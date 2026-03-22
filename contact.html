@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact Leveled Hockey Development — reach Jacob Taylor-Wong to register for programs or ask questions. North Shore Winter Club, North Vancouver, BC.">
+  <title>Contact &amp; Register | Leveled Hockey Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Page-specific additions ── */
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+    .form-success-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .form-success-title {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .form-success-msg {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .form-note {
+      font-size: 0.78rem;
+      color: var(--text-subtle);
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+    .location-section {
+      padding: clamp(3rem, 6vw, 5rem) 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .location-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(2rem, 4vw, 4rem);
+      align-items: center;
+    }
+    .location-map {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      height: 360px;
+    }
+    .location-map iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      filter: grayscale(100%) invert(92%) contrast(85%) brightness(72%) hue-rotate(180deg);
+    }
+    .location-info { display: flex; flex-direction: column; gap: 1.5rem; }
+    .location-detail { display: flex; align-items: flex-start; gap: 1rem; }
+    .location-detail-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      background: var(--accent-glow);
+      border: 1px solid rgba(232,121,42,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .location-detail-label {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 0.25rem;
+    }
+    .location-detail-value {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .location-detail-value a { transition: color var(--trans); }
+    .location-detail-value a:hover { color: var(--accent); }
+    @media (max-width: 768px) {
+      .location-grid { grid-template-columns: 1fr; }
+      .location-map { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================== NAVIGATION ===================== -->
+  <nav class="nav scrolled" id="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">
+        <img src="images/logo.webp" alt="Leveled Hockey Development" class="nav-logo">
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">Leveled Hockey</span>
+          <span class="nav-brand-tagline">Development</span>
+        </div>
+      </a>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="programs.html" class="nav-link">Programs</a></li>
+        <li><a href="contact.html" class="nav-link active">Contact</a></li>
+        <li><a href="contact.html" class="btn btn-primary nav-cta">Register Now</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===================== PAGE HERO ===================== -->
+  <section class="page-hero">
+    <div class="page-hero-bg" style="background-image: url('images/action/PEP4.jpg'); background-position: center 30%;"></div>
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Contact</span>
+      </nav>
+      <p class="page-hero-eyebrow">Get in Touch</p>
+      <h1 class="page-hero-title">Register &amp; Inquire</h1>
+      <p class="page-hero-desc">Have a question or ready to sign up? Reach out below — Jacob personally responds to every message.</p>
+    </div>
+  </section>
+
+  <!-- ===================== CONTACT MAIN ===================== -->
+  <section class="section">
+    <div class="container">
+      <div class="contact-grid">
+
+        <!-- FORM -->
+        <div class="contact-form-card">
+          <div id="form-content">
+            <h2 class="form-title">Send a Message</h2>
+            <form id="contact-form" novalidate>
+              <div class="form-grid">
+
+                <div class="form-group">
+                  <label for="first-name" class="form-label">First Name</label>
+                  <input type="text" id="first-name" name="first_name" class="form-input" placeholder="Alex" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="last-name" class="form-label">Last Name</label>
+                  <input type="text" id="last-name" name="last_name" class="form-input" placeholder="Johnson" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="email" class="form-label">Email Address</label>
+                  <input type="email" id="email" name="email" class="form-input" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="phone" class="form-label">Phone Number</label>
+                  <input type="tel" id="phone" name="phone" class="form-input" placeholder="604-555-0100">
+                </div>
+
+                <div class="form-group">
+                  <label for="player-age" class="form-label">Player Age</label>
+                  <input type="number" id="player-age" name="player_age" class="form-input" placeholder="e.g. 12" min="5" max="22">
+                </div>
+
+                <div class="form-group">
+                  <label for="program" class="form-label">Program Interest</label>
+                  <select id="program" name="program" class="form-select">
+                    <option value="" disabled selected>Select a program&hellip;</option>
+                    <option value="power-edge-pro">Power Edge Pro ($50 / player / hr)</option>
+                    <option value="development-sessions">Development Sessions ($50 / player / hr)</option>
+                    <option value="one-on-one">1-on-1 Private Training ($100 / hr)</option>
+                    <option value="not-sure">Not Sure Yet</option>
+                  </select>
+                </div>
+
+                <div class="form-group full">
+                  <label for="message" class="form-label">Message</label>
+                  <textarea id="message" name="message" class="form-textarea" placeholder="Tell us about your player — current level, goals, any questions you have. The more detail the better."></textarea>
+                </div>
+
+              </div>
+              <button type="submit" class="btn btn-primary form-submit">Send Message &rarr;</button>
+              <p class="form-note">We aim to respond within 24 hours. No spam — ever.</p>
+            </form>
+          </div>
+
+          <!-- SUCCESS STATE (shown after submit) -->
+          <div class="form-success" id="form-success">
+            <div class="form-success-icon">✅</div>
+            <h3 class="form-success-title">Message Sent!</h3>
+            <p class="form-success-msg">Thanks for reaching out. Jacob will be in touch within 24 hours to get you set up.</p>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="contact-sidebar">
+
+          <div class="contact-founder-card">
+            <div class="contact-founder-avatar">JT</div>
+            <div>
+              <div class="contact-founder-name">Jacob Taylor-Wong</div>
+              <div class="contact-founder-role">Founder &amp; Head Coach</div>
+              <p class="contact-founder-note">I personally respond to every inquiry. If you have questions about which program is the right fit for your player, don't hesitate to reach out — I'm happy to talk it through.</p>
+            </div>
+          </div>
+
+          <div class="contact-details-card">
+
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">📞</div>
+              <div>
+                <div class="contact-detail-label">Phone</div>
+                <div class="contact-detail-value">
+                  <a href="tel:+16045006574">1-604-500-6574</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">✉️</div>
+              <div>
+                <div class="contact-detail-label">Email</div>
+                <div class="contact-detail-value">
+                  <a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">📍</div>
+              <div>
+                <div class="contact-detail-label">Location</div>
+                <div class="contact-detail-value">
+                  North Shore Winter Club<br>
+                  1325 Keith Road East<br>
+                  North Vancouver, BC V7J 1J3
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-detail-item">
+              <div class="contact-detail-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                </svg>
+              </div>
+              <div>
+                <div class="contact-detail-label">Instagram</div>
+                <div class="contact-detail-value">
+                  <a href="https://instagram.com/LeveledHockey" target="_blank" rel="noopener noreferrer">@LeveledHockey</a>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LOCATION / MAP ===================== -->
+  <section class="location-section">
+    <div class="container">
+      <div class="location-grid">
+
+        <div class="location-map">
+          <iframe
+            src="https://maps.google.com/maps?q=North+Shore+Winter+Club+1325+Keith+Road+East+North+Vancouver+BC&output=embed"
+            title="North Shore Winter Club location map"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div class="location-info">
+          <div class="section-header">
+            <p class="section-eyebrow">Our Facility</p>
+            <h2 class="section-title">North Shore Winter Club</h2>
+            <p class="section-desc">All Leveled Hockey Development sessions take place at the North Shore Winter Club — one of the top multi-sport facilities in the Lower Mainland.</p>
+          </div>
+
+          <div class="location-detail">
+            <div class="location-detail-icon">📍</div>
+            <div>
+              <div class="location-detail-label">Address</div>
+              <div class="location-detail-value">1325 Keith Road East, North Vancouver, BC V7J 1J3</div>
+            </div>
+          </div>
+
+          <div class="location-detail">
+            <div class="location-detail-icon">🚗</div>
+            <div>
+              <div class="location-detail-label">Getting There</div>
+              <div class="location-detail-value">Located at the bottom of Mountain Highway, just north of the Second Narrows Bridge. Free parking is available on-site.</div>
+            </div>
+          </div>
+
+          <div class="location-detail">
+            <div class="location-detail-icon">🏒</div>
+            <div>
+              <div class="location-detail-label">Facility</div>
+              <div class="location-detail-value">NSWC features three full ice surfaces, including a dedicated goalie training rink — giving us the space to run focused, high-quality sessions year-round.</div>
+            </div>
+          </div>
+
+          <div class="location-detail">
+            <div class="location-detail-icon">📞</div>
+            <div>
+              <div class="location-detail-label">NSWC Main Line</div>
+              <div class="location-detail-value"><a href="tel:+16049854135">604-985-4135</a> &mdash; <a href="https://nswc.ca" target="_blank" rel="noopener noreferrer">nswc.ca</a></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="footer-main">
+      <div class="footer-grid container">
+
+        <div class="footer-brand">
+          <img src="images/logo.webp" alt="Leveled Hockey Development" class="footer-logo">
+          <p class="footer-tagline">Instructional player development for youth hockey athletes in North Vancouver, BC.</p>
+          <div class="footer-social">
+            <a href="https://instagram.com/LeveledHockey" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html" class="footer-link">Home</a></li>
+            <li><a href="programs.html" class="footer-link">Programs</a></li>
+            <li><a href="contact.html" class="footer-link">Contact</a></li>
+            <li><a href="contact.html" class="footer-link">Register</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Contact</h4>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Phone</div>
+            <div class="footer-contact-value"><a href="tel:+16045006574">1-604-500-6574</a></div>
+          </div>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Email</div>
+            <div class="footer-contact-value"><a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a></div>
+          </div>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Location</div>
+            <div class="footer-contact-value">North Shore Winter Club<br>1325 Keith Road East<br>North Vancouver, BC V7J 1J3</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2025 Leveled Hockey Development. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="#" class="footer-legal-link">Privacy Policy</a>
+        <a href="#" class="footer-legal-link">Terms of Use</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Hamburger menu toggle
+    const hamburger = document.getElementById('nav-hamburger');
+    const navMenu   = document.getElementById('nav-menu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      navMenu.classList.toggle('open');
+    });
+
+    // Contact form — demo submission (shows success state)
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('form-content').style.display = 'none';
+      document.getElementById('form-success').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
