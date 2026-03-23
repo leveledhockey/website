@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Register for Leveled Hockey Development programs — Power Edge Pro, Development Sessions, and 1-on-1 training in North Vancouver, BC.">
+  <title>Register | Leveled Hockey Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="schedule-data.js"></script>
+  <style>
+    /* ---- Registration page specific styles ---- */
+    .schedule-section { margin-bottom: 3rem; }
+
+    .schedule-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .schedule-table thead tr {
+      background: var(--surface-3);
+    }
+    .schedule-table th {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.9rem 1.25rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .schedule-table tbody tr {
+      border-top: 1px solid var(--border);
+      transition: background var(--trans);
+    }
+    .schedule-table tbody tr:hover { background: var(--surface-2); }
+    .schedule-table td {
+      padding: 0.9rem 1.25rem;
+      vertical-align: middle;
+    }
+    .program-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 3px;
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(232,121,42,0.25);
+      white-space: nowrap;
+    }
+    .schedule-loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .schedule-error {
+      text-align: center;
+      padding: 2rem;
+      color: #e05a5a;
+      font-size: 0.95rem;
+    }
+
+    /* ---- Form ---- */
+    .reg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 600px) {
+      .reg-grid { grid-template-columns: 1fr; }
+    }
+    .reg-grid .full { grid-column: 1 / -1; }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-label {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .form-label .required { color: var(--accent); margin-left: 2px; }
+    .form-input,
+    .form-select,
+    .form-textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      transition: border-color var(--trans), box-shadow var(--trans);
+      width: 100%;
+    }
+    .form-input::placeholder,
+    .form-textarea::placeholder { color: var(--text-subtle); }
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+    .form-select option { background: var(--surface-2); }
+    .form-textarea { resize: vertical; min-height: 100px; }
+
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.5rem, 4vw, 2.5rem);
+    }
+    .form-section-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-section + .form-section { margin-top: 2rem; }
+
+    .form-submit-row {
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .form-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .success-msg {
+      display: none;
+      background: rgba(50, 180, 100, 0.1);
+      border: 1px solid rgba(50, 180, 100, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
+      color: #6cda9a;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================== NAVIGATION ===================== -->
+  <nav class="nav scrolled" id="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">
+        <img src="images/logo.webp" alt="Leveled Hockey Development" class="nav-logo">
+        <div class="nav-brand-text">
+          <span class="nav-brand-name">Leveled Hockey</span>
+          <span class="nav-brand-tagline">Development</span>
+        </div>
+      </a>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="programs.html" class="nav-link">Programs</a></li>
+        <li><a href="contact.html" class="nav-link">Contact</a></li>
+        <li><a href="register.html" class="btn btn-primary nav-cta active">Register Now</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===================== PAGE HERO ===================== -->
+  <section class="page-hero">
+    <div class="page-hero-bg" style="background-image: url('images/action/PEP5.jpg'); background-position: center 40%;"></div>
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Register</span>
+      </nav>
+      <p class="page-hero-eyebrow">Secure Your Spot</p>
+      <h1 class="page-hero-title">Registration</h1>
+      <p class="page-hero-desc">Choose a session below and fill in your details. We'll confirm your spot by email.</p>
+    </div>
+  </section>
+
+  <!-- ===================== UPCOMING SESSIONS ===================== -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Schedule</p>
+        <h2 class="section-title">Upcoming Sessions</h2>
+        <p class="section-desc">All available sessions are listed below. Spots are limited — register early.</p>
+      </div>
+
+      <div class="schedule-section">
+        <div class="schedule-table-wrap">
+          <table class="schedule-table" id="schedule-table">
+            <thead>
+              <tr>
+                <th>Program</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th>Birth Years</th>
+                <th>Max Players</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-body">
+              <tr>
+                <td colspan="6" class="schedule-loading">Loading schedule&hellip;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== REGISTRATION FORM ===================== -->
+      <div class="form-card" id="reg-form-wrap">
+        <form id="reg-form" novalidate>
+
+          <div class="form-section">
+            <div class="form-section-title">Player Information</div>
+            <div class="reg-grid">
+              <div class="form-group">
+                <label class="form-label" for="player-first">First Name <span class="required">*</span></label>
+                <input class="form-input" type="text" id="player-first" name="player_first" placeholder="e.g. Alex" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="player-last">Last Name <span class="required">*</span></label>
+                <input class="form-input" type="text" id="player-last" name="player_last" placeholder="e.g. Smith" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="birth-year">Birth Year <span class="required">*</span></label>
+                <input class="form-input" type="number" id="birth-year" name="birth_year" placeholder="e.g. 2012" min="2000" max="2022" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="position">Position</label>
+                <select class="form-select" id="position" name="position">
+                  <option value="">Select position</option>
+                  <option value="Forward">Forward</option>
+                  <option value="Defence">Defence</option>
+                  <option value="Goalie">Goalie</option>
+                  <option value="Not sure">Not sure yet</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Parent / Guardian Information</div>
+            <div class="reg-grid">
+              <div class="form-group">
+                <label class="form-label" for="parent-name">Full Name <span class="required">*</span></label>
+                <input class="form-input" type="text" id="parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
+                <input class="form-input" type="tel" id="phone" name="phone" placeholder="e.g. 604-555-0100" required>
+              </div>
+              <div class="form-group full">
+                <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+                <input class="form-input" type="email" id="email" name="email" placeholder="e.g. jordan@email.com" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Session Selection</div>
+            <div class="reg-grid">
+              <div class="form-group full">
+                <label class="form-label" for="session-select">Session <span class="required">*</span></label>
+                <select class="form-select" id="session-select" name="session" required>
+                  <option value="">Loading sessions&hellip;</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label" for="notes">Additional Notes</label>
+                <textarea class="form-textarea" id="notes" name="notes" placeholder="Any questions, player experience level, or anything else we should know&hellip;"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-submit-row">
+            <button type="submit" class="btn btn-primary">Submit Registration</button>
+            <p class="form-note">We'll respond within 1–2 business days to confirm your spot and share payment details.</p>
+          </div>
+
+        </form>
+
+        <div class="success-msg" id="success-msg">
+          <strong>Registration received!</strong> Thanks for signing up. We'll be in touch within 1–2 business days to confirm your spot and share next steps. If you have any urgent questions, reach us at <a href="mailto:info@leveledhockey.com" style="color: var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color: var(--accent);">604-500-6574</a>.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== CTA BANNER ===================== -->
+  <section class="cta-banner">
+    <div class="cta-banner-inner">
+      <div>
+        <p class="section-eyebrow">Questions First?</p>
+        <h2 class="cta-banner-title">Get in Touch.</h2>
+        <p class="cta-banner-subtitle">Not sure which program is right? Reach out and we'll help you choose.</p>
+      </div>
+      <div class="cta-banner-actions">
+        <a href="programs.html" class="btn btn-outline">View Programs</a>
+        <a href="contact.html" class="btn btn-primary">Contact Jacob</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer">
+    <div class="footer-main">
+      <div class="footer-grid container">
+
+        <div class="footer-brand">
+          <img src="images/logo.webp" alt="Leveled Hockey Development" class="footer-logo">
+          <p class="footer-tagline">Instructional player development for youth hockey athletes in North Vancouver, BC.</p>
+          <div class="footer-social">
+            <a href="https://instagram.com/LeveledHockey" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html" class="footer-link">Home</a></li>
+            <li><a href="programs.html" class="footer-link">Programs</a></li>
+            <li><a href="contact.html" class="footer-link">Contact</a></li>
+            <li><a href="register.html" class="footer-link">Register</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Contact</h4>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Phone</div>
+            <div class="footer-contact-value"><a href="tel:+16045006574">1-604-500-6574</a></div>
+          </div>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Email</div>
+            <div class="footer-contact-value"><a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a></div>
+          </div>
+          <div class="footer-contact-item">
+            <div class="footer-contact-label">Location</div>
+            <div class="footer-contact-value">North Shore Winter Club<br>1325 Keith Road East<br>North Vancouver, BC V7J 1J3</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copyright">&copy; 2025 Leveled Hockey Development. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="#" class="footer-legal-link">Privacy Policy</a>
+        <a href="#" class="footer-legal-link">Terms of Use</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Hamburger menu toggle
+    const hamburger = document.getElementById('nav-hamburger');
+    const navMenu   = document.getElementById('nav-menu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      navMenu.classList.toggle('open');
+    });
+
+    // ---- Schedule helpers ----
+    function formatDate(dateStr) {
+      // Expects DD-MM-YYYY
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      const [day, month, year] = parts;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const m = parseInt(month, 10);
+      return `${months[m - 1]} ${parseInt(day, 10)}, ${year}`;
+    }
+
+    function formatTime(timeStr) {
+      // Expects HH:MM:SS or HH:MM
+      const parts = timeStr.split(':');
+      let h = parseInt(parts[0], 10);
+      const min = parts[1] || '00';
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${min} ${ampm}`;
+    }
+
+    function buildSessionLabel(row) {
+      return `${row['Program']} — ${formatDate(row['Date'])} at ${formatTime(row['Time'])} (${row['Location']})`;
+    }
+
+    function loadSchedule() {
+      const tbody = document.getElementById('schedule-body');
+      const sessionSelect = document.getElementById('session-select');
+      const rows = window.SCHEDULE_DATA || [];
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="schedule-loading">No sessions scheduled at this time.</td></tr>';
+        sessionSelect.innerHTML = '<option value="">No sessions available</option>';
+        return;
+      }
+
+      // Build table
+      tbody.innerHTML = rows.map(row => `
+        <tr>
+          <td><span class="program-badge">${row['Program'] || '—'}</span></td>
+          <td>${row['Date'] ? formatDate(row['Date']) : '—'}</td>
+          <td>${row['Time'] ? formatTime(row['Time']) : '—'}</td>
+          <td>${row['Location'] || '—'}</td>
+          <td>${row['Birth Year Range'] || '—'}</td>
+          <td>${row['Max Participants'] || '—'}</td>
+        </tr>
+      `).join('');
+
+      // Build session dropdown
+      sessionSelect.innerHTML = '<option value="">Select a session&hellip;</option>' +
+        rows.map((row, i) => `<option value="${i}">${buildSessionLabel(row)}</option>`).join('');
+    }
+
+    loadSchedule();
+
+    // ---- Form submission ----
+    document.getElementById('reg-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const form = e.target;
+
+      // Basic required-field validation
+      const required = form.querySelectorAll('[required]');
+      let valid = true;
+      required.forEach(field => {
+        field.style.borderColor = '';
+        if (!field.value.trim()) {
+          field.style.borderColor = '#e05a5a';
+          valid = false;
+        }
+      });
+      if (!valid) return;
+
+      // In a real deployment this would POST to a backend or form service.
+      // For now, show a success message.
+      form.style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+      window.scrollTo({ top: document.getElementById('reg-form-wrap').offsetTop - 100, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
