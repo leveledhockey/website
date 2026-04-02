@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="schedule-data.js"></script>
   <style>
     /* ---- Registration page specific styles ---- */
     .schedule-section { margin-bottom: 3rem; }
@@ -230,11 +229,12 @@
                 <th>Location</th>
                 <th>Birth Years</th>
                 <th>Max Players</th>
+                <th>Spots Left</th>
               </tr>
             </thead>
             <tbody id="schedule-body">
               <tr>
-                <td colspan="6" class="schedule-loading">Loading schedule&hellip;</td>
+                <td colspan="7" class="schedule-loading">Loading schedule&hellip;</td>
               </tr>
             </tbody>
           </table>
@@ -427,42 +427,57 @@
       return `${row['Program']} — ${formatDate(row['Date'])} at ${formatTime(row['Time'])} (${row['Location']})`;
     }
 
-    function loadSchedule() {
+    async function loadSchedule() {
       const tbody = document.getElementById('schedule-body');
       const sessionSelect = document.getElementById('session-select');
-      const rows = window.SCHEDULE_DATA || [];
 
-      if (rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="schedule-loading">No sessions scheduled at this time.</td></tr>';
-        sessionSelect.innerHTML = '<option value="">No sessions available</option>';
-        return;
+      try {
+        const resp = await fetch('/api/schedule');
+        if (!resp.ok) throw new Error('API error');
+        const rows = await resp.json();
+
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="schedule-loading">No sessions scheduled at this time.</td></tr>';
+          sessionSelect.innerHTML = '<option value="">No sessions available</option>';
+          return;
+        }
+
+        // Build table
+        tbody.innerHTML = rows.map(row => {
+          const full = row.spotsRemaining <= 0;
+          return `
+            <tr${full ? ' style="opacity:0.5"' : ''}>
+              <td><span class="program-badge">${row['Program'] || '—'}</span></td>
+              <td>${row['Date'] ? formatDate(row['Date']) : '—'}</td>
+              <td>${row['Time'] ? formatTime(row['Time']) : '—'}</td>
+              <td>${row['Location'] || '—'}</td>
+              <td>${row['Birth Year Range'] || '—'}</td>
+              <td>${row['Max Participants'] || '—'}</td>
+              <td>${full ? '<span style="color:#e05a5a">Full</span>' : row.spotsRemaining}</td>
+            </tr>`;
+        }).join('');
+
+        // Build session dropdown — exclude full sessions
+        sessionSelect.innerHTML = '<option value="">Select a session&hellip;</option>' +
+          rows
+            .filter(row => row.spotsRemaining > 0)
+            .map(row => `<option value="${row.sessionId}">${buildSessionLabel(row)}</option>`)
+            .join('');
+
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="7" class="schedule-error">Failed to load schedule. Please refresh the page.</td></tr>';
+        sessionSelect.innerHTML = '<option value="">Unable to load sessions</option>';
       }
-
-      // Build table
-      tbody.innerHTML = rows.map(row => `
-        <tr>
-          <td><span class="program-badge">${row['Program'] || '—'}</span></td>
-          <td>${row['Date'] ? formatDate(row['Date']) : '—'}</td>
-          <td>${row['Time'] ? formatTime(row['Time']) : '—'}</td>
-          <td>${row['Location'] || '—'}</td>
-          <td>${row['Birth Year Range'] || '—'}</td>
-          <td>${row['Max Participants'] || '—'}</td>
-        </tr>
-      `).join('');
-
-      // Build session dropdown
-      sessionSelect.innerHTML = '<option value="">Select a session&hellip;</option>' +
-        rows.map((row, i) => `<option value="${i}">${buildSessionLabel(row)}</option>`).join('');
     }
 
     loadSchedule();
 
     // ---- Form submission ----
-    document.getElementById('reg-form').addEventListener('submit', function(e) {
+    document.getElementById('reg-form').addEventListener('submit', async function(e) {
       e.preventDefault();
       const form = e.target;
 
-      // Basic required-field validation
+      // Client-side required-field validation
       const required = form.querySelectorAll('[required]');
       let valid = true;
       required.forEach(field => {
@@ -474,11 +489,51 @@
       });
       if (!valid) return;
 
-      // In a real deployment this would POST to a backend or form service.
-      // For now, show a success message.
-      form.style.display = 'none';
-      document.getElementById('success-msg').style.display = 'block';
-      window.scrollTo({ top: document.getElementById('reg-form-wrap').offsetTop - 100, behavior: 'smooth' });
+      const submitBtn = form.querySelector('[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting\u2026';
+
+      const payload = {
+        sessionId:    form.session.value,
+        player_first: form.player_first.value.trim(),
+        player_last:  form.player_last.value.trim(),
+        birth_year:   form.birth_year.value.trim(),
+        position:     form.position.value,
+        parent_name:  form.parent_name.value.trim(),
+        phone:        form.phone.value.trim(),
+        email:        form.email.value.trim(),
+        notes:        form.notes.value.trim(),
+      };
+
+      try {
+        const resp = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+          form.style.display = 'none';
+          document.getElementById('success-msg').style.display = 'block';
+          window.scrollTo({ top: document.getElementById('reg-form-wrap').offsetTop - 100, behavior: 'smooth' });
+        } else {
+          let errEl = document.getElementById('form-error-msg');
+          if (!errEl) {
+            errEl = document.createElement('p');
+            errEl.id = 'form-error-msg';
+            errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
+            form.querySelector('.form-submit-row').prepend(errEl);
+          }
+          errEl.textContent = data.error || 'Something went wrong. Please try again.';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Registration';
+        }
+      } catch (err) {
+        alert('Network error. Please check your connection and try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Registration';
+      }
     });
   </script>
 </body>
