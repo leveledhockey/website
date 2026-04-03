@@ -10,88 +10,500 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* ---- Registration page specific styles ---- */
-    .schedule-section { margin-bottom: 3rem; }
+    /* ---- Program Selector ---- */
+    .prog-selector-section {
+      margin-bottom: 2rem;
+    }
 
-    .schedule-table-wrap {
-      overflow-x: auto;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border);
+    .prog-dropdown-wrap {
+      position: relative;
     }
-    .schedule-table {
+
+    .prog-trigger {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.75rem;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      transition: border-color var(--trans), background var(--trans);
     }
-    .schedule-table thead tr {
-      background: var(--surface-3);
+    .prog-trigger:hover {
+      border-color: rgba(232,121,42,0.45);
+      background: var(--surface-2);
     }
-    .schedule-table th {
+    .prog-trigger.open {
+      border-color: var(--accent);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      background: var(--surface-2);
+    }
+
+    .prog-trigger-left { flex: 1; min-width: 0; }
+
+    .prog-trigger-eyebrow {
       font-family: var(--font-display);
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--text-muted);
-      padding: 0.9rem 1.25rem;
-      text-align: left;
-      white-space: nowrap;
+      margin-bottom: 0.3rem;
     }
-    .schedule-table tbody tr {
+
+    .prog-trigger-name {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+      line-height: 1.05;
+      margin-bottom: 0.4rem;
+    }
+
+    .prog-trigger-tagline {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .prog-trigger-chevron {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: transform var(--trans), background var(--trans), border-color var(--trans), color var(--trans);
+    }
+    .prog-trigger.open .prog-trigger-chevron {
+      transform: rotate(180deg);
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .prog-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-top: none;
+      border-bottom-left-radius: var(--radius-lg);
+      border-bottom-right-radius: var(--radius-lg);
+      overflow: hidden;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    }
+    .prog-dropdown.open { display: block; }
+
+    .prog-option {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.75rem;
+      cursor: pointer;
       border-top: 1px solid var(--border);
       transition: background var(--trans);
     }
-    .schedule-table tbody tr:hover { background: var(--surface-2); }
-    .schedule-table td {
-      padding: 0.9rem 1.25rem;
-      vertical-align: middle;
+    .prog-option:hover { background: var(--surface-2); }
+    .prog-option.selected { background: var(--accent-glow); }
+
+    .prog-option-radio {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color var(--trans);
     }
-    .program-badge {
-      display: inline-block;
-      padding: 0.25rem 0.65rem;
-      border-radius: 3px;
+    .prog-option-radio::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity var(--trans);
+    }
+    .prog-option.selected .prog-option-radio {
+      border-color: var(--accent);
+    }
+    .prog-option.selected .prog-option-radio::after { opacity: 1; }
+
+    .prog-option-info { flex: 1; min-width: 0; }
+
+    .prog-option-name {
       font-family: var(--font-display);
-      font-size: 0.7rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--text);
+      transition: color var(--trans);
+    }
+    .prog-option.selected .prog-option-name { color: var(--accent); }
+
+    .prog-option-tagline {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      margin-top: 0.15rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prog-option-badge {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
       letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(232,121,42,0.25);
+      border-radius: 3px;
+      padding: 0.15rem 0.45rem;
+      flex-shrink: 0;
+    }
+
+    /* ---- Calendar ---- */
+    .calendar-section { margin-bottom: 1.5rem; }
+
+    .calendar-wrap {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: var(--surface-3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cal-month-label {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .cal-nav-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.3rem;
+      line-height: 1;
+      padding: 0.3rem 0.75rem 0.35rem;
+      transition: background var(--trans), border-color var(--trans), color var(--trans);
+    }
+    .cal-nav-btn:hover:not(:disabled) {
+      background: var(--surface-2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .cal-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--border);
+      gap: 1px;
+    }
+
+    .cal-dow {
+      background: var(--surface-2);
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0.65rem 0.25rem;
+    }
+
+    .cal-day {
+      background: var(--surface);
+      min-height: 80px;
+      padding: 0.55rem 0.5rem;
+      position: relative;
+      transition: background var(--trans);
+    }
+    @media (max-width: 600px) {
+      .cal-day { min-height: 58px; padding: 0.4rem 0.3rem; }
+    }
+
+    .cal-day--empty { background: rgba(13,13,13,0.6); }
+    .cal-day--past { opacity: 0.4; }
+
+    .cal-day--has-sessions {
+      cursor: pointer;
+    }
+    .cal-day--has-sessions:hover {
+      background: var(--surface-2);
+    }
+    .cal-day--has-sessions:hover .cal-day-num { color: var(--accent); }
+
+    .cal-day--today .cal-day-num {
+      background: var(--accent);
+      color: #000 !important;
+      border-radius: 50%;
+    }
+
+    .cal-day-num {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      display: inline-flex;
+      width: 24px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.3rem;
+      transition: color var(--trans);
+    }
+
+    .cal-day-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .cal-badge {
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       font-weight: 600;
       background: var(--accent-glow);
       color: var(--accent);
       border: 1px solid rgba(232,121,42,0.25);
+      border-radius: 2px;
+      padding: 0.12rem 0.3rem;
       white-space: nowrap;
     }
-    .schedule-loading {
+    @media (max-width: 500px) {
+      .cal-badge { display: none; }
+      .cal-day--has-sessions::after {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        margin-top: 4px;
+      }
+    }
+
+    .cal-status {
       text-align: center;
       padding: 3rem;
       color: var(--text-muted);
       font-size: 0.95rem;
+      background: var(--surface);
     }
-    .schedule-error {
+    .cal-status--error { color: #e05a5a; }
+
+    .calendar-hint {
       text-align: center;
-      padding: 2rem;
-      color: #e05a5a;
-      font-size: 0.95rem;
+      color: var(--text-subtle);
+      font-size: 0.82rem;
+      margin-top: 0.9rem;
     }
 
-    /* ---- Form ---- */
+    /* ---- Modal overlay ---- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 900;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: clamp(1rem, 4vw, 2.5rem) 1rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s var(--ease);
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.5rem, 4vw, 2.5rem);
+      width: 100%;
+      max-width: 700px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s var(--ease);
+      margin: auto;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--trans), color var(--trans);
+    }
+    .modal-close:hover { background: var(--surface-3); color: var(--text); }
+
+    .modal-eyebrow {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    .modal-date-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 3.5vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 1.75rem;
+      padding-right: 2rem;
+    }
+
+    /* ---- Session picker ---- */
+    .modal-section-label {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .modal-session-section { margin-bottom: 2rem; }
+
+    .session-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .session-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans), box-shadow var(--trans);
+      user-select: none;
+    }
+    .session-card:hover:not(.session-card--full) {
+      border-color: rgba(232,121,42,0.5);
+      background: var(--surface-3);
+    }
+    .session-card--selected {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .session-card--full {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .session-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .session-spots {
+      font-family: var(--font-display);
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #6cda9a;
+      white-space: nowrap;
+    }
+    .session-spots--full { color: #e05a5a; }
+
+    .session-card-details {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .session-card-details span { display: block; }
+
+    /* ---- Registration form ---- */
     .reg-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.25rem;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 560px) {
       .reg-grid { grid-template-columns: 1fr; }
+      .session-cards { grid-template-columns: 1fr; }
     }
     .reg-grid .full { grid-column: 1 / -1; }
+
+    .modal-form-section { margin-bottom: 1.75rem; }
 
     .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
     .form-label {
       font-family: var(--font-display);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
     .form-label .required { color: var(--accent); margin-left: 2px; }
+
     .form-input,
     .form-select,
     .form-textarea {
@@ -123,28 +535,10 @@
       cursor: pointer;
     }
     .form-select option { background: var(--surface-2); }
-    .form-textarea { resize: vertical; min-height: 100px; }
-
-    .form-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: clamp(1.5rem, 4vw, 2.5rem);
-    }
-    .form-section-title {
-      font-family: var(--font-display);
-      font-size: 1rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.6rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .form-section + .form-section { margin-top: 2rem; }
+    .form-textarea { resize: vertical; min-height: 90px; }
 
     .form-submit-row {
-      margin-top: 2rem;
+      margin-top: 1.75rem;
       display: flex;
       align-items: center;
       gap: 1.25rem;
@@ -158,14 +552,29 @@
 
     .success-msg {
       display: none;
-      background: rgba(50, 180, 100, 0.1);
-      border: 1px solid rgba(50, 180, 100, 0.3);
+      background: rgba(50,180,100,0.1);
+      border: 1px solid rgba(50,180,100,0.3);
       border-radius: var(--radius-lg);
       padding: 1.5rem 2rem;
       color: #6cda9a;
       font-size: 0.95rem;
       line-height: 1.6;
-      margin-top: 1.5rem;
+    }
+
+    /* ---- Program badge (shared) ---- */
+    .program-badge {
+      display: inline-block;
+      padding: 0.22rem 0.6rem;
+      border-radius: 3px;
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(232,121,42,0.25);
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -205,122 +614,137 @@
       </nav>
       <p class="page-hero-eyebrow">Secure Your Spot</p>
       <h1 class="page-hero-title">Registration</h1>
-      <p class="page-hero-desc">Choose a session below and fill in your details. We'll confirm your spot by email.</p>
+      <p class="page-hero-desc">Pick a day on the calendar to view and register for available sessions.</p>
     </div>
   </section>
 
-  <!-- ===================== UPCOMING SESSIONS ===================== -->
+  <!-- ===================== CALENDAR ===================== -->
   <section class="section">
     <div class="container">
-      <div class="section-header">
-        <p class="section-eyebrow">Schedule</p>
-        <h2 class="section-title">Upcoming Sessions</h2>
-        <p class="section-desc">All available sessions are listed below. Spots are limited — register early.</p>
-      </div>
 
-      <div class="schedule-section">
-        <div class="schedule-table-wrap">
-          <table class="schedule-table" id="schedule-table">
-            <thead>
-              <tr>
-                <th>Program</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Location</th>
-                <th>Birth Years</th>
-                <th>Max Players</th>
-                <th>Spots Left</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-body">
-              <tr>
-                <td colspan="7" class="schedule-loading">Loading schedule&hellip;</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Program selector -->
+      <div class="prog-selector-section">
+        <p class="section-eyebrow" style="margin-bottom:1rem">Schedule</p>
+        <div class="prog-dropdown-wrap" id="prog-dropdown-wrap">
+          <button class="prog-trigger" id="prog-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <div class="prog-trigger-left">
+              <p class="prog-trigger-eyebrow">Program</p>
+              <p class="prog-trigger-name" id="prog-trigger-name">Loading&hellip;</p>
+              <p class="prog-trigger-tagline" id="prog-trigger-tagline"></p>
+            </div>
+            <span class="prog-trigger-chevron" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+          <div class="prog-dropdown" id="prog-dropdown" role="listbox"></div>
         </div>
       </div>
 
-      <!-- ===================== REGISTRATION FORM ===================== -->
-      <div class="form-card" id="reg-form-wrap">
-        <form id="reg-form" novalidate>
-
-          <div class="form-section">
-            <div class="form-section-title">Player Information</div>
-            <div class="reg-grid">
-              <div class="form-group">
-                <label class="form-label" for="player-first">First Name <span class="required">*</span></label>
-                <input class="form-input" type="text" id="player-first" name="player_first" placeholder="e.g. Alex" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="player-last">Last Name <span class="required">*</span></label>
-                <input class="form-input" type="text" id="player-last" name="player_last" placeholder="e.g. Smith" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="birth-year">Birth Year <span class="required">*</span></label>
-                <input class="form-input" type="number" id="birth-year" name="birth_year" placeholder="e.g. 2012" min="2000" max="2022" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="position">Position</label>
-                <select class="form-select" id="position" name="position">
-                  <option value="">Select position</option>
-                  <option value="Forward">Forward</option>
-                  <option value="Defence">Defence</option>
-                  <option value="Goalie">Goalie</option>
-                  <option value="Not sure">Not sure yet</option>
-                </select>
-              </div>
-            </div>
+      <div class="calendar-section">
+        <div class="calendar-wrap">
+          <div class="calendar-header">
+            <button class="cal-nav-btn" id="cal-prev" aria-label="Previous month">&#8249;</button>
+            <span class="cal-month-label" id="cal-month-label">&nbsp;</span>
+            <button class="cal-nav-btn" id="cal-next" aria-label="Next month">&#8250;</button>
           </div>
 
-          <div class="form-section">
-            <div class="form-section-title">Parent / Guardian Information</div>
-            <div class="reg-grid">
-              <div class="form-group">
-                <label class="form-label" for="parent-name">Full Name <span class="required">*</span></label>
-                <input class="form-input" type="text" id="parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
-                <input class="form-input" type="tel" id="phone" name="phone" placeholder="e.g. 604-555-0100" required>
-              </div>
-              <div class="form-group full">
-                <label class="form-label" for="email">Email Address <span class="required">*</span></label>
-                <input class="form-input" type="email" id="email" name="email" placeholder="e.g. jordan@email.com" required>
-              </div>
-            </div>
+          <div id="cal-status" class="cal-status">Loading schedule&hellip;</div>
+
+          <div class="calendar-grid" id="calendar-grid" style="display:none">
+            <div class="cal-dow">Sun</div>
+            <div class="cal-dow">Mon</div>
+            <div class="cal-dow">Tue</div>
+            <div class="cal-dow">Wed</div>
+            <div class="cal-dow">Thu</div>
+            <div class="cal-dow">Fri</div>
+            <div class="cal-dow">Sat</div>
           </div>
-
-          <div class="form-section">
-            <div class="form-section-title">Session Selection</div>
-            <div class="reg-grid">
-              <div class="form-group full">
-                <label class="form-label" for="session-select">Session <span class="required">*</span></label>
-                <select class="form-select" id="session-select" name="session" required>
-                  <option value="">Loading sessions&hellip;</option>
-                </select>
-              </div>
-              <div class="form-group full">
-                <label class="form-label" for="notes">Additional Notes</label>
-                <textarea class="form-textarea" id="notes" name="notes" placeholder="Any questions, player experience level, or anything else we should know&hellip;"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-submit-row">
-            <button type="submit" class="btn btn-primary">Submit Registration</button>
-            <p class="form-note">We'll respond within 1–2 business days to confirm your spot and share payment details.</p>
-          </div>
-
-        </form>
-
-        <div class="success-msg" id="success-msg">
-          <strong>Registration received!</strong> Thanks for signing up. We'll be in touch within 1–2 business days to confirm your spot and share next steps. If you have any urgent questions, reach us at <a href="mailto:info@leveledhockey.com" style="color: var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color: var(--accent);">604-500-6574</a>.
         </div>
+        <p class="calendar-hint" id="calendar-hint" style="display:none">Select a highlighted day to register for a session.</p>
       </div>
-
     </div>
   </section>
+
+  <!-- ===================== REGISTRATION MODAL ===================== -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-date-title">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+
+      <p class="modal-eyebrow">Register</p>
+      <h2 class="modal-date-title" id="modal-date-title"></h2>
+
+      <div class="modal-session-section">
+        <p class="modal-section-label">Select a Session</p>
+        <div class="session-cards" id="modal-session-cards"></div>
+      </div>
+
+      <form id="reg-form" novalidate>
+        <input type="hidden" id="modal-session-id" name="session">
+
+        <div class="modal-form-section">
+          <p class="modal-section-label">Player Information</p>
+          <div class="reg-grid">
+            <div class="form-group">
+              <label class="form-label" for="player-first">First Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="player-first" name="player_first" placeholder="e.g. Alex" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="player-last">Last Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="player-last" name="player_last" placeholder="e.g. Smith" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="birth-year">Birth Year <span class="required">*</span></label>
+              <input class="form-input" type="number" id="birth-year" name="birth_year" placeholder="e.g. 2012" min="2000" max="2022" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="position">Position</label>
+              <select class="form-select" id="position" name="position">
+                <option value="">Select position</option>
+                <option value="Forward">Forward</option>
+                <option value="Defence">Defence</option>
+                <option value="Goalie">Goalie</option>
+                <option value="Not sure">Not sure yet</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-section">
+          <p class="modal-section-label">Parent / Guardian Information</p>
+          <div class="reg-grid">
+            <div class="form-group">
+              <label class="form-label" for="parent-name">Full Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
+              <input class="form-input" type="tel" id="phone" name="phone" placeholder="e.g. 604-555-0100" required>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+              <input class="form-input" type="email" id="email" name="email" placeholder="e.g. jordan@email.com" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-form-section">
+          <p class="modal-section-label">Additional Notes</p>
+          <div class="form-group">
+            <textarea class="form-textarea" id="notes" name="notes" placeholder="Any questions, player experience level, or anything else we should know&hellip;"></textarea>
+          </div>
+        </div>
+
+        <div class="form-submit-row">
+          <button type="submit" class="btn btn-primary" id="submit-btn">Submit Registration</button>
+          <p class="form-note">We'll respond within 1&ndash;2 business days to confirm your spot and share payment details.</p>
+        </div>
+      </form>
+
+      <div class="success-msg" id="success-msg">
+        <strong>Registration received!</strong> Thanks for signing up. We'll be in touch within 1&ndash;2 business days to confirm your spot and share next steps. If you have any urgent questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color:var(--accent);">604-500-6574</a>.
+      </div>
+    </div>
+  </div>
 
   <!-- ===================== CTA BANNER ===================== -->
   <section class="cta-banner">
@@ -394,7 +818,7 @@
   </footer>
 
   <script>
-    // Hamburger menu toggle
+    // ---- Hamburger menu ----
     const hamburger = document.getElementById('nav-hamburger');
     const navMenu   = document.getElementById('nav-menu');
     hamburger.addEventListener('click', () => {
@@ -402,19 +826,8 @@
       navMenu.classList.toggle('open');
     });
 
-    // ---- Schedule helpers ----
-    function formatDate(dateStr) {
-      // Expects DD-MM-YYYY
-      const parts = dateStr.split('-');
-      if (parts.length !== 3) return dateStr;
-      const [day, month, year] = parts;
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const m = parseInt(month, 10);
-      return `${months[m - 1]} ${parseInt(day, 10)}, ${year}`;
-    }
-
+    // ---- Helpers ----
     function formatTime(timeStr) {
-      // Expects HH:MM:SS or HH:MM
       const parts = timeStr.split(':');
       let h = parseInt(parts[0], 10);
       const min = parts[1] || '00';
@@ -423,52 +836,343 @@
       return `${h}:${min} ${ampm}`;
     }
 
-    function buildSessionLabel(row) {
-      return `${row['Program']} — ${formatDate(row['Date'])} at ${formatTime(row['Time'])} (${row['Location']})`;
+    function parseSessionDate(dateStr) {
+      // Expects DD-MM-YYYY
+      const [d, m, y] = dateStr.split('-').map(Number);
+      return { day: d, month: m, year: y };
     }
 
+    // ---- Program metadata ----
+    // Keys must match the Program field returned by /api/schedule.
+    // Add or rename entries here if your Google Sheet uses different codes.
+    const PROGRAM_META = {
+      'PEP':          { name: 'Power Edge Pro',          tagline: 'Elite skating, puck control, and decision-making' },
+      'OVERSPEED':    { name: 'Overspeed Power Skating',  tagline: 'Build speed, strength, and skating efficiency' },
+      'PUCK_SKILLS':  { name: 'Puck Skills',              tagline: 'Control the puck. Create space. Execute plays.' },
+      'BATTLE_CAMP':  { name: 'Battle Camp',              tagline: 'Compete. Think. Execute.' },
+      'DEFENSE_CAMP': { name: 'Defense Camp',             tagline: 'Build complete, confident defensemen' },
+    };
+    // Preferred display order in the dropdown
+    const PROGRAM_ORDER = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
+
+    function getProgramMeta(code) {
+      return PROGRAM_META[code] || { name: code, tagline: '' };
+    }
+
+    // ---- Calendar state ----
+    let allSessions    = [];
+    let selectedProgram = null;
+    let calYear, calMonth;
+
+    const MONTH_NAMES = ['January','February','March','April','May','June',
+                         'July','August','September','October','November','December'];
+    const DOW_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    // ---- Program selector ----
+    function buildProgramDropdown(codesInData) {
+      const dropdown = document.getElementById('prog-dropdown');
+      // Show PROGRAM_ORDER first, then any extra codes from the data
+      const order = [...PROGRAM_ORDER, ...codesInData.filter(c => !PROGRAM_ORDER.includes(c))];
+
+      dropdown.innerHTML = order.map(code => {
+        const meta       = getProgramMeta(code);
+        const hasSession = codesInData.includes(code);
+        return `
+          <div class="prog-option${code === selectedProgram ? ' selected' : ''}"
+               data-code="${code}"
+               role="option"
+               aria-selected="${code === selectedProgram}"
+               tabindex="0">
+            <span class="prog-option-radio"></span>
+            <span class="prog-option-info">
+              <span class="prog-option-name">${meta.name}</span>
+              <span class="prog-option-tagline">${meta.tagline}</span>
+            </span>
+            ${hasSession ? '<span class="prog-option-badge">Sessions available</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      dropdown.querySelectorAll('.prog-option').forEach(opt => {
+        opt.addEventListener('click',   () => selectProgram(opt.dataset.code));
+        opt.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectProgram(opt.dataset.code); }
+        });
+      });
+    }
+
+    function setProgram(code) {
+      selectedProgram = code;
+      const meta = getProgramMeta(code);
+
+      document.getElementById('prog-trigger-name').textContent    = meta.name;
+      document.getElementById('prog-trigger-tagline').textContent = meta.tagline;
+
+      // Sync dropdown option states
+      document.querySelectorAll('.prog-option').forEach(opt => {
+        const sel = opt.dataset.code === code;
+        opt.classList.toggle('selected', sel);
+        opt.setAttribute('aria-selected', sel);
+      });
+
+      renderCalendar();
+    }
+
+    function selectProgram(code) {
+      setProgram(code);
+      closeProgramDropdown();
+    }
+
+    function openProgramDropdown() {
+      document.getElementById('prog-trigger').classList.add('open');
+      document.getElementById('prog-trigger').setAttribute('aria-expanded', 'true');
+      document.getElementById('prog-dropdown').classList.add('open');
+    }
+
+    function closeProgramDropdown() {
+      document.getElementById('prog-trigger').classList.remove('open');
+      document.getElementById('prog-trigger').setAttribute('aria-expanded', 'false');
+      document.getElementById('prog-dropdown').classList.remove('open');
+    }
+
+    document.getElementById('prog-trigger').addEventListener('click', () => {
+      document.getElementById('prog-trigger').classList.contains('open')
+        ? closeProgramDropdown()
+        : openProgramDropdown();
+    });
+
+    document.addEventListener('click', e => {
+      if (!document.getElementById('prog-dropdown-wrap').contains(e.target)) {
+        closeProgramDropdown();
+      }
+    });
+
+    // ---- Calendar render ----
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+
+      // Remove old day cells, keep the 7 DOW header divs
+      while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+      document.getElementById('cal-month-label').textContent =
+        `${MONTH_NAMES[calMonth - 1]} ${calYear}`;
+
+      // Filter sessions to selected program, then group by day for this month
+      const byDay = {};
+      allSessions
+        .filter(s => s['Program'] === selectedProgram)
+        .forEach(s => {
+          const { day, month, year } = parseSessionDate(s['Date']);
+          if (year === calYear && month === calMonth) {
+            if (!byDay[day]) byDay[day] = [];
+            byDay[day].push(s);
+          }
+        });
+
+      const today = new Date();
+      const todayY = today.getFullYear();
+      const todayM = today.getMonth() + 1;
+      const todayD = today.getDate();
+
+      const firstDow    = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
+      const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+
+      // Empty leading cells
+      for (let i = 0; i < firstDow; i++) {
+        const el = document.createElement('div');
+        el.className = 'cal-day cal-day--empty';
+        grid.appendChild(el);
+      }
+
+      // Day cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const daySessions = byDay[d] || [];
+        const hasSessions = daySessions.length > 0;
+        const isToday     = calYear === todayY && calMonth === todayM && d === todayD;
+        const isPast      = new Date(calYear, calMonth - 1, d) <
+                            new Date(todayY, todayM - 1, todayD);
+
+        const classes = ['cal-day'];
+        if (isToday)               classes.push('cal-day--today');
+        if (isPast)                classes.push('cal-day--past');
+        if (hasSessions && !isPast) classes.push('cal-day--has-sessions');
+
+        const cell = document.createElement('div');
+        cell.className = classes.join(' ');
+
+        if (hasSessions && !isPast) {
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('tabindex', '0');
+          cell.addEventListener('click', () => openModal(calYear, calMonth, d));
+          cell.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(calYear, calMonth, d); }
+          });
+        }
+
+        // Only show time on the badge (no need for program name — calendar is already filtered)
+        const badgesHtml = daySessions.map(s =>
+          `<span class="cal-badge">${formatTime(s['Time'])}</span>`
+        ).join('');
+
+        cell.innerHTML = `
+          <span class="cal-day-num">${d}</span>
+          ${hasSessions ? `<div class="cal-day-badges">${badgesHtml}</div>` : ''}
+        `;
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function updateNavBtns() {
+      const today = new Date();
+      document.getElementById('cal-prev').disabled =
+        calYear === today.getFullYear() && calMonth === today.getMonth() + 1;
+    }
+
+    // ---- Modal ----
+    function openModal(year, month, day) {
+      // Filter to selected program only
+      const daySessions = allSessions.filter(s => {
+        const { day: d, month: m, year: y } = parseSessionDate(s['Date']);
+        return y === year && m === month && d === day && s['Program'] === selectedProgram;
+      });
+      if (!daySessions.length) return;
+
+      // Date title
+      const dow = DOW_NAMES[new Date(year, month - 1, day).getDay()];
+      document.getElementById('modal-date-title').textContent =
+        `${dow}, ${MONTH_NAMES[month - 1]} ${day}`;
+
+      // Session cards
+      const container = document.getElementById('modal-session-cards');
+      container.innerHTML = daySessions.map(s => {
+        const full = s.spotsRemaining <= 0;
+        const spotsLabel = full
+          ? 'Full'
+          : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
+        return `
+          <div class="session-card${full ? ' session-card--full' : ''}"
+               data-session-id="${s.sessionId}"
+               ${full ? '' : 'role="radio" tabindex="0"'}>
+            <div class="session-card-top">
+              <span class="program-badge">${s['Program']}</span>
+              <span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>
+            </div>
+            <div class="session-card-details">
+              <span>${formatTime(s['Time'])}</span>
+              <span>${s['Location']}</span>
+              <span>Born ${s['Birth Year Range']}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Click handlers for available cards
+      container.querySelectorAll('.session-card:not(.session-card--full)').forEach(card => {
+        card.addEventListener('click', () => selectSessionCard(card));
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSessionCard(card); }
+        });
+      });
+
+      // Auto-select if only one option
+      const available = container.querySelectorAll('.session-card:not(.session-card--full)');
+      if (available.length === 1) {
+        selectSessionCard(available[0]);
+      } else {
+        document.getElementById('modal-session-id').value = '';
+      }
+
+      // Reset form state
+      const form = document.getElementById('reg-form');
+      form.reset();
+      form.style.display = '';
+      document.getElementById('modal-session-id').value =
+        available.length === 1 ? available[0].dataset.sessionId : '';
+      document.getElementById('success-msg').style.display = 'none';
+      const errEl = document.getElementById('form-error-msg');
+      if (errEl) errEl.remove();
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Registration';
+      form.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(el => {
+        el.style.borderColor = '';
+      });
+
+      // Show modal
+      document.getElementById('modal-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function selectSessionCard(card) {
+      document.querySelectorAll('.session-card').forEach(c => c.classList.remove('session-card--selected'));
+      card.classList.add('session-card--selected');
+      document.getElementById('modal-session-id').value = card.dataset.sessionId;
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('modal-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('modal-overlay')) closeModal();
+    });
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // ---- Month navigation ----
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      calMonth--;
+      if (calMonth < 1) { calMonth = 12; calYear--; }
+      renderCalendar();
+      updateNavBtns();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      calMonth++;
+      if (calMonth > 12) { calMonth = 1; calYear++; }
+      renderCalendar();
+      updateNavBtns();
+    });
+
+    // ---- Load schedule from API ----
     async function loadSchedule() {
-      const tbody = document.getElementById('schedule-body');
-      const sessionSelect = document.getElementById('session-select');
+      const statusEl = document.getElementById('cal-status');
+      const gridEl   = document.getElementById('calendar-grid');
+      const hintEl   = document.getElementById('calendar-hint');
 
       try {
         const resp = await fetch('/api/schedule');
         if (!resp.ok) throw new Error('API error');
-        const rows = await resp.json();
+        allSessions = await resp.json();
 
-        if (!rows.length) {
-          tbody.innerHTML = '<tr><td colspan="7" class="schedule-loading">No sessions scheduled at this time.</td></tr>';
-          sessionSelect.innerHTML = '<option value="">No sessions available</option>';
-          return;
-        }
+        // Derive which program codes actually have sessions
+        const codesInData = [...new Set(allSessions.map(s => s['Program']))];
 
-        // Build table
-        tbody.innerHTML = rows.map(row => {
-          const full = row.spotsRemaining <= 0;
-          return `
-            <tr${full ? ' style="opacity:0.5"' : ''}>
-              <td><span class="program-badge">${row['Program'] || '—'}</span></td>
-              <td>${row['Date'] ? formatDate(row['Date']) : '—'}</td>
-              <td>${row['Time'] ? formatTime(row['Time']) : '—'}</td>
-              <td>${row['Location'] || '—'}</td>
-              <td>${row['Birth Year Range'] || '—'}</td>
-              <td>${row['Max Participants'] || '—'}</td>
-              <td>${full ? '<span style="color:#e05a5a">Full</span>' : row.spotsRemaining}</td>
-            </tr>`;
-        }).join('');
+        // Build the dropdown (all 5 defined programs + any extras in data)
+        buildProgramDropdown(codesInData);
 
-        // Build session dropdown — exclude full sessions
-        sessionSelect.innerHTML = '<option value="">Select a session&hellip;</option>' +
-          rows
-            .filter(row => row.spotsRemaining > 0)
-            .map(row => `<option value="${row.sessionId}">${buildSessionLabel(row)}</option>`)
-            .join('');
+        // Default to first program in order that has sessions, else first defined
+        const firstWithSessions = PROGRAM_ORDER.find(c => codesInData.includes(c));
+        setProgram(firstWithSessions || PROGRAM_ORDER[0]);
 
+        statusEl.style.display = 'none';
+        gridEl.style.display   = '';
+        hintEl.style.display   = '';
+
+        updateNavBtns();
       } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="7" class="schedule-error">Failed to load schedule. Please refresh the page.</td></tr>';
-        sessionSelect.innerHTML = '<option value="">Unable to load sessions</option>';
+        statusEl.textContent = 'Failed to load schedule. Please refresh the page.';
+        statusEl.className   = 'cal-status cal-status--error';
       }
     }
+
+    // Init
+    const now  = new Date();
+    calYear    = now.getFullYear();
+    calMonth   = now.getMonth() + 1;
+    document.getElementById('cal-month-label').textContent =
+      `${MONTH_NAMES[calMonth - 1]} ${calYear}`;
 
     loadSchedule();
 
@@ -477,10 +1181,19 @@
       e.preventDefault();
       const form = e.target;
 
-      // Client-side required-field validation
-      const required = form.querySelectorAll('[required]');
+      // Ensure a session is selected
+      const sessionId = document.getElementById('modal-session-id').value;
+      if (!sessionId) {
+        const cards = document.getElementById('modal-session-cards');
+        cards.style.outline      = '2px solid #e05a5a';
+        cards.style.borderRadius = '8px';
+        setTimeout(() => { cards.style.outline = ''; }, 2000);
+        return;
+      }
+
+      // Required field validation
       let valid = true;
-      required.forEach(field => {
+      form.querySelectorAll('[required]').forEach(field => {
         field.style.borderColor = '';
         if (!field.value.trim()) {
           field.style.borderColor = '#e05a5a';
@@ -489,12 +1202,12 @@
       });
       if (!valid) return;
 
-      const submitBtn = form.querySelector('[type="submit"]');
-      submitBtn.disabled = true;
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled    = true;
       submitBtn.textContent = 'Submitting\u2026';
 
       const payload = {
-        sessionId:    form.session.value,
+        sessionId,
         player_first: form.player_first.value.trim(),
         player_last:  form.player_last.value.trim(),
         birth_year:   form.birth_year.value.trim(),
@@ -507,16 +1220,15 @@
 
       try {
         const resp = await fetch('/api/register', {
-          method: 'POST',
+          method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body:    JSON.stringify(payload),
         });
         const data = await resp.json();
 
         if (resp.ok) {
           form.style.display = 'none';
           document.getElementById('success-msg').style.display = 'block';
-          window.scrollTo({ top: document.getElementById('reg-form-wrap').offsetTop - 100, behavior: 'smooth' });
         } else {
           let errEl = document.getElementById('form-error-msg');
           if (!errEl) {
@@ -525,13 +1237,13 @@
             errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
             form.querySelector('.form-submit-row').prepend(errEl);
           }
-          errEl.textContent = data.error || 'Something went wrong. Please try again.';
-          submitBtn.disabled = false;
+          errEl.textContent     = data.error || 'Something went wrong. Please try again.';
+          submitBtn.disabled    = false;
           submitBtn.textContent = 'Submit Registration';
         }
       } catch (err) {
         alert('Network error. Please check your connection and try again.');
-        submitBtn.disabled = false;
+        submitBtn.disabled    = false;
         submitBtn.textContent = 'Submit Registration';
       }
     });

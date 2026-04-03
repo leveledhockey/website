@@ -1,8 +1,10 @@
 const { google } = require('googleapis');
 
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
-const SHEET_SESSIONS = 'Sessions';
+const SPREADSHEET_ID     = process.env.GOOGLE_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS = 'Registrations';
+
+// Must match the tab names in Google Sheets exactly.
+const VALID_PROGRAM_CODES = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
 
 function getAuth() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
@@ -35,21 +37,28 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid birth year.' });
   }
 
+  // Derive program code from session ID (format: {PROGRAM}-{YYYY}-{MM}-{DD}-{HH}).
+  // Validate against the known list to prevent arbitrary sheet name injection.
+  const programCode = String(sessionId).trim().split('-')[0].toUpperCase();
+  if (!VALID_PROGRAM_CODES.includes(programCode)) {
+    return res.status(400).json({ error: 'Invalid session.' });
+  }
+
   try {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Fetch sessions and existing registrations for this session in parallel
+    // Fetch the program's session sheet and existing registrations in one call.
     const { data } = await sheets.spreadsheets.values.batchGet({
       spreadsheetId: SPREADSHEET_ID,
-      ranges: [`${SHEET_SESSIONS}!A1:G`, `${SHEET_REGISTRATIONS}!B1:B`],
+      ranges: [`${programCode}!A1:F`, `${SHEET_REGISTRATIONS}!B1:B`],
     });
 
-    const [sessionsRange, regRange] = data.valueRanges;
-    const sessionRows = sessionsRange.values || [];
-    const headers = sessionRows[0] || [];
+    const [programRange, regRange] = data.valueRanges;
+    const sessionRows = programRange.values || [];
+    const headers     = sessionRows[0] || [];
 
-    // Validate the session exists
+    // Validate the session ID exists in the program's sheet.
     const sessionRow = sessionRows.slice(1).find(row => row[0] === String(sessionId).trim());
     if (!sessionRow) {
       return res.status(400).json({ error: 'Invalid session.' });
@@ -60,7 +69,7 @@ module.exports = async function handler(req, res) {
 
     const maxParticipants = parseInt(sessionObj['Max Participants'], 10);
 
-    // Count live registrations for this session
+    // Count live registrations for this session to enforce capacity.
     const regCount = (regRange.values || [])
       .slice(1)
       .filter(([sid]) => sid === String(sessionId).trim()).length;
@@ -69,13 +78,13 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'Sorry, this session is now full.' });
     }
 
-    // Human-readable session label for the sheet (for admin readability)
-    const sessionLabel = `${sessionObj['Program']} — ${sessionObj['Date']} at ${sessionObj['Time']} (${sessionObj['Location']})`;
+    // Human-readable label written to the Registrations sheet for admin readability.
+    const sessionLabel = `${programCode} — ${sessionObj['Date']} at ${sessionObj['Time']} (${sessionObj['Location']})`;
 
-    // Append the registration row
+    // Append the registration row.
     await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_REGISTRATIONS}!A:L`,
+      spreadsheetId:   SPREADSHEET_ID,
+      range:           `${SHEET_REGISTRATIONS}!A:L`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {

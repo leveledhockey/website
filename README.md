@@ -65,7 +65,7 @@ You should see `.env.local` appear in the project root containing `GOOGLE_SPREAD
 npx vercel dev
 ```
 
-Open [http://localhost:3000/register.html](http://localhost:3000/register.html) in your browser. The schedule table should load sessions from Google Sheets.
+Open [http://localhost:3000/register.html](http://localhost:3000/register.html) in your browser. The calendar should load sessions from Google Sheets.
 
 ---
 
@@ -74,11 +74,13 @@ Open [http://localhost:3000/register.html](http://localhost:3000/register.html) 
 **"Failed to load schedule"** — check the terminal where `vercel dev` is running for a `schedule error:` line. Common causes:
 
 - `.env.local` is missing → re-run `npx vercel env pull .env.local`
-- Sheet tab is not named `Sessions` exactly (capital S) → rename it in Google Sheets
-- Header row is wrong → row 1 of the Sessions tab must be exactly:
-  `Session ID`, `Program`, `Date`, `Time`, `Location`, `Max Participants`, `Birth Year Range`
+- Program sheet tab names don't match exactly → see the Google Sheets structure section below
+- Header row is wrong → row 1 of each program tab must be exactly:
+  `Session ID`, `Date`, `Time`, `Location`, `Max Participants`, `Birth Year Range`
 
-**"No sessions scheduled at this time"** — the Sessions sheet exists and was read successfully, but either it has no data rows or the `Session ID` column is empty.
+**Calendar shows no sessions for a program** — the tab was read successfully but has no data rows, or the `Session ID` column is empty for all rows.
+
+**Registration returns "Invalid session"** — the session ID in the sheet doesn't follow the `{SHEET_NAME}-{YYYY}-{MM}-{DD}-{HH}` convention, or the program code prefix doesn't match one of the five valid sheet names.
 
 ---
 
@@ -87,17 +89,38 @@ Open [http://localhost:3000/register.html](http://localhost:3000/register.html) 
 The site reads from a Google Spreadsheet shared with the service account
 `leveled-website@leveledhockey.iam.gserviceaccount.com`.
 
-**Sessions tab** — the business owner edits this to manage the schedule:
+There is **one tab per program**. The tab names must be exactly as listed below (case-sensitive). The `Registrations` tab is the only other tab the site uses.
 
-| Session ID | Program | Date | Time | Location | Max Participants | Birth Year Range |
-|---|---|---|---|---|---|---|
-| PEP-2026-03-22-03 | PEP | 22-03-2026 | 03:00:00 | NSWC | 20 | 2010-2015 |
+### Program tabs
 
-- Session ID convention: `{program}-{YYYY}-{MM}-{DD}-{HH}` — set once, never change
-- Date format: `DD-MM-YYYY`
-- Time format: `HH:MM:SS` (24-hour)
+| Tab name | Program displayed on site |
+|---|---|
+| `PEP` | Power Edge Pro |
+| `OVERSPEED` | Overspeed Power Skating |
+| `PUCK_SKILLS` | Puck Skills |
+| `BATTLE_CAMP` | Battle Camp |
+| `DEFENSE_CAMP` | Defense Camp |
 
-**Registrations tab** — to be added later. Will be populated automatically when someone registers via the website, with `Paid? = FALSE` for all web submissions.
+Each program tab has this header row (6 columns — no "Program" column):
+
+| Session ID | Date | Time | Location | Max Participants | Birth Year Range |
+|---|---|---|---|---|---|
+| PEP-2026-04-05-09 | 05-04-2026 | 09:00:00 | NSWC | 16 | 2010-2013 |
+
+**Column rules:**
+- **Session ID** — convention: `{TAB_NAME}-{YYYY}-{MM}-{DD}-{HH}`. Set once, never change. Must be unique across the entire sheet. Two sessions on the same day must be at different hours.
+- **Date** — format `DD-MM-YYYY`
+- **Time** — format `HH:MM:SS` (24-hour)
+- **Max Participants** — set to `0` to mark a session as full on the calendar
+
+### Registrations tab
+
+Populated automatically when someone submits the registration form. Columns (do not reorder):
+
+| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+
+All web submissions write `FALSE` in the `Paid?` column. Mark as `TRUE` manually once payment is received.
 
 ---
 

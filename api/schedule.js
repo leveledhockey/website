@@ -1,7 +1,9 @@
 const { google } = require('googleapis');
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
-const SHEET_SESSIONS = 'Sessions';
+
+// One sheet per program — names must match the tab names in Google Sheets exactly.
+const PROGRAM_SHEETS = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
 
 function getAuth() {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
@@ -20,37 +22,51 @@ module.exports = async function handler(req, res) {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const { data } = await sheets.spreadsheets.values.get({
+    // Discover which program sheets actually exist in this spreadsheet.
+    const { data: meta } = await sheets.spreadsheets.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_SESSIONS}!A1:G`,
+      fields: 'sheets.properties.title',
     });
+    const existingSheets = (meta.sheets || [])
+      .map(s => s.properties.title)
+      .filter(t => PROGRAM_SHEETS.includes(t));
 
-    const sessionRows = data.values || [];
-
-    if (sessionRows.length < 2) {
+    if (existingSheets.length === 0) {
       res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
       return res.status(200).json([]);
     }
 
-    const headers = sessionRows[0];
-    const sessions = sessionRows.slice(1).map(row => {
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = row[i] || ''; });
-      return obj;
+    // Fetch all existing program sheets in a single API call.
+    const { data } = await sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SPREADSHEET_ID,
+      ranges: existingSheets.map(name => `${name}!A1:F`),
     });
 
-    const result = sessions
-      .filter(s => s['Session ID'])
-      .map(s => ({
-        sessionId: s['Session ID'],
-        Program: s['Program'],
-        Date: s['Date'],
-        Time: s['Time'],
-        Location: s['Location'],
-        'Max Participants': s['Max Participants'],
-        'Birth Year Range': s['Birth Year Range'],
-        spotsRemaining: parseInt(s['Max Participants'], 10) || 0,
-      }));
+    const result = [];
+
+    (data.valueRanges || []).forEach((vr, idx) => {
+      const programCode = existingSheets[idx];
+      const rows = vr.values || [];
+      if (rows.length < 2) return;
+
+      const headers = rows[0];
+      rows.slice(1).forEach(row => {
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+        if (!obj['Session ID']) return;
+
+        result.push({
+          sessionId:          obj['Session ID'],
+          Program:            programCode,
+          Date:               obj['Date'],
+          Time:               obj['Time'],
+          Location:           obj['Location'],
+          'Max Participants': obj['Max Participants'],
+          'Birth Year Range': obj['Birth Year Range'],
+          spotsRemaining:     parseInt(obj['Max Participants'], 10) || 0,
+        });
+      });
+    });
 
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
     return res.status(200).json(result);
