@@ -4,3 +4,4 @@ node_modules/
 *SheetsAPIKey.json
 
 .vercel
+.env*.local
