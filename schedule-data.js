@@ -7,7 +7,7 @@ window.SCHEDULE_DATA = [
     "Time": "03:00:00",
     "Location": "NSWC",
     "Max Participants": "20",
-    "Birth Year Range": "2010-2015"
+    "Age Group": "U15"
   },
   {
     "Program": "PEP",
@@ -15,7 +15,7 @@ window.SCHEDULE_DATA = [
     "Time": "04:00:00",
     "Location": "NSWC",
     "Max Participants": "20",
-    "Birth Year Range": "2014-2016"
+    "Age Group": "U13"
   },
   {
     "Program": "PEP",
@@ -23,7 +23,7 @@ window.SCHEDULE_DATA = [
     "Time": "05:00:00",
     "Location": "NSWC",
     "Max Participants": "20",
-    "Birth Year Range": "2008-2010"
+    "Age Group": "U18"
   },
   {
     "Program": "General Skills",
@@ -31,7 +31,7 @@ window.SCHEDULE_DATA = [
     "Time": "03:00:00",
     "Location": "Canlan North Van",
     "Max Participants": "20",
-    "Birth Year Range": "2010-2018"
+    "Age Group": "U15"
   },
   {
     "Program": "General Skills",
@@ -39,7 +39,7 @@ window.SCHEDULE_DATA = [
     "Time": "04:00:00",
     "Location": "Canlan North Van",
     "Max Participants": "20",
-    "Birth Year Range": "2015-2019"
+    "Age Group": "U13"
   },
   {
     "Program": "General Skills",
@@ -47,7 +47,7 @@ window.SCHEDULE_DATA = [
     "Time": "05:00:00",
     "Location": "Canlan North Van",
     "Max Participants": "20",
-    "Birth Year Range": "2007-2010"
+    "Age Group": "U18"
   },
   {
     "Program": "Scrimmage",
@@ -55,6 +55,6 @@ window.SCHEDULE_DATA = [
     "Time": "10:00:00",
     "Location": "NSWC",
     "Max Participants": "20",
-    "Birth Year Range": "All"
+    "Age Group": "All"
   }
 ];

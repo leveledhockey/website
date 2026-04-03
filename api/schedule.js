@@ -62,7 +62,7 @@ module.exports = async function handler(req, res) {
           Time:               obj['Time'],
           Location:           obj['Location'],
           'Max Participants': obj['Max Participants'],
-          'Birth Year Range': obj['Birth Year Range'],
+          'Age Group':         obj['Age Group'],
           spotsRemaining:     parseInt(obj['Max Participants'], 10) || 0,
         });
       });

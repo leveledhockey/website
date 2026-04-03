@@ -248,13 +248,13 @@
 
     .cal-day {
       background: var(--surface);
-      min-height: 80px;
+      min-height: 120px;
       padding: 0.55rem 0.5rem;
       position: relative;
       transition: background var(--trans);
     }
     @media (max-width: 600px) {
-      .cal-day { min-height: 58px; padding: 0.4rem 0.3rem; }
+      .cal-day { min-height: 90px; padding: 0.4rem 0.3rem; }
     }
 
     .cal-day--empty { background: rgba(13,13,13,0.6); }
@@ -290,22 +290,35 @@
 
     .cal-day-badges {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 3px;
+    }
+    /* When a day has many sessions, fall back to 2-column layout (top→bottom, left→right) */
+    .cal-day-badges--many {
+      display: block;
+      column-count: 2;
+      column-gap: 4px;
     }
 
     .cal-badge {
       font-family: var(--font-display);
-      font-size: 0.55rem;
-      letter-spacing: 0.05em;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
       font-weight: 600;
       background: var(--accent-glow);
       color: var(--accent);
       border: 1px solid rgba(232,121,42,0.25);
       border-radius: 2px;
-      padding: 0.12rem 0.3rem;
+      padding: 0.2rem 0.4rem;
       white-space: nowrap;
+    }
+    .cal-day-badges--many .cal-badge {
+      display: block;
+      break-inside: avoid;
+      font-size: 0.6rem;
+      padding: 0.15rem 0.3rem;
+      margin-bottom: 3px;
     }
     @media (max-width: 500px) {
       .cal-badge { display: none; }
@@ -341,7 +354,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.78);
-      z-index: 900;
+      z-index: 1100;
       display: flex;
       align-items: flex-start;
       justify-content: center;
@@ -1009,14 +1022,15 @@
           });
         }
 
-        // Only show time on the badge (no need for program name — calendar is already filtered)
+        // Show time and age group on each badge
         const badgesHtml = daySessions.map(s =>
-          `<span class="cal-badge">${formatTime(s['Time'])}</span>`
+          `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']}</span>`
         ).join('');
 
+        const manyClass = daySessions.length > 3 ? ' cal-day-badges--many' : '';
         cell.innerHTML = `
           <span class="cal-day-num">${d}</span>
-          ${hasSessions ? `<div class="cal-day-badges">${badgesHtml}</div>` : ''}
+          ${hasSessions ? `<div class="cal-day-badges${manyClass}">${badgesHtml}</div>` : ''}
         `;
 
         grid.appendChild(cell);
@@ -1061,7 +1075,7 @@
             <div class="session-card-details">
               <span>${formatTime(s['Time'])}</span>
               <span>${s['Location']}</span>
-              <span>Born ${s['Birth Year Range']}</span>
+              <span>${s['Age Group']}</span>
             </div>
           </div>
         `;
