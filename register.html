@@ -254,7 +254,7 @@
       transition: background var(--trans);
     }
     @media (max-width: 600px) {
-      .cal-day { min-height: 90px; padding: 0.4rem 0.3rem; }
+      .cal-day { min-height: 80px; padding: 0.35rem 0.25rem; }
     }
 
     .cal-day--empty { background: rgba(13,13,13,0.6); }
@@ -320,16 +320,67 @@
       padding: 0.15rem 0.3rem;
       margin-bottom: 3px;
     }
+
     @media (max-width: 500px) {
-      .cal-badge { display: none; }
+      .cal-day {
+        min-height: 70px;
+        padding: 0.3rem 0.2rem;
+      }
+      .cal-day-num {
+        font-size: 0.7rem;
+        width: 20px;
+        height: 20px;
+        margin-bottom: 0.2rem;
+      }
+      .cal-badge {
+        font-size: 0.5rem;
+        padding: 0.1rem 0.25rem;
+        letter-spacing: 0.02em;
+        white-space: normal;
+        line-height: 1.3;
+        word-break: break-word;
+      }
+      .cal-day-badges {
+        gap: 2px;
+      }
+      .cal-day-badges--many {
+        display: flex;
+        flex-direction: column;
+        column-count: unset;
+        column-gap: unset;
+      }
+      .cal-day-badges--many .cal-badge {
+        break-inside: unset;
+        font-size: 0.5rem;
+        padding: 0.1rem 0.25rem;
+        margin-bottom: 2px;
+      }
+      .cal-day-badges {
+        max-height: 44px;
+        overflow-y: auto;
+        scrollbar-width: none;
+      }
+      .cal-day-badges::-webkit-scrollbar { display: none; }
+      .cal-day--has-sessions {
+        position: relative;
+      }
       .cal-day--has-sessions::after {
         content: '';
-        display: block;
-        width: 6px;
-        height: 6px;
-        background: var(--accent);
-        border-radius: 50%;
-        margin-top: 4px;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 18px;
+        background: linear-gradient(to bottom, transparent, var(--surface));
+        pointer-events: none;
+      }
+      .cal-day--has-sessions:hover::after {
+        background: linear-gradient(to bottom, transparent, var(--surface-2));
+      }
+      .cal-dow {
+        font-size: 0.55rem;
+        padding: 0.4rem 0.1rem;
+        letter-spacing: 0.05em;
       }
     }
 
@@ -589,6 +640,246 @@
       border: 1px solid rgba(232,121,42,0.25);
       white-space: nowrap;
     }
+
+    /* ---- Mobile: programme pill tabs ---- */
+    .mob-prog-tabs {
+      display: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 1.25rem;
+      padding-bottom: 2px;
+    }
+    .mob-prog-tabs::-webkit-scrollbar { display: none; }
+
+    .mob-prog-tab {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+      padding: 0.5rem 1.1rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: var(--surface);
+      cursor: pointer;
+      transition: background var(--trans), border-color var(--trans), color var(--trans);
+      white-space: nowrap;
+      margin-right: 0.5rem;
+    }
+    .mob-prog-tab:last-child { margin-right: 0; }
+    .mob-prog-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+    }
+
+    /* ---- Bottom-sheet drag handle (mobile only) ---- */
+    .mob-sheet-handle {
+      display: none;
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface-3);
+      margin: 0 auto 1.5rem;
+    }
+
+    /* ---- "+X more" overflow label ---- */
+    .cal-more {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+      padding: 0.05rem 0.3rem;
+    }
+
+    /* ---- All non-empty day cells are now clickable ---- */
+    .cal-day:not(.cal-day--empty) { cursor: pointer; }
+
+    /* ---- Highlight the open week's cells ---- */
+    .cal-day--week-open {
+      background: var(--accent-glow) !important;
+    }
+    .cal-day--week-open .cal-day-num { color: var(--accent); }
+
+    /* ---- Expandable week-detail row ---- */
+    .cal-week-detail {
+      grid-column: 1 / -1;
+      display: none;
+      background: var(--surface-2);
+      border-top: 2px solid var(--accent);
+      border-bottom: 1px solid var(--border);
+      animation: weekIn 0.18s var(--ease);
+    }
+    .cal-week-detail.open { display: block; }
+
+    @keyframes weekIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .week-detail-inner {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .week-day-col {
+      padding: 0.65rem 0.5rem;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .week-day-col:last-child { border-right: none; }
+    .week-day-col--today .week-day-label,
+    .week-day-col--today .week-day-num { color: var(--accent); }
+
+    .week-day-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.1rem;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .week-day-label {
+      font-family: var(--font-display);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .week-day-num {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .week-sessions { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .week-session-item { display: flex; flex-direction: column; gap: 0.15rem; }
+
+    .week-session-time {
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .week-session-meta {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .week-session-register {
+      font-size: 0.58rem !important;
+      padding: 0.22rem 0.5rem !important;
+      letter-spacing: 0.08em !important;
+      margin-top: 0.2rem;
+      width: 100%;
+      justify-content: center;
+    }
+    .week-session-full-tag {
+      font-family: var(--font-display);
+      font-size: 0.58rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #e05a5a;
+      margin-top: 0.15rem;
+    }
+    .week-no-sessions {
+      font-size: 0.7rem;
+      color: var(--text-subtle);
+      text-align: center;
+      padding: 0.2rem 0;
+    }
+
+    /* ============================================================
+       MOBILE OVERRIDES  ≤ 640 px
+       ============================================================ */
+    @media (max-width: 640px) {
+
+      /* Slightly tighter DOW headers */
+      .cal-dow {
+        font-size: 0.55rem;
+        padding: 0.45rem 0.1rem;
+        letter-spacing: 0.05em;
+      }
+
+      /* Week detail: vertical list instead of 7 columns */
+      .week-detail-inner {
+        display: flex;
+        flex-direction: column;
+      }
+      .week-day-col {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        padding: 0.65rem 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .week-day-col:last-child { border-bottom: none; }
+      .week-day-col--empty { display: none; } /* hide blank day slots on mobile */
+
+      .week-day-header {
+        flex-direction: column;
+        align-items: center;
+        min-width: 38px;
+        flex-shrink: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border-bottom: none;
+        border-right: 1px solid var(--border);
+        padding-right: 0.65rem;
+        gap: 0.15rem;
+      }
+
+      .week-sessions {
+        flex: 1;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+      }
+
+      .week-session-item {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+      .week-session-register {
+        width: auto !important;
+        padding: 0.18rem 0.65rem !important;
+        margin-top: 0;
+      }
+      .week-no-sessions { text-align: left; }
+
+      /* Bottom-sheet modal */
+      .modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+      .modal {
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+        max-width: 100% !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        margin: 0 !important;
+        transform: translateY(100%) !important;
+      }
+      .modal-overlay.open .modal { transform: translateY(0) !important; }
+      .mob-sheet-handle { display: block; }
+    }
   </style>
 </head>
 <body>
@@ -638,6 +929,11 @@
       <!-- Program selector -->
       <div class="prog-selector-section">
         <p class="section-eyebrow" style="margin-bottom:1rem">Schedule</p>
+
+        <!-- Mobile: horizontal pill tabs (hidden on desktop via CSS) -->
+        <div class="mob-prog-tabs" id="mob-prog-tabs" role="tablist" aria-label="Select program"></div>
+
+        <!-- Desktop: dropdown -->
         <div class="prog-dropdown-wrap" id="prog-dropdown-wrap">
           <button class="prog-trigger" id="prog-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
             <div class="prog-trigger-left">
@@ -673,7 +969,7 @@
             <div class="cal-dow">Sat</div>
           </div>
         </div>
-        <p class="calendar-hint" id="calendar-hint" style="display:none">Select a highlighted day to register for a session.</p>
+        <p class="calendar-hint" id="calendar-hint" style="display:none">Click any day to expand that week's full schedule.</p>
       </div>
     </div>
   </section>
@@ -681,6 +977,7 @@
   <!-- ===================== REGISTRATION MODAL ===================== -->
   <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-date-title">
     <div class="modal" id="modal">
+      <div class="mob-sheet-handle" aria-hidden="true"></div>
       <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
 
       <p class="modal-eyebrow">Register</p>
@@ -881,6 +1178,24 @@
                          'July','August','September','October','November','December'];
     const DOW_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
+    // ---- Mobile programme tabs ----
+    function buildMobileTabs(codesInData) {
+      const tabsEl = document.getElementById('mob-prog-tabs');
+      if (!tabsEl) return;
+      const order = [...PROGRAM_ORDER, ...codesInData.filter(c => !PROGRAM_ORDER.includes(c))];
+      tabsEl.innerHTML = order.map(code => {
+        const meta = getProgramMeta(code);
+        return `<button class="mob-prog-tab${code === selectedProgram ? ' active' : ''}"
+                        data-code="${code}"
+                        type="button"
+                        role="tab"
+                        aria-selected="${code === selectedProgram}">${meta.name}</button>`;
+      }).join('');
+      tabsEl.querySelectorAll('.mob-prog-tab').forEach(tab => {
+        tab.addEventListener('click', () => selectProgram(tab.dataset.code));
+      });
+    }
+
     // ---- Program selector ----
     function buildProgramDropdown(codesInData) {
       const dropdown = document.getElementById('prog-dropdown');
@@ -921,11 +1236,18 @@
       document.getElementById('prog-trigger-name').textContent    = meta.name;
       document.getElementById('prog-trigger-tagline').textContent = meta.tagline;
 
-      // Sync dropdown option states
+      // Sync desktop dropdown option states
       document.querySelectorAll('.prog-option').forEach(opt => {
         const sel = opt.dataset.code === code;
         opt.classList.toggle('selected', sel);
         opt.setAttribute('aria-selected', sel);
+      });
+
+      // Sync mobile tab states
+      document.querySelectorAll('.mob-prog-tab').forEach(tab => {
+        const sel = tab.dataset.code === code;
+        tab.classList.toggle('active', sel);
+        tab.setAttribute('aria-selected', sel);
       });
 
       renderCalendar();
@@ -964,13 +1286,13 @@
     function renderCalendar() {
       const grid = document.getElementById('calendar-grid');
 
-      // Remove old day cells, keep the 7 DOW header divs
+      // Remove everything except the 7 DOW header cells
       while (grid.children.length > 7) grid.removeChild(grid.lastChild);
 
       document.getElementById('cal-month-label').textContent =
         `${MONTH_NAMES[calMonth - 1]} ${calYear}`;
 
-      // Filter sessions to selected program, then group by day for this month
+      // Group sessions by day for this month/program
       const byDay = {};
       allSessions
         .filter(s => s['Program'] === selectedProgram)
@@ -987,54 +1309,145 @@
       const todayM = today.getMonth() + 1;
       const todayD = today.getDate();
 
-      const firstDow    = new Date(calYear, calMonth - 1, 1).getDay(); // 0=Sun
+      const firstDow    = new Date(calYear, calMonth - 1, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth, 0).getDate();
 
-      // Empty leading cells
-      for (let i = 0; i < firstDow; i++) {
-        const el = document.createElement('div');
-        el.className = 'cal-day cal-day--empty';
-        grid.appendChild(el);
-      }
+      // Build flat slot array, then split into weeks of 7
+      const slots = [];
+      for (let i = 0; i < firstDow; i++) slots.push(null);
+      for (let d = 1; d <= daysInMonth; d++) slots.push(d);
+      while (slots.length % 7 !== 0) slots.push(null);
 
-      // Day cells
-      for (let d = 1; d <= daysInMonth; d++) {
-        const daySessions = byDay[d] || [];
-        const hasSessions = daySessions.length > 0;
-        const isToday     = calYear === todayY && calMonth === todayM && d === todayD;
-        const isPast      = new Date(calYear, calMonth - 1, d) <
-                            new Date(todayY, todayM - 1, todayD);
+      const weeks = [];
+      for (let i = 0; i < slots.length; i += 7) weeks.push(slots.slice(i, i + 7));
 
-        const classes = ['cal-day'];
-        if (isToday)               classes.push('cal-day--today');
-        if (isPast)                classes.push('cal-day--past');
-        if (hasSessions && !isPast) classes.push('cal-day--has-sessions');
+      weeks.forEach((week, weekIdx) => {
+        // ── Seven day cells ──
+        week.forEach(d => {
+          const cell = document.createElement('div');
 
-        const cell = document.createElement('div');
-        cell.className = classes.join(' ');
+          if (d === null) {
+            cell.className = 'cal-day cal-day--empty';
+            grid.appendChild(cell);
+            return;
+          }
 
-        if (hasSessions && !isPast) {
+          const daySessions = byDay[d] || [];
+          const hasSessions = daySessions.length > 0;
+          const isToday = calYear === todayY && calMonth === todayM && d === todayD;
+          const isPast  = new Date(calYear, calMonth - 1, d) < new Date(todayY, todayM - 1, todayD);
+
+          const classes = ['cal-day'];
+          if (isToday)                classes.push('cal-day--today');
+          if (isPast)                 classes.push('cal-day--past');
+          if (hasSessions && !isPast) classes.push('cal-day--has-sessions');
+
+          cell.className = classes.join(' ');
           cell.setAttribute('role', 'button');
           cell.setAttribute('tabindex', '0');
-          cell.addEventListener('click', () => openModal(calYear, calMonth, d));
+          cell.dataset.weekIdx = weekIdx;
+
+          // Show 1 badge + "+X more" label
+          let badgesHtml = '';
+          if (hasSessions) {
+            const first = daySessions[0];
+            badgesHtml = `<span class="cal-badge">${formatTime(first['Time'])} · ${first['Age Group']}</span>`;
+            if (daySessions.length > 1) {
+              badgesHtml += `<span class="cal-more">+${daySessions.length - 1} more</span>`;
+            }
+          }
+
+          cell.innerHTML = `
+            <span class="cal-day-num">${d}</span>
+            ${hasSessions ? `<div class="cal-day-badges">${badgesHtml}</div>` : ''}
+          `;
+
+          cell.addEventListener('click', () => toggleWeekDetail(weekIdx, week, byDay));
           cell.addEventListener('keydown', e => {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(calYear, calMonth, d); }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleWeekDetail(weekIdx, week, byDay); }
           });
+
+          grid.appendChild(cell);
+        });
+
+        // ── Full-width expandable week detail ──
+        const detail = document.createElement('div');
+        detail.className = 'cal-week-detail';
+        detail.id = `cal-week-detail-${weekIdx}`;
+        detail.innerHTML = buildWeekDetailHTML(week, byDay);
+
+        detail.querySelectorAll('.week-session-register').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            openModal(parseInt(btn.dataset.year), parseInt(btn.dataset.month), parseInt(btn.dataset.day));
+          });
+        });
+
+        grid.appendChild(detail);
+      });
+    }
+
+    // ---- Toggle a week detail open/closed ----
+    function toggleWeekDetail(weekIdx, week, byDay) {
+      const detail = document.getElementById(`cal-week-detail-${weekIdx}`);
+      const isOpen = detail.classList.contains('open');
+
+      // Close all open details and un-highlight all week cells
+      document.querySelectorAll('.cal-week-detail.open').forEach(d => d.classList.remove('open'));
+      document.querySelectorAll('.cal-day--week-open').forEach(c => c.classList.remove('cal-day--week-open'));
+
+      if (!isOpen) {
+        detail.classList.add('open');
+        document.querySelectorAll(`.cal-day[data-week-idx="${weekIdx}"]`).forEach(c => {
+          c.classList.add('cal-day--week-open');
+        });
+        setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+      }
+    }
+
+    // ---- Build the HTML inside a week detail panel ----
+    function buildWeekDetailHTML(week, byDay) {
+      const cols = week.map(d => {
+        if (d === null) return '<div class="week-day-col week-day-col--empty"></div>';
+
+        const daySessions = byDay[d] || [];
+        const dow = DOW_NAMES[new Date(calYear, calMonth - 1, d).getDay()].slice(0, 3);
+        const today = new Date();
+        const isToday = calYear === today.getFullYear()
+                     && calMonth === today.getMonth() + 1
+                     && d === today.getDate();
+
+        let sessionsHtml;
+        if (daySessions.length === 0) {
+          sessionsHtml = '<p class="week-no-sessions">—</p>';
+        } else {
+          sessionsHtml = daySessions.map(s => {
+            const full = s.spotsRemaining <= 0;
+            return `
+              <div class="week-session-item">
+                <span class="week-session-time">${formatTime(s['Time'])}</span>
+                <span class="week-session-meta">${s['Age Group']}</span>
+                ${full
+                  ? `<span class="week-session-full-tag">Full</span>`
+                  : `<button class="btn btn-primary week-session-register"
+                             data-year="${calYear}" data-month="${calMonth}" data-day="${d}"
+                             type="button">Register</button>`
+                }
+              </div>`;
+          }).join('');
         }
 
-        // Show time and age group on each badge
-        const badgesHtml = daySessions.map(s =>
-          `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']}</span>`
-        ).join('');
+        return `
+          <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
+            <div class="week-day-header">
+              <span class="week-day-label">${dow}</span>
+              <span class="week-day-num">${d}</span>
+            </div>
+            <div class="week-sessions">${sessionsHtml}</div>
+          </div>`;
+      }).join('');
 
-        const manyClass = daySessions.length > 3 ? ' cal-day-badges--many' : '';
-        cell.innerHTML = `
-          <span class="cal-day-num">${d}</span>
-          ${hasSessions ? `<div class="cal-day-badges${manyClass}">${badgesHtml}</div>` : ''}
-        `;
-
-        grid.appendChild(cell);
-      }
+      return `<div class="week-detail-inner">${cols}</div>`;
     }
 
     function updateNavBtns() {
@@ -1163,8 +1576,9 @@
         // Derive which program codes actually have sessions
         const codesInData = [...new Set(allSessions.map(s => s['Program']))];
 
-        // Build the dropdown (all 5 defined programs + any extras in data)
+        // Build the dropdown (desktop) and pill tabs (mobile)
         buildProgramDropdown(codesInData);
+        buildMobileTabs(codesInData);
 
         // Default to first program in order that has sessions, else first defined
         const firstWithSessions = PROGRAM_ORDER.find(c => codesInData.includes(c));
