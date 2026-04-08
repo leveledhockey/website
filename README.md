@@ -124,26 +124,47 @@ All web submissions write `FALSE` in the `Paid?` column. Mark as `TRUE` manually
 
 ---
 
-## Deploying to production
+## Making a Change
+Open a terminal and do the following-
 
-Vercel auto-deploys on every push to `main`:
+1. Create and switch to a new branch (if you havent already)
+`git branch <branch name>` (Creates a new branch)
+`git checkout <branch_name>` (switches to new branch)
 
-```bash
-git add .
-git commit -m "your message"
-git push
+Verify what branch you're on:
+`git branch`
+
+You should see
+```
+kerdizheng@stinkykz:~/Desktop/leveled_website$ git branch
+  dev
+  main
+* mobile_calendar
 ```
 
-To update environment variables, go to the Vercel dashboard → Project → Settings → Environment Variables. After changing them, re-run `npx vercel env pull .env.local` locally to sync.
+2. Make your changes
 
----
+3. See what files have changed
+`git status`
 
-## What is and isn't in the repo
+You should see:
+```
+kerdizheng@stinkykz:~/Desktop/leveled_website$ git status
+On branch mobile_calendar
+Your branch is up to date with 'origin/mobile_calendar'.
 
-| Committed | Not committed (gitignored) |
-|---|---|
-| `api/schedule.js` — serverless function | `.env.local` — credentials |
-| `api/register.js` — serverless function | `.env` — credentials |
-| `package.json` — declares dependencies | `*SheetsAPIKey.json` — raw API key file |
-| `vercel.json` — function config | `node_modules/` — installed by `npm install` |
-| All HTML/CSS/images | `.vercel/` — machine-specific project link |
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   register.html
+```
+The files you've changed should appear under "changes not staged for commit". Add them
+`git add <file1> <file2> ...`
+
+4. Commit your changes
+`git commit -m "(description of your feature)"`
+
+5. push to origin
+`git push`
+
+6. If you open github, you should see your changes.
