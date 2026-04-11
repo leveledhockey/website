@@ -6,7 +6,9 @@ const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
 const PROGRAM_SHEETS = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
 
 function getAuth() {
-  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  const credentials = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
