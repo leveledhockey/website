@@ -124,6 +124,131 @@ All web submissions write `FALSE` in the `Paid?` column. Mark as `TRUE` manually
 
 ---
 
+## TODO
+
+The following features have been designed but not yet implemented. Each item includes enough context for a developer to pick it up independently.
+
+---
+
+### 1. Fix spots-remaining calculation (Bug)
+
+**File:** `api/schedule.js`
+
+**Problem:** `spotsRemaining` is currently set to `Max Participants` for every session — it never accounts for existing registrations. The calendar always shows full capacity regardless of how many people have signed up.
+
+**Fix:** After fetching all program sessions, fetch the `Registrations` tab and count how many rows have a matching `Session ID` and a `Status` of `Confirmed` or `Pending`. Subtract that count from `Max Participants` to get the real `spotsRemaining`.
+
+```
+spotsRemaining = Max Participants − count of rows in Registrations where Session ID matches AND Status is not "Denied"
+```
+
+Use `sheets.spreadsheets.values.batchGet` to fetch both the program sheets and the Registrations tab in a single API call for efficiency.
+
+---
+
+### 2. Add Status and Token columns to the Registrations sheet
+
+**Before implementing items 3–5, the Registrations tab needs two new columns:**
+
+| Column | Values | Notes |
+|---|---|---|
+| `Status` | `Pending` / `Confirmed` / `Denied` | Set to `Pending` on every new web submission. Owner changes this to approve/deny. |
+| `Token` | UUID string | A unique token generated at registration time. Used to authenticate approve/deny link taps. |
+
+Updated full column order:
+
+| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? | Status | Token |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
+Update `api/register.js` to write `Pending` and a generated UUID (`crypto.randomUUID()`) when appending the new row.
+
+---
+
+### 3. SMS notification to owner on new registration
+
+**File:** `api/register.js`  
+**Service:** [Twilio](https://twilio.com) — requires a Twilio account and a purchased phone number.
+
+After writing the row to the Registrations sheet, send an SMS to the owner's phone number with two one-tap links:
+
+```
+New registration: Alex Smith — PEP, Mar 22 @ 3:00 PM
+Approve: https://leveledhockey.com/api/approve?token=<TOKEN>
+Deny:    https://leveledhockey.com/api/deny?token=<TOKEN>
+```
+
+The `<TOKEN>` is the UUID written to the sheet in step 2. It's the only thing that ties the link back to the correct registration row.
+
+**New environment variables to add in Vercel dashboard:**
+
+| Variable | Description |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | From Twilio console |
+| `TWILIO_AUTH_TOKEN` | From Twilio console |
+| `TWILIO_FROM_NUMBER` | The Twilio phone number (e.g. `+16041234567`) |
+| `OWNER_PHONE_NUMBER` | The owner's mobile number to receive SMS |
+
+---
+
+### 4. Approve and Deny API endpoints
+
+**New files:** `api/approve.js` and `api/deny.js`
+
+These endpoints are hit when the owner taps a link in the SMS. Both follow the same logic:
+
+1. Read the `token` query parameter
+2. Scan the `Registrations` sheet for a row whose `Token` column matches
+3. If not found or token already used → return 400
+4. Update that row's `Status` column to `Confirmed` or `Denied`
+5. Read the `Email`, `Player First`, `Player Last`, and `Parent Name` from the same row
+6. Send a confirmation or denial email to the parent (see item 5)
+7. Return a plain success page the owner sees after tapping the link (e.g. "Alex Smith has been confirmed.")
+
+**Security note:** The token is a UUID and is single-use — once the status has been changed from `Pending`, subsequent taps of the same link should do nothing (or return a friendly "already processed" message).
+
+---
+
+### 5. Parent confirmation/denial email
+
+**Service:** [Resend](https://resend.com) — simple API, generous free tier, works well from Vercel serverless functions.
+
+Triggered from **two places**:
+
+**A. From `api/approve.js` / `api/deny.js`** (owner taps SMS link)  
+Send the email directly from the API handler after updating the sheet.
+
+**B. From Google Apps Script** (owner manually edits Status cell in the sheet)  
+Add an `onEdit` trigger in the Google Sheet that watches the `Status` column. When it changes to `Confirmed` or `Denied`, send the email using the `Email` value in the same row. The Apps Script uses Gmail or the Resend API (via `UrlFetchApp`) to send.
+
+This dual-trigger ensures the parent always gets an email regardless of whether the owner used the SMS link or edited the sheet directly.
+
+**New environment variables:**
+
+| Variable | Description |
+|---|---|
+| `RESEND_API_KEY` | From Resend dashboard |
+| `EMAIL_FROM` | Sending address, e.g. `info@leveledhockey.com` (must be a verified domain in Resend) |
+
+**Email content (suggested):**
+
+- **Confirmed:** "Your registration for [Player] in [Program] on [Date] has been confirmed. See you on the ice!"
+- **Denied:** "Unfortunately, we weren't able to confirm [Player]'s registration for [Program] on [Date]. Please contact us at info@leveledhockey.com if you have questions."
+
+---
+
+### Summary checklist
+
+- [ ] Fix `spotsRemaining` bug in `api/schedule.js`
+- [ ] Add `Status` and `Token` columns to the Registrations sheet
+- [ ] Update `api/register.js` to write `Status: Pending` and a UUID token
+- [ ] Update `api/register.js` to send owner SMS via Twilio
+- [ ] Create `api/approve.js` — updates sheet, emails parent
+- [ ] Create `api/deny.js` — updates sheet, emails parent
+- [ ] Add Apps Script `onEdit` trigger for manual sheet edits
+- [ ] Add all new environment variables to Vercel dashboard
+
+---
+
 ## Making a Change
 Open a terminal and do the following-
 
