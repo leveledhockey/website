@@ -204,6 +204,20 @@
       .cal-day--has-sessions:hover::after {
         background: linear-gradient(to bottom, transparent, var(--surface-2));
       }
+      .cal-more { display: none; }
+      /* Replace badge text with a single orange dot on mobile */
+      .cal-day-collapsed { display: none; }
+      .cal-day--has-sessions::before {
+        content: '';
+        display: block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #e8792a;
+        margin: 2px auto 0;
+      }
+      /* No scrollable content left, remove the fade gradient */
+      .cal-day--has-sessions::after { display: none; }
       .cal-dow {
         font-size: 0.55rem;
         padding: 0.4rem 0.1rem;
@@ -478,7 +492,7 @@
       margin: 0 auto 1.5rem;
     }
 
-    /* ---- "+X more" overflow label ---- */
+    /* ---- "+X more" overflow label (kept for fallback) ---- */
     .cal-more {
       display: block;
       font-family: var(--font-display);
@@ -490,14 +504,132 @@
       padding: 0.05rem 0.3rem;
     }
 
+    /* ---- Expanded cell session list (desktop only, hidden by default) ---- */
+    .cal-day-expanded { display: none; }
+
+    .cal-session-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding-top: 0.2rem;
+    }
+
+    .cal-session-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-session-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .cal-session-time {
+      font-family: var(--font-display);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .cal-session-age {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .cal-session-full-tag {
+      font-family: var(--font-display);
+      font-size: 0.58rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #e05a5a;
+    }
+
+    .cal-session-register {
+      font-size: 0.58rem !important;
+      padding: 0.22rem 0.5rem !important;
+      margin-top: 0.2rem;
+      align-self: flex-start;
+    }
+
+    /* ---- Desktop: scrollable badges in day cells ---- */
+    @media (min-width: 501px) {
+      .cal-day-badges-wrap {
+        position: relative;
+      }
+      .cal-day-badges {
+        max-height: 62px; /* ~3 badges visible */
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232,121,42,0.35) transparent;
+      }
+      .cal-day-badges::-webkit-scrollbar { width: 3px; }
+      .cal-day-badges::-webkit-scrollbar-track { background: transparent; }
+      .cal-day-badges::-webkit-scrollbar-thumb {
+        background: rgba(232,121,42,0.35);
+        border-radius: 2px;
+      }
+      /* Gradient lives on the wrapper so it's never clipped by scroll overflow */
+      .cal-day-badges-wrap--overflow::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 26px;
+        background: linear-gradient(to bottom, transparent, var(--surface));
+        pointer-events: none;
+      }
+      .cal-day--has-sessions:hover .cal-day-badges-wrap--overflow::after {
+        background: linear-gradient(to bottom, transparent, var(--surface-2));
+      }
+      .cal-day--week-open .cal-day-badges-wrap--overflow::after {
+        background: linear-gradient(to bottom, transparent, rgba(232, 121, 42, 0.32));
+      }
+      /* "+X more" label on desktop */
+      .cal-more {
+        color: var(--accent);
+        font-size: 0.58rem;
+        margin-top: 3px;
+        opacity: 0.85;
+      }
+
+      /* Suppress separate week-detail row; cells expand in-place instead */
+      .cal-week-detail { display: none !important; }
+
+      /* Swap badge view → session list when a week cell is open */
+      .cal-day--week-open .cal-day-collapsed { display: none; }
+      .cal-day--week-open .cal-day-expanded  { display: block; }
+      .cal-day--week-open { padding: 0.65rem 0.6rem; }
+    }
+
     /* ---- All non-empty day cells are now clickable ---- */
     .cal-day:not(.cal-day--empty) { cursor: pointer; }
 
     /* ---- Highlight the open week's cells ---- */
     .cal-day--week-open {
-      background: var(--accent-glow) !important;
+      background: rgba(232, 121, 42, 0.32) !important;
     }
     .cal-day--week-open .cal-day-num { color: var(--accent); }
+
+    /* ---- Dim the rest of the calendar when a week is expanded ---- */
+    .cal-day {
+      transition: background var(--trans), opacity 0.2s var(--ease);
+    }
+    .cal-dow {
+      transition: opacity 0.2s var(--ease);
+    }
+    .calendar-grid--week-open .cal-day:not(.cal-day--week-open) {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .calendar-grid--week-open .cal-dow {
+      opacity: 0.2;
+    }
 
     /* ---- Expandable week-detail row ---- */
     .cal-week-detail {
@@ -994,20 +1126,53 @@
           cell.setAttribute('tabindex', '0');
           cell.dataset.weekIdx = weekIdx;
 
-          // Show 1 badge + "+X more" label
+          // Collapsed view: scrollable badges (desktop shows 3, then scroll)
           let badgesHtml = '';
           if (hasSessions) {
-            const first = daySessions[0];
-            badgesHtml = `<span class="cal-badge">${first['Program']} · ${formatTime(first['Time'])}</span>`;
-            if (daySessions.length > 1) {
-              badgesHtml += `<span class="cal-more">+${daySessions.length - 1} more</span>`;
-            }
+            badgesHtml = daySessions.map(s =>
+              `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']}</span>`
+            ).join('');
           }
 
+          // Expanded view: full session list with register buttons (desktop only)
+          const expandedHtml = hasSessions ? daySessions.map(s => {
+            const full = s.spotsRemaining <= 0;
+            return `
+              <div class="cal-session-item">
+                <span class="cal-session-time">${formatTime(s['Time'])}</span>
+                <span class="cal-session-age">${s['Age Group']}</span>
+                ${full
+                  ? `<span class="cal-session-full-tag">Full</span>`
+                  : `<button class="btn btn-primary cal-session-register"
+                             data-year="${calYear}" data-month="${calMonth}" data-day="${d}"
+                             type="button">Register</button>`
+                }
+              </div>`;
+          }).join('') : '';
+
+          const hasOverflow = daySessions.length > 3;
           cell.innerHTML = `
             <span class="cal-day-num">${d}</span>
-            ${hasSessions ? `<div class="cal-day-badges">${badgesHtml}</div>` : ''}
+            ${hasSessions ? `
+              <div class="cal-day-collapsed">
+                <div class="cal-day-badges-wrap${hasOverflow ? ' cal-day-badges-wrap--overflow' : ''}">
+                  <div class="cal-day-badges">${badgesHtml}</div>
+                </div>
+                ${hasOverflow ? `<span class="cal-more">+${daySessions.length - 3} more</span>` : ''}
+              </div>
+              <div class="cal-day-expanded">
+                <div class="cal-session-list">${expandedHtml}</div>
+              </div>
+            ` : ''}
           `;
+
+          // Wire up register buttons inside expanded cell
+          cell.querySelectorAll('.cal-session-register').forEach(btn => {
+            btn.addEventListener('click', e => {
+              e.stopPropagation();
+              openModal(parseInt(btn.dataset.year), parseInt(btn.dataset.month), parseInt(btn.dataset.day));
+            });
+          });
 
           cell.addEventListener('click', () => toggleWeekDetail(weekIdx, week, byDay));
           cell.addEventListener('keydown', e => {
@@ -1037,14 +1202,17 @@
     // ---- Toggle a week detail open/closed ----
     function toggleWeekDetail(weekIdx, week, byDay) {
       const detail = document.getElementById(`cal-week-detail-${weekIdx}`);
+      const grid   = document.getElementById('calendar-grid');
       const isOpen = detail.classList.contains('open');
 
       // Close all open details and un-highlight all week cells
       document.querySelectorAll('.cal-week-detail.open').forEach(d => d.classList.remove('open'));
       document.querySelectorAll('.cal-day--week-open').forEach(c => c.classList.remove('cal-day--week-open'));
+      grid.classList.remove('calendar-grid--week-open');
 
       if (!isOpen) {
         detail.classList.add('open');
+        grid.classList.add('calendar-grid--week-open');
         document.querySelectorAll(`.cal-day[data-week-idx="${weekIdx}"]`).forEach(c => {
           c.classList.add('cal-day--week-open');
         });
