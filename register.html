@@ -577,7 +577,6 @@
     }
     .calendar-grid--week-open .cal-day:not(.cal-day--week-open) {
       opacity: 0.2;
-      pointer-events: none;
     }
     .calendar-grid--week-open .cal-dow {
       opacity: 0.2;
@@ -784,7 +783,7 @@
 
   <!-- ===================== PAGE HERO ===================== -->
   <section class="page-hero">
-    <div class="page-hero-bg" style="background-image: url('images/action/PEP5.jpg'); background-position: center 40%;"></div>
+    <div class="page-hero-bg" style="background-image: url('images/action/D38A1128.jpg'); background-position: center 10%;"></div>
     <div class="page-hero-overlay"></div>
     <div class="page-hero-content">
       <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -1327,6 +1326,17 @@
       if (calMonth > 12) { calMonth = 1; calYear++; }
       renderCalendar();
       updateNavBtns();
+    });
+
+    // ---- Close week view when clicking outside the calendar grid ----
+    document.addEventListener('click', e => {
+      const grid = document.getElementById('calendar-grid');
+      if (!grid || !grid.classList.contains('calendar-grid--week-open')) return;
+      if (!grid.contains(e.target)) {
+        document.querySelectorAll('.cal-week-detail.open').forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.cal-day--week-open').forEach(c => c.classList.remove('cal-day--week-open'));
+        grid.classList.remove('calendar-grid--week-open');
+      }
     });
 
     // ---- Load schedule from API ----

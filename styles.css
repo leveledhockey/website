@@ -210,7 +210,7 @@ h1, h2, h3, h4, h5 {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background-image: url('images/action/PEP5.jpg');
+  background-image: url('images/action/D38A1128.jpg');
   background-size: cover;
   background-position: center 35%;
   transform: scale(1.06);
@@ -342,6 +342,29 @@ h1, h2, h3, h4, h5 {
    ============================================================ */
 .section { padding: clamp(4rem, 8vw, 7rem) 0; }
 .section-alt { background: var(--surface); }
+
+.section-photo-bg {
+  position: relative;
+  background: none;
+  background-image: url('images/action/D38A1169.jpg');
+  background-size: cover;
+  background-position: center 55%;
+  padding-bottom: clamp(10rem, 22vw, 18rem);
+}
+.section-photo-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.74);
+  z-index: 0;
+}
+.section-photo-bg > * {
+  position: relative;
+  z-index: 1;
+}
+.section-photo-bg .features-grid {
+  margin-top: clamp(10rem, 16vw, 13rem);
+}
 
 .section-header { margin-bottom: clamp(2.5rem, 5vw, 4rem); }
 .section-header.center { text-align: center; }
@@ -480,26 +503,16 @@ h1, h2, h3, h4, h5 {
 }
 .feature-item {
   padding: 2rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: var(--radius-lg);
   transition: border-color var(--trans), background var(--trans);
 }
 .feature-item:hover {
-  border-color: var(--accent);
-  background: var(--surface-3);
-}
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--accent-glow);
-  border: 1px solid rgba(232,121,42,0.25);
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  margin-bottom: 1.25rem;
+  border-color: rgba(232, 121, 42, 0.55);
+  background: rgba(255, 255, 255, 0.12);
 }
 .feature-title {
   font-size: 1rem;
@@ -986,24 +999,38 @@ h1, h2, h3, h4, h5 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1.75rem;
+  overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
 }
-.contact-founder-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #fff;
+.contact-founder-photo {
+  position: relative;
+  width: 42%;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.contact-founder-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.contact-founder-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 40%, var(--surface) 100%);
+  pointer-events: none;
+}
+.contact-founder-info {
+  flex: 1;
+  padding: 1.75rem 1.75rem 1.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .contact-founder-name {
   font-family: var(--font-display);
