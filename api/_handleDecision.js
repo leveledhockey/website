@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const { Resend } = require('resend');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS           = 'Registrations';
@@ -7,11 +8,12 @@ const SHEET_REGISTRATIONS           = 'Registrations';
 // A=0 Timestamp, B=1 Session ID, C=2 Session Label, D=3 Player First,
 // E=4 Player Last, F=5 Birth Year, G=6 Position, H=7 Parent Name,
 // I=8 Phone, J=9 Email, K=10 Notes, L=11 Paid?, M=12 Status, N=13 Token
-const COL_TOKEN        = 13;
-const COL_STATUS       = 12;
-const COL_PLAYER_FIRST = 3;
-const COL_PLAYER_LAST  = 4;
+const COL_TOKEN         = 13;
+const COL_STATUS        = 12;
+const COL_PLAYER_FIRST  = 3;
+const COL_PLAYER_LAST   = 4;
 const COL_SESSION_LABEL = 2;
+const COL_EMAIL         = 9;
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -75,9 +77,35 @@ module.exports = async function handleDecision(req, res, newStatus) {
     const playerFirst  = row[COL_PLAYER_FIRST]  || '';
     const playerLast   = row[COL_PLAYER_LAST]   || '';
     const sessionLabel = row[COL_SESSION_LABEL] || '';
+    const parentEmail  = row[COL_EMAIL]         || '';
     const action       = newStatus === 'Confirmed' ? 'confirmed' : 'denied';
 
-    // TODO: Send confirmation/denial email to parent (item 5 — Resend).
+    // Send confirmation/denial email to parent.
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const subject = newStatus === 'Confirmed'
+        ? `Registration Confirmed — ${playerFirst} ${playerLast}`
+        : `Registration Update — ${playerFirst} ${playerLast}`;
+      const body = newStatus === 'Confirmed'
+        ? `<p>Hi,</p>
+           <p>Great news! <strong>${playerFirst} ${playerLast}</strong>'s registration for <strong>${sessionLabel}</strong> has been confirmed. See you on the ice!</p>
+           <p>If you have any questions, reply to this email or contact us at info@leveledhockey.com.</p>
+           <p>— Leveled Hockey</p>`
+        : `<p>Hi,</p>
+           <p>Unfortunately, we weren't able to confirm <strong>${playerFirst} ${playerLast}</strong>'s registration for <strong>${sessionLabel}</strong>.</p>
+           <p>Please contact us at info@leveledhockey.com if you have any questions.</p>
+           <p>— Leveled Hockey</p>`;
+
+      await resend.emails.send({
+        from:    process.env.EMAIL_FROM,
+        to:      parentEmail,
+        subject,
+        html:    body,
+      });
+    } catch (emailErr) {
+      // Email failure should not block the success page from showing.
+      console.error('email error:', emailErr);
+    }
 
     return res.status(200).send(page(
       `Registration ${newStatus}`,
