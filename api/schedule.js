@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
+const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
+const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 
 // One sheet per program — names must match the tab names in Google Sheets exactly.
 const PROGRAM_SHEETS = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
@@ -38,15 +39,34 @@ module.exports = async function handler(req, res) {
       return res.status(200).json([]);
     }
 
-    // Fetch all existing program sheets in a single API call.
-    const { data } = await sheets.spreadsheets.values.batchGet({
-      spreadsheetId: SPREADSHEET_ID,
-      ranges: existingSheets.map(name => `${name}!A1:F`),
+    // Fetch all program sheets and the registrations sheet in parallel.
+    const [programData, regData] = await Promise.all([
+      sheets.spreadsheets.values.batchGet({
+        spreadsheetId: SPREADSHEET_ID,
+        ranges: existingSheets.map(name => `${name}!A1:F`),
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
+        range:         'Registrations!B1:M10000',
+      }),
+    ]);
+
+    // Build a map of sessionId → confirmed/pending registration count.
+    // Columns in the fetched range: B=0 Session ID, ..., M=11 Status
+    // (we fetched B:M so indices are shifted: B=0, M=11)
+    const regRows = (regData.data.values || []).slice(1); // skip header
+    const regCountMap = {};
+    regRows.forEach(row => {
+      const sessionId = row[0]  || '';
+      const status    = row[11] || '';
+      if (sessionId && status !== 'Denied') {
+        regCountMap[sessionId] = (regCountMap[sessionId] || 0) + 1;
+      }
     });
 
     const result = [];
 
-    (data.valueRanges || []).forEach((vr, idx) => {
+    (programData.data.valueRanges || []).forEach((vr, idx) => {
       const programCode = existingSheets[idx];
       const rows = vr.values || [];
       if (rows.length < 2) return;
@@ -57,6 +77,9 @@ module.exports = async function handler(req, res) {
         headers.forEach((h, i) => { obj[h] = row[i] || ''; });
         if (!obj['Session ID']) return;
 
+        const maxParticipants = parseInt(obj['Max Participants'], 10) || 0;
+        const registered      = regCountMap[obj['Session ID']] || 0;
+
         result.push({
           sessionId:          obj['Session ID'],
           Program:            programCode,
@@ -64,8 +87,8 @@ module.exports = async function handler(req, res) {
           Time:               obj['Time'],
           Location:           obj['Location'],
           'Max Participants': obj['Max Participants'],
-          'Age Group':         obj['Age Group'],
-          spotsRemaining:     parseInt(obj['Max Participants'], 10) || 0,
+          'Age Group':        obj['Age Group'],
+          spotsRemaining:     Math.max(0, maxParticipants - registered),
         });
       });
     });
