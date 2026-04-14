@@ -51,13 +51,26 @@ When `vercel link` asks:
 
 ### 5. Pull environment variables
 
-This pulls the Google credentials from the Vercel dashboard so you don't need to copy any files manually:
+This pulls credentials from the Vercel dashboard so you don't need to copy any files manually:
 
 ```bash
 npx vercel env pull .env.local
 ```
 
-You should see `.env.local` appear in the project root containing `GOOGLE_SPREADSHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON`.
+You should see `.env.local` appear in the project root. It will contain `GOOGLE_SPREADSHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, and the Twilio variables once they have been added to the Vercel dashboard (see step 6).
+
+### 6. Add Twilio environment variables
+
+The SMS notification feature requires a [Twilio](https://twilio.com) account and a purchased phone number. Once you have those, add the following variables to the **Vercel dashboard** under Project → Settings → Environment Variables:
+
+| Variable | Description |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | From the Twilio console homepage |
+| `TWILIO_AUTH_TOKEN` | From the Twilio console homepage |
+| `TWILIO_FROM_NUMBER` | The Twilio phone number in E.164 format (e.g. `+16041234567`) |
+| `OWNER_PHONE_NUMBER` | The owner's mobile number to receive registration SMS (e.g. `+17781234567`) |
+
+After adding them in Vercel, re-run `npx vercel env pull .env.local` to sync them locally. You can also set them directly in `.env.local` for local testing without going through the dashboard.
 
 ### 6. Run the dev server
 
@@ -117,10 +130,12 @@ Each program tab has this header row (6 columns — no "Program" column):
 
 Populated automatically when someone submits the registration form. Columns (do not reorder):
 
-| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? |
-|---|---|---|---|---|---|---|---|---|---|---|---|
+| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? | Status | Token |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
-All web submissions write `FALSE` in the `Paid?` column. Mark as `TRUE` manually once payment is received.
+- **Paid?** — web submissions write `FALSE`. Mark `TRUE` manually once payment is received.
+- **Status** — web submissions write `Pending`. Change to `Confirmed` or `Denied` to trigger the parent email (once the Apps Script trigger is set up).
+- **Token** — a UUID generated at registration time. Used to authenticate the approve/deny SMS links. Do not edit.
 
 ---
 
@@ -239,13 +254,13 @@ This dual-trigger ensures the parent always gets an email regardless of whether 
 ### Summary checklist
 
 - [ ] Fix `spotsRemaining` bug in `api/schedule.js`
-- [ ] Add `Status` and `Token` columns to the Registrations sheet
-- [ ] Update `api/register.js` to write `Status: Pending` and a UUID token
-- [ ] Update `api/register.js` to send owner SMS via Twilio
+- [x] Add `Status` and `Token` columns to the Registrations sheet
+- [x] Update `api/register.js` to write `Status: Pending` and a UUID token
+- [x] Update `api/register.js` to send owner SMS via Twilio
 - [ ] Create `api/approve.js` — updates sheet, emails parent
 - [ ] Create `api/deny.js` — updates sheet, emails parent
 - [ ] Add Apps Script `onEdit` trigger for manual sheet edits
-- [ ] Add all new environment variables to Vercel dashboard
+- [ ] Add Twilio environment variables to Vercel dashboard
 
 ---
 

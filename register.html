@@ -159,69 +159,21 @@
         height: 20px;
         margin-bottom: 0.2rem;
       }
-      .cal-badge {
-        font-size: 0.5rem;
-        padding: 0.1rem 0.25rem;
-        letter-spacing: 0.02em;
-        white-space: normal;
-        line-height: 1.3;
-        word-break: break-word;
+      .cal-dow {
+        font-size: 0.55rem;
+        padding: 0.4rem 0.1rem;
+        letter-spacing: 0.05em;
       }
-      .cal-day-badges {
-        gap: 2px;
-      }
-      .cal-day-badges--many {
-        display: flex;
-        flex-direction: column;
-        column-count: unset;
-        column-gap: unset;
-      }
-      .cal-day-badges--many .cal-badge {
-        break-inside: unset;
-        font-size: 0.5rem;
-        padding: 0.1rem 0.25rem;
-        margin-bottom: 2px;
-      }
-      .cal-day-badges {
-        max-height: 44px;
-        overflow-y: auto;
-        scrollbar-width: none;
-      }
-      .cal-day-badges::-webkit-scrollbar { display: none; }
-      .cal-day--has-sessions {
-        position: relative;
-      }
-      .cal-day--has-sessions::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 18px;
-        background: linear-gradient(to bottom, transparent, var(--surface));
-        pointer-events: none;
-      }
-      .cal-day--has-sessions:hover::after {
-        background: linear-gradient(to bottom, transparent, var(--surface-2));
-      }
-      .cal-more { display: none; }
-      /* Replace badge text with a single orange dot on mobile */
-      .cal-day-collapsed { display: none; }
+      /* Hide badges on mobile — show a dot instead */
+      .cal-day-badges { display: none; }
       .cal-day--has-sessions::before {
         content: '';
         display: block;
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #e8792a;
+        background: var(--accent);
         margin: 2px auto 0;
-      }
-      /* No scrollable content left, remove the fade gradient */
-      .cal-day--has-sessions::after { display: none; }
-      .cal-dow {
-        font-size: 0.55rem;
-        padding: 0.4rem 0.1rem;
-        letter-spacing: 0.05em;
       }
     }
 
@@ -1130,7 +1082,7 @@
           let badgesHtml = '';
           if (hasSessions) {
             badgesHtml = daySessions.map(s =>
-              `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']}</span>`
+              `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']} · ${s['Program']}</span>`
             ).join('');
           }
 
