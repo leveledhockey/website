@@ -253,12 +253,14 @@ This dual-trigger ensures the parent always gets an email regardless of whether 
 
 ### Summary checklist
 
-- [ ] Fix `spotsRemaining` bug in `api/schedule.js`
+- [x] Fix `spotsRemaining` bug in `api/schedule.js`
 - [x] Add `Status` and `Token` columns to the Registrations sheet
 - [x] Update `api/register.js` to write `Status: Pending` and a UUID token
 - [x] Update `api/register.js` to send owner SMS via Twilio
-- [ ] Create `api/approve.js` — updates sheet, emails parent
-- [ ] Create `api/deny.js` — updates sheet, emails parent
+- [x] Create `api/review.js` — owner review page with Confirm/Deny buttons
+- [x] Create `api/approve.js` — updates sheet Status to Confirmed
+- [x] Create `api/deny.js` — updates sheet Status to Denied
+- [ ] Parent confirmation/denial email via Resend (`api/approve.js` / `api/deny.js`)
 - [ ] Add Apps Script `onEdit` trigger for manual sheet edits
 - [ ] Add Twilio environment variables to Vercel dashboard
 
