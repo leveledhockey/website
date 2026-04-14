@@ -128,7 +128,7 @@ module.exports = async function handler(req, res) {
       const msg = await smsClient.messages.create({
         from: process.env.TWILIO_FROM_NUMBER,
         to:   process.env.OWNER_PHONE_NUMBER,
-        body: `New reg: ${String(player_first).trim()} ${String(player_last).trim()}\nApprove: ${process.env.SITE_URL}/api/approve?token=${token}`,
+        body: `New reg: ${String(player_first).trim()} ${String(player_last).trim()}\n${process.env.SITE_URL}/api/review?token=${token}`,
       });
       console.log('SMS sent:', msg.sid, msg.status);
     } catch (smsErr) {
