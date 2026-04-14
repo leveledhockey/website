@@ -103,6 +103,17 @@ All variables must be set in the **Vercel dashboard** under Project → Settings
 
 **Registration returns "Invalid session"** — the session ID in the sheet doesn't follow the `{SHEET_NAME}-{YYYY}-{MM}-{DD}-{HH}` convention, or the program code prefix doesn't match one of the five valid sheet names.
 
+**Registration returns 500 / "Server error"** — check the `vercel dev` terminal for a `register error:` line. Common causes:
+- `GOOGLE_REGISTRATIONS_SPREADSHEET_ID` is missing or wrong
+- The Registrations sheet tab is not named exactly `Registrations`
+- The Registrations sheet is not shared with the service account
+
+**SMS not received after registration** — check the `vercel dev` terminal for an `SMS error:` or `SMS sent:` line. On Twilio trial, SMS only delivers to verified numbers. Verify your number at Twilio Console → Phone Numbers → Verified Caller IDs.
+
+**Approve/deny email not received** — check the terminal for an `email error:` line. While using `onboarding@resend.dev`, Resend only delivers to the email address registered with your Resend account. Use that email when testing registrations.
+
+**Review page returns "Invalid or expired link"** — the token in the URL doesn't match any row in the Registrations sheet. This can happen if `GOOGLE_REGISTRATIONS_SPREADSHEET_ID` points to a different sheet in production vs local, or if the row was deleted.
+
 ---
 
 ## Google Sheets structure
@@ -142,135 +153,80 @@ Populated automatically when someone submits the registration form. Columns (do 
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
 - **Paid?** — web submissions write `FALSE`. Mark `TRUE` manually once payment is received.
-- **Status** — web submissions write `Pending`. Change to `Confirmed` or `Denied` to trigger the parent email (once the Apps Script trigger is set up).
-- **Token** — a UUID generated at registration time. Used to authenticate the approve/deny SMS links. Do not edit.
+- **Status** — web submissions write `Pending`. Use the SMS review link to confirm or deny, which also emails the parent automatically. You can also change this manually in the sheet — see the Apps Script TODO for auto-email on manual edits.
+- **Token** — a UUID generated at registration time. Used to authenticate the approve/deny links. Do not edit.
 
 ---
 
 ## TODO
 
-The following features have been designed but not yet implemented. Each item includes enough context for a developer to pick it up independently.
+### Completed
 
----
-
-### 1. Fix spots-remaining calculation (Bug)
-
-**File:** `api/schedule.js`
-
-**Problem:** `spotsRemaining` is currently set to `Max Participants` for every session — it never accounts for existing registrations. The calendar always shows full capacity regardless of how many people have signed up.
-
-**Fix:** After fetching all program sessions, fetch the `Registrations` tab and count how many rows have a matching `Session ID` and a `Status` of `Confirmed` or `Pending`. Subtract that count from `Max Participants` to get the real `spotsRemaining`.
-
-```
-spotsRemaining = Max Participants − count of rows in Registrations where Session ID matches AND Status is not "Denied"
-```
-
-Use `sheets.spreadsheets.values.batchGet` to fetch both the program sheets and the Registrations tab in a single API call for efficiency.
-
----
-
-### 2. Add Status and Token columns to the Registrations sheet
-
-**Before implementing items 3–5, the Registrations tab needs two new columns:**
-
-| Column | Values | Notes |
-|---|---|---|
-| `Status` | `Pending` / `Confirmed` / `Denied` | Set to `Pending` on every new web submission. Owner changes this to approve/deny. |
-| `Token` | UUID string | A unique token generated at registration time. Used to authenticate approve/deny link taps. |
-
-Updated full column order:
-
-| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? | Status | Token |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-
-Update `api/register.js` to write `Pending` and a generated UUID (`crypto.randomUUID()`) when appending the new row.
-
----
-
-### 3. SMS notification to owner on new registration
-
-**File:** `api/register.js`  
-**Service:** [Twilio](https://twilio.com) — requires a Twilio account and a purchased phone number.
-
-After writing the row to the Registrations sheet, send an SMS to the owner's phone number with two one-tap links:
-
-```
-New registration: Alex Smith — PEP, Mar 22 @ 3:00 PM
-Approve: https://leveledhockey.com/api/approve?token=<TOKEN>
-Deny:    https://leveledhockey.com/api/deny?token=<TOKEN>
-```
-
-The `<TOKEN>` is the UUID written to the sheet in step 2. It's the only thing that ties the link back to the correct registration row.
-
-**New environment variables to add in Vercel dashboard:**
-
-| Variable | Description |
-|---|---|
-| `TWILIO_ACCOUNT_SID` | From Twilio console |
-| `TWILIO_AUTH_TOKEN` | From Twilio console |
-| `TWILIO_FROM_NUMBER` | The Twilio phone number (e.g. `+16041234567`) |
-| `OWNER_PHONE_NUMBER` | The owner's mobile number to receive SMS |
-
----
-
-### 4. Approve and Deny API endpoints
-
-**New files:** `api/approve.js` and `api/deny.js`
-
-These endpoints are hit when the owner taps a link in the SMS. Both follow the same logic:
-
-1. Read the `token` query parameter
-2. Scan the `Registrations` sheet for a row whose `Token` column matches
-3. If not found or token already used → return 400
-4. Update that row's `Status` column to `Confirmed` or `Denied`
-5. Read the `Email`, `Player First`, `Player Last`, and `Parent Name` from the same row
-6. Send a confirmation or denial email to the parent (see item 5)
-7. Return a plain success page the owner sees after tapping the link (e.g. "Alex Smith has been confirmed.")
-
-**Security note:** The token is a UUID and is single-use — once the status has been changed from `Pending`, subsequent taps of the same link should do nothing (or return a friendly "already processed" message).
-
----
-
-### 5. Parent confirmation/denial email
-
-**Service:** [Resend](https://resend.com) — simple API, generous free tier, works well from Vercel serverless functions.
-
-Triggered from **two places**:
-
-**A. From `api/approve.js` / `api/deny.js`** (owner taps SMS link)  
-Send the email directly from the API handler after updating the sheet.
-
-**B. From Google Apps Script** (owner manually edits Status cell in the sheet)  
-Add an `onEdit` trigger in the Google Sheet that watches the `Status` column. When it changes to `Confirmed` or `Denied`, send the email using the `Email` value in the same row. The Apps Script uses Gmail or the Resend API (via `UrlFetchApp`) to send.
-
-This dual-trigger ensures the parent always gets an email regardless of whether the owner used the SMS link or edited the sheet directly.
-
-**New environment variables:**
-
-| Variable | Description |
-|---|---|
-| `RESEND_API_KEY` | From Resend dashboard |
-| `EMAIL_FROM` | Sending address, e.g. `info@leveledhockey.com` (must be a verified domain in Resend) |
-
-**Email content (suggested):**
-
-- **Confirmed:** "Your registration for [Player] in [Program] on [Date] has been confirmed. See you on the ice!"
-- **Denied:** "Unfortunately, we weren't able to confirm [Player]'s registration for [Program] on [Date]. Please contact us at info@leveledhockey.com if you have questions."
-
----
-
-### Summary checklist
-
-- [x] Fix `spotsRemaining` bug in `api/schedule.js`
+- [x] Fix `spotsRemaining` bug in `api/schedule.js` — now calculated live from Registrations sheet on every page load
 - [x] Add `Status` and `Token` columns to the Registrations sheet
-- [x] Update `api/register.js` to write `Status: Pending` and a UUID token
-- [x] Update `api/register.js` to send owner SMS via Twilio
-- [x] Create `api/review.js` — owner review page with Confirm/Deny buttons
-- [x] Create `api/approve.js` — updates sheet Status to Confirmed
-- [x] Create `api/deny.js` — updates sheet Status to Denied
-- [ ] Parent confirmation/denial email via Resend (`api/approve.js` / `api/deny.js`)
-- [ ] Add Apps Script `onEdit` trigger for manual sheet edits
-- [ ] Add Twilio environment variables to Vercel dashboard
+- [x] `api/register.js` — writes `Status: Pending` and a UUID token on every submission
+- [x] `api/register.js` — sends owner an SMS via Twilio with a link to the review page
+- [x] `api/review.js` — owner review page showing registration details with Confirm/Deny buttons
+- [x] `api/approve.js` / `api/deny.js` — update sheet Status and email the parent via Resend
+
+---
+
+### Remaining
+
+#### 1. Apps Script onEdit trigger (manual sheet edits)
+
+If the owner changes a `Status` cell directly in the Registrations sheet (instead of using the SMS link), no email is sent. An Apps Script `onEdit` trigger can watch column M and fire when the value changes to `Confirmed` or `Denied`.
+
+**How to set it up:**
+1. Open the Registrations Google Sheet → **Extensions → Apps Script**
+2. Paste the script below and save
+3. Run it once manually to grant permissions
+4. Go to **Triggers → Add Trigger** → `onEdit`, event type: `From spreadsheet → On edit`
+
+```javascript
+function onEdit(e) {
+  const sheet = e.source.getActiveSheet();
+  if (sheet.getName() !== 'Registrations') return;
+
+  const col = e.range.getColumn();
+  const STATUS_COL = 13; // column M
+  if (col !== STATUS_COL) return;
+
+  const newStatus = e.value;
+  if (newStatus !== 'Confirmed' && newStatus !== 'Denied') return;
+
+  const row       = e.range.getRow();
+  const rowData   = sheet.getRange(row, 1, 1, 14).getValues()[0];
+  const email     = rowData[9];  // col J
+  const firstName = rowData[3];  // col D
+  const lastName  = rowData[4];  // col E
+  const session   = rowData[2];  // col C
+
+  const subject = newStatus === 'Confirmed'
+    ? `Registration Confirmed — ${firstName} ${lastName}`
+    : `Registration Update — ${firstName} ${lastName}`;
+
+  const body = newStatus === 'Confirmed'
+    ? `Hi,\n\n${firstName} ${lastName}'s registration for ${session} has been confirmed. See you on the ice!\n\n— Leveled Hockey`
+    : `Hi,\n\nUnfortunately we weren't able to confirm ${firstName} ${lastName}'s registration for ${session}. Please contact us at info@leveledhockey.com if you have questions.\n\n— Leveled Hockey`;
+
+  GmailApp.sendEmail(email, subject, body);
+}
+```
+
+> **Note:** This uses Gmail (the account running the script) as the sender. If you'd prefer Resend for consistency, replace `GmailApp.sendEmail` with a `UrlFetchApp.fetch` call to the Resend API using your `RESEND_API_KEY`.
+
+#### 2. Upgrade Twilio from trial
+
+The trial account prepends "Sent from your Twilio trial account" to every SMS and can only send to verified numbers. Once ready for production:
+- Upgrade the Twilio account
+- The SMS character limit expands — restore the full message in `api/register.js` with both approve and deny links
+
+#### 3. Verify sending domain in Resend
+
+Currently using `onboarding@resend.dev` which can only send to your own Resend account email. Before launch:
+- Add and verify `leveledhockey.com` in the Resend dashboard (requires adding DNS records)
+- Update `EMAIL_FROM` in Vercel to `info@leveledhockey.com` (or preferred address)
 
 ---
 
