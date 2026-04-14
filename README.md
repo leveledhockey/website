@@ -51,26 +51,13 @@ When `vercel link` asks:
 
 ### 5. Pull environment variables
 
-This pulls credentials from the Vercel dashboard so you don't need to copy any files manually:
+This pulls all credentials from the Vercel dashboard so you don't need to copy anything manually:
 
 ```bash
 npx vercel env pull .env.local
 ```
 
-You should see `.env.local` appear in the project root. It will contain `GOOGLE_SPREADSHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, and the Twilio variables once they have been added to the Vercel dashboard (see step 6).
-
-### 6. Add Twilio environment variables
-
-The SMS notification feature requires a [Twilio](https://twilio.com) account and a purchased phone number. Once you have those, add the following variables to the **Vercel dashboard** under Project → Settings → Environment Variables:
-
-| Variable | Description |
-|---|---|
-| `TWILIO_ACCOUNT_SID` | From the Twilio console homepage |
-| `TWILIO_AUTH_TOKEN` | From the Twilio console homepage |
-| `TWILIO_FROM_NUMBER` | The Twilio phone number in E.164 format (e.g. `+16041234567`) |
-| `OWNER_PHONE_NUMBER` | The owner's mobile number to receive registration SMS (e.g. `+17781234567`) |
-
-After adding them in Vercel, re-run `npx vercel env pull .env.local` to sync them locally. You can also set them directly in `.env.local` for local testing without going through the dashboard.
+`.env.local` will appear in the project root with all the variables listed in the **Environment Variables** section below. If a variable is missing locally, check that it has been added to the Vercel dashboard first, then re-run this command.
 
 ### 6. Run the dev server
 
@@ -79,6 +66,27 @@ npx vercel dev
 ```
 
 Open [http://localhost:3000/register.html](http://localhost:3000/register.html) in your browser. The calendar should load sessions from Google Sheets.
+
+---
+
+## Environment Variables
+
+All variables must be set in the **Vercel dashboard** under Project → Settings → Environment Variables, enabled for Production, Preview, and Development. After adding or changing any variable, re-run `npx vercel env pull .env.local` to sync locally.
+
+| Variable | Description |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Full JSON credentials for the Google service account |
+| `GOOGLE_SPREADSHEET_ID` | ID of the spreadsheet containing program session tabs (PEP, OVERSPEED, etc.) |
+| `GOOGLE_REGISTRATIONS_SPREADSHEET_ID` | ID of the separate Registrations spreadsheet |
+| `TWILIO_ACCOUNT_SID` | From the [Twilio console](https://console.twilio.com) homepage |
+| `TWILIO_AUTH_TOKEN` | From the Twilio console homepage |
+| `TWILIO_FROM_NUMBER` | Your Twilio phone number in E.164 format (e.g. `+17406618690`) |
+| `OWNER_PHONE_NUMBER` | Owner's mobile number to receive registration SMS (e.g. `+16041234567`) |
+| `SITE_URL` | Base URL of the site — `https://leveledhockey.com` in production, `https://leveled-website.vercel.app` for preview |
+| `RESEND_API_KEY` | From the [Resend dashboard](https://resend.com) |
+| `EMAIL_FROM` | Sending address — must be on a verified domain in Resend (e.g. `info@leveledhockey.com`). Use `onboarding@resend.dev` for testing only. |
+
+> **Note:** `.env` and `.env.local` are git-ignored and should never be committed.
 
 ---
 
@@ -253,12 +261,14 @@ This dual-trigger ensures the parent always gets an email regardless of whether 
 
 ### Summary checklist
 
-- [ ] Fix `spotsRemaining` bug in `api/schedule.js`
+- [x] Fix `spotsRemaining` bug in `api/schedule.js`
 - [x] Add `Status` and `Token` columns to the Registrations sheet
 - [x] Update `api/register.js` to write `Status: Pending` and a UUID token
 - [x] Update `api/register.js` to send owner SMS via Twilio
-- [ ] Create `api/approve.js` — updates sheet, emails parent
-- [ ] Create `api/deny.js` — updates sheet, emails parent
+- [x] Create `api/review.js` — owner review page with Confirm/Deny buttons
+- [x] Create `api/approve.js` — updates sheet Status to Confirmed
+- [x] Create `api/deny.js` — updates sheet Status to Denied
+- [ ] Parent confirmation/denial email via Resend (`api/approve.js` / `api/deny.js`)
 - [ ] Add Apps Script `onEdit` trigger for manual sheet edits
 - [ ] Add Twilio environment variables to Vercel dashboard
 
