@@ -718,110 +718,6 @@ h1, h2, h3, h4, h5 {
 }
 
 
-/* ============================================================
-   PROGRAM DETAIL CARDS (programs page)
-   ============================================================ */
-.program-detail-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-.program-detail-card {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: border-color var(--trans);
-}
-.program-detail-card:hover { border-color: rgba(232,121,42,0.5); }
-.program-detail-card.reverse { direction: rtl; }
-.program-detail-card.reverse > * { direction: ltr; }
-
-.program-detail-img {
-  overflow: hidden;
-  min-height: 320px;
-}
-.program-detail-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.55s var(--ease);
-}
-.program-detail-card:hover .program-detail-img img { transform: scale(1.04); }
-
-.program-detail-body {
-  padding: clamp(2rem, 4vw, 3rem);
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-.program-detail-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: var(--font-display);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-.program-detail-tag::before {
-  content: '';
-  display: block;
-  width: 18px;
-  height: 2px;
-  background: var(--accent);
-}
-.program-detail-title { font-size: clamp(1.7rem, 3vw, 2.4rem); }
-.program-detail-desc {
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  line-height: 1.75;
-}
-.program-detail-features {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-}
-.program-detail-feature {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-.program-detail-feature::before {
-  content: '→';
-  color: var(--accent);
-  flex-shrink: 0;
-  font-size: 0.85rem;
-  margin-top: 0.1em;
-}
-.program-detail-footer {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.program-price-amount {
-  font-family: var(--font-display);
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1;
-}
-.program-price-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  margin-top: 0.2rem;
-}
-
 
 /* ============================================================
    HOW IT WORKS
@@ -1205,9 +1101,6 @@ h1, h2, h3, h4, h5 {
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1024px) {
-  .program-detail-card { grid-template-columns: 1fr; }
-  .program-detail-card.reverse { direction: ltr; }
-  .program-detail-img { min-height: 260px; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -1267,5 +1160,170 @@ h1, h2, h3, h4, h5 {
   .programs-grid { grid-template-columns: 1fr; }
   .testimonials-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: 1fr; }
-  .program-detail-footer { flex-direction: column; align-items: flex-start; gap: 1rem; }
+}
+
+/* ============================================================
+   PRIVATE LESSONS CARD
+   ============================================================ */
+.program-card-private {
+  cursor: pointer;
+  outline: none;
+}
+.program-card-private:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.program-card-price-private {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   PRIVATE LESSONS MODAL
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.modal-backdrop[hidden] { display: none; }
+
+body.modal-open { overflow: hidden; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  padding: clamp(2rem, 5vw, 3rem);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color var(--trans);
+}
+.modal-close:hover { color: var(--text); }
+
+.modal-header { display: flex; flex-direction: column; gap: 0.6rem; }
+.modal-heading {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  color: var(--accent);
+  line-height: 1.1;
+}
+.modal-title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  color: var(--text);
+}
+.modal-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.modal-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.modal-rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.modal-rate-row:last-child { border-bottom: none; }
+
+.modal-rate-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.modal-rate-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.modal-rate-detail {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.modal-rate-price {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.modal-rate-price span {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 0.2rem;
+}
+
+.modal-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.modal-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-muted);
+}
+.modal-contact-row svg { flex-shrink: 0; color: var(--accent); }
+.modal-contact-value {
+  font-size: 0.875rem;
+  color: var(--text);
+  flex: 1;
+}
+.modal-copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.3rem 0.45rem;
+  display: flex;
+  align-items: center;
+  transition: color var(--trans), border-color var(--trans), background var(--trans);
+  flex-shrink: 0;
+}
+.modal-copy-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.modal-cta {
+  text-align: center;
+  will-change: transform;
 }
