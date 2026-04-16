@@ -956,7 +956,9 @@ h1, h2, h3, h4, h5 {
   flex-direction: column;
   gap: 1.25rem;
 }
-.contact-detail-item { display: flex; align-items: flex-start; gap: 1rem; }
+.contact-detail-item { display: flex; align-items: center; gap: 1rem; }
+.contact-detail-content { display: flex; flex-direction: column; }
+.contact-detail-value-row { display: flex; align-items: center; gap: 0.4rem; }
 .contact-detail-icon {
   width: 36px;
   height: 36px;
