@@ -75,13 +75,14 @@
 
     .cal-day {
       background: var(--surface);
-      min-height: 120px;
-      padding: 0.55rem 0.5rem;
+      padding: 0.5rem 0 0.4rem;
       position: relative;
       transition: background var(--trans);
-    }
-    @media (max-width: 600px) {
-      .cal-day { min-height: 80px; padding: 0.35rem 0.25rem; }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: default;
     }
 
     .cal-day--empty { background: rgba(13,13,13,0.6); }
@@ -107,73 +108,76 @@
       font-weight: 500;
       color: var(--text);
       display: inline-flex;
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       align-items: center;
       justify-content: center;
-      margin-bottom: 0.3rem;
       transition: color var(--trans);
+      flex-shrink: 0;
     }
 
-    .cal-day-badges {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    /* When a day has many sessions, fall back to 2-column layout (top→bottom, left→right) */
-    .cal-day-badges--many {
-      display: block;
-      column-count: 2;
-      column-gap: 4px;
+    .cal-day-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: 3px;
+      flex-shrink: 0;
     }
 
-    .cal-badge {
-      font-family: var(--font-display);
-      font-size: 0.7rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      font-weight: 600;
-      background: var(--accent-glow);
-      color: var(--accent);
-      border: 1px solid rgba(232,121,42,0.25);
-      border-radius: 2px;
-      padding: 0.2rem 0.4rem;
-      white-space: nowrap;
-    }
-    .cal-day-badges--many .cal-badge {
-      display: block;
-      break-inside: avoid;
-      font-size: 0.6rem;
-      padding: 0.15rem 0.3rem;
-      margin-bottom: 3px;
+    /* Mobile: dot only. Desktop (≥769px): program list */
+    .cal-day-programs { display: none; }
+
+    @media (min-width: 769px) {
+      .cal-day {
+        min-height: 90px;
+        justify-content: flex-start;
+      }
+      .cal-day-dot { display: none; }
+      .cal-day-programs {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow-y: auto;
+        max-height: 60px;
+        width: 100%;
+        padding: 0 0.3rem 0.2rem;
+        margin-top: 2px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232,121,42,0.3) transparent;
+      }
+      .cal-day-programs::-webkit-scrollbar { width: 3px; }
+      .cal-day-programs::-webkit-scrollbar-track { background: transparent; }
+      .cal-day-programs::-webkit-scrollbar-thumb {
+        background: rgba(232,121,42,0.3);
+        border-radius: 2px;
+      }
+      .cal-day-program-item {
+        font-family: var(--font-display);
+        font-size: 0.6rem;
+        letter-spacing: 0.03em;
+        color: var(--accent);
+        background: var(--accent-glow);
+        border: 1px solid rgba(232,121,42,0.2);
+        border-radius: 2px;
+        padding: 0.15rem 0.3rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+      }
     }
 
     @media (max-width: 500px) {
-      .cal-day {
-        min-height: 70px;
-        padding: 0.3rem 0.2rem;
-      }
       .cal-day-num {
-        font-size: 0.7rem;
-        width: 20px;
-        height: 20px;
-        margin-bottom: 0.2rem;
+        font-size: 0.75rem;
+        width: 22px;
+        height: 22px;
       }
       .cal-dow {
         font-size: 0.55rem;
         padding: 0.4rem 0.1rem;
         letter-spacing: 0.05em;
-      }
-      /* Hide badges on mobile — show a dot instead */
-      .cal-day-badges { display: none; }
-      .cal-day--has-sessions::before {
-        content: '';
-        display: block;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--accent);
-        margin: 2px auto 0;
       }
     }
 
@@ -337,6 +341,89 @@
     }
     .session-card-details span { display: block; }
 
+    /* ---- Waiver ---- */
+    .waiver-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(232,121,42,0.3) transparent;
+      margin-bottom: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .waiver-box::-webkit-scrollbar { width: 4px; }
+    .waiver-box::-webkit-scrollbar-track { background: transparent; }
+    .waiver-box::-webkit-scrollbar-thumb { background: rgba(232,121,42,0.3); border-radius: 2px; }
+    .waiver-org {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+    .waiver-title {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    .waiver-box h4 {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0.9rem 0 0.3rem;
+    }
+    .waiver-box p { margin: 0 0 0.4rem; }
+    .waiver-box ul {
+      margin: 0.2rem 0 0.4rem 1.1rem;
+      padding: 0;
+    }
+    .waiver-box ul li { margin-bottom: 0.15rem; }
+    .waiver-consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans);
+    }
+    .waiver-consent-row:has(#consent-check:checked) {
+      border-color: rgba(232,121,42,0.6);
+      background: var(--accent-glow);
+    }
+    .waiver-consent-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .waiver-consent-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      cursor: pointer;
+      user-select: none;
+    }
+    .waiver-consent-label strong { color: var(--text); }
+
     /* ---- Registration form ---- */
     .reg-grid {
       display: grid;
@@ -444,120 +531,6 @@
       margin: 0 auto 1.5rem;
     }
 
-    /* ---- "+X more" overflow label (kept for fallback) ---- */
-    .cal-more {
-      display: block;
-      font-family: var(--font-display);
-      font-size: 0.6rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-top: 2px;
-      padding: 0.05rem 0.3rem;
-    }
-
-    /* ---- Expanded cell session list (desktop only, hidden by default) ---- */
-    .cal-day-expanded { display: none; }
-
-    .cal-session-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-      padding-top: 0.2rem;
-    }
-
-    .cal-session-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.12rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .cal-session-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .cal-session-time {
-      font-family: var(--font-display);
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .cal-session-age {
-      font-size: 0.67rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .cal-session-full-tag {
-      font-family: var(--font-display);
-      font-size: 0.58rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: #e05a5a;
-    }
-
-    .cal-session-register {
-      font-size: 0.58rem !important;
-      padding: 0.22rem 0.5rem !important;
-      margin-top: 0.2rem;
-      align-self: flex-start;
-    }
-
-    /* ---- Desktop: scrollable badges in day cells ---- */
-    @media (min-width: 501px) {
-      .cal-day-badges-wrap {
-        position: relative;
-      }
-      .cal-day-badges {
-        max-height: 62px; /* ~3 badges visible */
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(232,121,42,0.35) transparent;
-      }
-      .cal-day-badges::-webkit-scrollbar { width: 3px; }
-      .cal-day-badges::-webkit-scrollbar-track { background: transparent; }
-      .cal-day-badges::-webkit-scrollbar-thumb {
-        background: rgba(232,121,42,0.35);
-        border-radius: 2px;
-      }
-      /* Gradient lives on the wrapper so it's never clipped by scroll overflow */
-      .cal-day-badges-wrap--overflow::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 26px;
-        background: linear-gradient(to bottom, transparent, var(--surface));
-        pointer-events: none;
-      }
-      .cal-day--has-sessions:hover .cal-day-badges-wrap--overflow::after {
-        background: linear-gradient(to bottom, transparent, var(--surface-2));
-      }
-      .cal-day--week-open .cal-day-badges-wrap--overflow::after {
-        background: linear-gradient(to bottom, transparent, rgba(232, 121, 42, 0.32));
-      }
-      /* "+X more" label on desktop */
-      .cal-more {
-        color: var(--accent);
-        font-size: 0.58rem;
-        margin-top: 3px;
-        opacity: 0.85;
-      }
-
-      /* Suppress separate week-detail row; cells expand in-place instead */
-      .cal-week-detail { display: none !important; }
-
-      /* Swap badge view → session list when a week cell is open */
-      .cal-day--week-open .cal-day-collapsed { display: none; }
-      .cal-day--week-open .cal-day-expanded  { display: block; }
-      .cal-day--week-open { padding: 0.65rem 0.6rem; }
-    }
 
     /* ---- All non-empty day cells are now clickable ---- */
     .cal-day:not(.cal-day--empty) { cursor: pointer; }
@@ -586,7 +559,7 @@
     .cal-week-detail {
       grid-column: 1 / -1;
       display: none;
-      background: var(--surface-2);
+      background: #0d0d0d;
       border-top: 2px solid var(--accent);
       border-bottom: 1px solid var(--border);
       animation: weekIn 0.18s var(--ease);
@@ -599,145 +572,82 @@
     }
 
     .week-detail-inner {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      display: flex;
+      flex-direction: column;
     }
 
     .week-day-col {
-      padding: 0.65rem 0.5rem;
-      border-right: 1px solid var(--border);
-      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.6rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      min-height: 44px;
     }
-    .week-day-col:last-child { border-right: none; }
-    .week-day-col--today .week-day-label,
-    .week-day-col--today .week-day-num { color: var(--accent); }
+    .week-day-col:last-child { border-bottom: none; }
+    .week-day-col--today .week-day-label { color: var(--accent); }
 
     .week-day-header {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 0.1rem;
-      padding-bottom: 0.5rem;
-      margin-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
+      min-width: 36px;
+      flex-shrink: 0;
     }
 
     .week-day-label {
       font-family: var(--font-display);
-      font-size: 0.58rem;
+      font-size: 0.68rem;
+      font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
-    .week-day-num {
-      font-family: var(--font-display);
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      line-height: 1;
+    .week-day-label--weekend { color: var(--accent); }
+
+    .week-sessions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      flex: 1;
+      align-items: center;
     }
 
-    .week-sessions { display: flex; flex-direction: column; gap: 0.5rem; }
-
-    .week-session-item { display: flex; flex-direction: column; gap: 0.15rem; }
-
-    .week-session-time {
-      font-family: var(--font-display);
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .week-session-meta {
-      font-size: 0.67rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-    .week-session-register {
-      font-size: 0.58rem !important;
-      padding: 0.22rem 0.5rem !important;
-      letter-spacing: 0.08em !important;
-      margin-top: 0.2rem;
-      width: 100%;
+    .week-session-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
+      background: rgba(232, 121, 42, 0.18);
+      border: 1px solid rgba(232, 121, 42, 0.35);
+      border-radius: 8px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      transition: background var(--trans);
+      gap: 0.05rem;
     }
-    .week-session-full-tag {
+    .week-session-pill:hover { background: rgba(232, 121, 42, 0.32); }
+    .week-session-pill--full {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .week-session-pill-time {
       font-family: var(--font-display);
-      font-size: 0.58rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #e05a5a;
-      margin-top: 0.15rem;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      white-space: nowrap;
     }
-    .week-no-sessions {
-      font-size: 0.7rem;
-      color: var(--text-subtle);
-      text-align: center;
-      padding: 0.2rem 0;
+    .week-session-pill-age {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      white-space: nowrap;
     }
 
     /* ============================================================
        MOBILE OVERRIDES  ≤ 640 px
        ============================================================ */
     @media (max-width: 640px) {
-
-      /* Slightly tighter DOW headers */
-      .cal-dow {
-        font-size: 0.55rem;
-        padding: 0.45rem 0.1rem;
-        letter-spacing: 0.05em;
-      }
-
-      /* Week detail: vertical list instead of 7 columns */
-      .week-detail-inner {
-        display: flex;
-        flex-direction: column;
-      }
-      .week-day-col {
-        display: flex;
-        gap: 0.75rem;
-        align-items: flex-start;
-        padding: 0.65rem 1rem;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-      .week-day-col:last-child { border-bottom: none; }
-      .week-day-col--empty { display: none; } /* hide blank day slots on mobile */
-
-      .week-day-header {
-        flex-direction: column;
-        align-items: center;
-        min-width: 38px;
-        flex-shrink: 0;
-        padding-bottom: 0;
-        margin-bottom: 0;
-        border-bottom: none;
-        border-right: 1px solid var(--border);
-        padding-right: 0.65rem;
-        gap: 0.15rem;
-      }
-
-      .week-sessions {
-        flex: 1;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 0.35rem 0.75rem;
-      }
-
-      .week-session-item {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-      }
-      .week-session-register {
-        width: auto !important;
-        padding: 0.18rem 0.65rem !important;
-        margin-top: 0;
-      }
-      .week-no-sessions { text-align: left; }
-
       /* Bottom-sheet modal */
       .modal-overlay {
         align-items: flex-end !important;
@@ -763,7 +673,7 @@
   <nav class="nav scrolled" id="nav">
     <div class="nav-inner">
       <a href="index.html" class="nav-brand">
-        <img src="images/logo.webp" alt="Leveled Hockey Development" class="nav-logo">
+        <img src="images/logo-new.png" alt="Leveled Hockey Development" class="nav-logo">
         <div class="nav-brand-text">
           <span class="nav-brand-name">Leveled Hockey</span>
           <span class="nav-brand-tagline">Development</span>
@@ -855,18 +765,14 @@
               <label class="form-label" for="player-last">Last Name <span class="required">*</span></label>
               <input class="form-input" type="text" id="player-last" name="player_last" placeholder="e.g. Smith" required>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="birth-year">Birth Year <span class="required">*</span></label>
-              <input class="form-input" type="number" id="birth-year" name="birth_year" placeholder="e.g. 2012" min="2000" max="2022" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="position">Position</label>
-              <select class="form-select" id="position" name="position">
-                <option value="">Select position</option>
-                <option value="Forward">Forward</option>
-                <option value="Defence">Defence</option>
-                <option value="Goalie">Goalie</option>
-                <option value="Not sure">Not sure yet</option>
+            <div class="form-group full">
+              <label class="form-label" for="level">Level of Play <span class="required">*</span></label>
+              <select class="form-select" id="level" name="level" required>
+                <option value="">Select level</option>
+                <option value="U11">U11</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U18">U18</option>
               </select>
             </div>
           </div>
@@ -876,8 +782,12 @@
           <p class="modal-section-label">Parent / Guardian Information</p>
           <div class="reg-grid">
             <div class="form-group">
-              <label class="form-label" for="parent-name">Full Name <span class="required">*</span></label>
-              <input class="form-input" type="text" id="parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+              <label class="form-label" for="parent-first">First Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="parent-first" name="parent_first" placeholder="e.g. Jordan" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="parent-last">Last Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="parent-last" name="parent_last" placeholder="e.g. Smith" required>
             </div>
             <div class="form-group">
               <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
@@ -891,14 +801,77 @@
         </div>
 
         <div class="modal-form-section">
-          <p class="modal-section-label">Additional Notes</p>
-          <div class="form-group">
-            <textarea class="form-textarea" id="notes" name="notes" placeholder="Any questions, player experience level, or anything else we should know&hellip;"></textarea>
+          <p class="modal-section-label">Waiver &amp; Consent</p>
+          <div class="waiver-box">
+            <p class="waiver-org">Leveled Hockey Development</p>
+            <p class="waiver-title">Participant Waiver, Liability Release &amp; Media Consent Agreement</p>
+
+            <h4>1. Assumption of Risk</h4>
+            <p>I acknowledge that participation in hockey training, skating, and athletic development activities involves inherent risks, including but not limited to:</p>
+            <ul>
+              <li>Falls, collisions with players, boards, glass, or equipment</li>
+              <li>Injuries from sticks, pucks, or other objects</li>
+              <li>Strains, sprains, fractures, concussions, or other physical injuries</li>
+              <li>Risks associated with high-speed skating, shooting, and competitive drills</li>
+            </ul>
+            <p>I fully understand these risks and voluntarily assume all responsibility for any injury, loss, or damage that may occur as a result of participation.</p>
+
+            <h4>2. Release of Liability</h4>
+            <p>In consideration for participation in Leveled Hockey Development programs, I hereby release, waive, and discharge:</p>
+            <ul>
+              <li>Leveled Hockey Development</li>
+              <li>Its owners, coaches, staff, contractors, and affiliates</li>
+              <li>Any facility operators where sessions are conducted</li>
+            </ul>
+            <p>from any and all liability, claims, demands, or causes of action arising out of or related to participation. This includes, but is not limited to:</p>
+            <ul>
+              <li>Personal injury</li>
+              <li>Property damage</li>
+              <li>Losses arising from negligence or any other cause permitted by law</li>
+            </ul>
+
+            <h4>3. Medical Responsibility &amp; Emergency Authorization</h4>
+            <p>I confirm that the participant is physically fit and able to safely participate in hockey activities and has no medical conditions that would increase risk (or such conditions have been disclosed). In the event of injury or medical emergency, I authorize Leveled Hockey Development staff to administer basic first aid and seek emergency medical treatment if deemed necessary. I accept full financial responsibility for any medical care required.</p>
+
+            <h4>4. Conduct &amp; Safety Requirements</h4>
+            <ul>
+              <li>Participants must follow all instructions from coaches and staff at all times</li>
+              <li>Full, CSA-approved hockey equipment is required</li>
+              <li>Unsafe, reckless, or disruptive behavior may result in removal without refund</li>
+            </ul>
+
+            <h4>5. Media, Filming &amp; Promotional Release</h4>
+            <p>I grant permission for the participant to be filmed, photographed, and recorded (video and audio) during any Leveled Hockey Development sessions. I acknowledge and agree that:</p>
+            <ul>
+              <li>All media content is the exclusive property of Leveled Hockey Development</li>
+              <li>Content may be used for marketing, advertising, and promotional purposes</li>
+              <li>Content may be distributed across all platforms (including social media, websites, and digital advertising)</li>
+              <li>No compensation will be provided now or in the future</li>
+              <li>Participant names are not required to be displayed</li>
+              <li>I waive any right to inspect or approve final media content</li>
+            </ul>
+
+            <h4>6. Indemnification</h4>
+            <p>I agree to indemnify and hold harmless Leveled Hockey Development and its affiliates from any claims, damages, or expenses (including legal fees) arising from the participant's actions, breach of this agreement, or any third-party claims related to participation.</p>
+
+            <h4>7. Business Status &amp; Insurance</h4>
+            <p>Leveled Hockey Development operates as a licensed and insured business with qualified coaching staff, active liability insurance coverage, and structured development programming.</p>
+
+            <h4>8. Governing Law</h4>
+            <p>This agreement shall be governed by and interpreted in accordance with the laws of the Province of British Columbia, Canada.</p>
+
+            <h4>9. Acknowledgment &amp; Consent</h4>
+            <p>By checking below, I confirm that I have read and fully understand this agreement, I voluntarily agree to all terms and conditions, I am the legal parent/guardian of the participant (if under 18), and I provide full consent for participation and media use.</p>
           </div>
+
+          <label class="waiver-consent-row" for="consent-check">
+            <input type="checkbox" id="consent-check" name="consent">
+            <span class="waiver-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
+          </label>
         </div>
 
         <div class="form-submit-row">
-          <button type="submit" class="btn btn-primary" id="submit-btn">Submit Registration</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Submit Registration</button>
           <p class="form-note">We'll respond within 1&ndash;2 business days to confirm your spot and share payment details.</p>
         </div>
       </form>
@@ -915,7 +888,7 @@
       <div class="footer-grid container">
 
         <div class="footer-brand">
-          <img src="images/logo.webp" alt="Leveled Hockey Development" class="footer-logo">
+          <img src="images/logo-new.png" alt="Leveled Hockey Development" class="footer-logo">
           <p class="footer-tagline">Instructional player development for youth hockey athletes in North Vancouver, BC.</p>
           <div class="footer-social">
             <a href="https://instagram.com/LeveledHockey" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Instagram">
@@ -1056,53 +1029,17 @@
           cell.setAttribute('tabindex', '0');
           cell.dataset.weekIdx = weekIdx;
 
-          // Collapsed view: scrollable badges (desktop shows 3, then scroll)
-          let badgesHtml = '';
-          if (hasSessions) {
-            badgesHtml = daySessions.map(s =>
-              `<span class="cal-badge">${formatTime(s['Time'])} · ${s['Age Group']} · ${s['Program']}</span>`
-            ).join('');
-          }
+          const programsHtml = (hasSessions && !isPast) ? daySessions.map(s =>
+            `<span class="cal-day-program-item">${formatTime(s['Time'])} ${s['Age Group']} ${s['Program']}</span>`
+          ).join('') : '';
 
-          // Expanded view: full session list with register buttons (desktop only)
-          const expandedHtml = hasSessions ? daySessions.map(s => {
-            const full = s.spotsRemaining <= 0;
-            return `
-              <div class="cal-session-item">
-                <span class="cal-session-time">${formatTime(s['Time'])}</span>
-                <span class="cal-session-age">${s['Age Group']}</span>
-                ${full
-                  ? `<span class="cal-session-full-tag">Full</span>`
-                  : `<button class="btn btn-primary cal-session-register"
-                             data-year="${calYear}" data-month="${calMonth}" data-day="${d}"
-                             type="button">Register</button>`
-                }
-              </div>`;
-          }).join('') : '';
-
-          const hasOverflow = daySessions.length > 3;
           cell.innerHTML = `
             <span class="cal-day-num">${d}</span>
-            ${hasSessions ? `
-              <div class="cal-day-collapsed">
-                <div class="cal-day-badges-wrap${hasOverflow ? ' cal-day-badges-wrap--overflow' : ''}">
-                  <div class="cal-day-badges">${badgesHtml}</div>
-                </div>
-                ${hasOverflow ? `<span class="cal-more">+${daySessions.length - 3} more</span>` : ''}
-              </div>
-              <div class="cal-day-expanded">
-                <div class="cal-session-list">${expandedHtml}</div>
-              </div>
+            ${hasSessions && !isPast ? `
+              <span class="cal-day-dot"></span>
+              <div class="cal-day-programs">${programsHtml}</div>
             ` : ''}
           `;
-
-          // Wire up register buttons inside expanded cell
-          cell.querySelectorAll('.cal-session-register').forEach(btn => {
-            btn.addEventListener('click', e => {
-              e.stopPropagation();
-              openModal(parseInt(btn.dataset.year), parseInt(btn.dataset.month), parseInt(btn.dataset.day));
-            });
-          });
 
           cell.addEventListener('click', () => toggleWeekDetail(weekIdx, week, byDay));
           cell.addEventListener('keydown', e => {
@@ -1121,7 +1058,7 @@
         detail.querySelectorAll('.week-session-register').forEach(btn => {
           btn.addEventListener('click', e => {
             e.stopPropagation();
-            openModal(parseInt(btn.dataset.year), parseInt(btn.dataset.month), parseInt(btn.dataset.day));
+            openModal(parseInt(btn.dataset.year), parseInt(btn.dataset.month), parseInt(btn.dataset.day), btn.dataset.sessionId);
           });
         });
 
@@ -1152,41 +1089,34 @@
 
     // ---- Build the HTML inside a week detail panel ----
     function buildWeekDetailHTML(week, byDay) {
+      const today = new Date();
       const cols = week.map(d => {
-        if (d === null) return '<div class="week-day-col week-day-col--empty"></div>';
+        if (d === null) return '';
 
         const daySessions = byDay[d] || [];
-        const dow = DOW_NAMES[new Date(calYear, calMonth - 1, d).getDay()].slice(0, 3);
-        const today = new Date();
+        const dowIndex = new Date(calYear, calMonth - 1, d).getDay();
+        const dow = DOW_NAMES[dowIndex].slice(0, 3).toUpperCase();
+        const isWeekend = dowIndex === 0 || dowIndex === 6;
         const isToday = calYear === today.getFullYear()
                      && calMonth === today.getMonth() + 1
                      && d === today.getDate();
 
-        let sessionsHtml;
-        if (daySessions.length === 0) {
-          sessionsHtml = '<p class="week-no-sessions">—</p>';
-        } else {
-          sessionsHtml = daySessions.map(s => {
-            const full = s.spotsRemaining <= 0;
-            return `
-              <div class="week-session-item">
-                <span class="week-session-time">${s['Program']}</span>
-                <span class="week-session-meta">${formatTime(s['Time'])} · ${s['Age Group']}</span>
-                ${full
-                  ? `<span class="week-session-full-tag">Full</span>`
-                  : `<button class="btn btn-primary week-session-register"
-                             data-year="${calYear}" data-month="${calMonth}" data-day="${d}"
-                             type="button">Register</button>`
-                }
-              </div>`;
-          }).join('');
-        }
+        const sessionsHtml = daySessions.map(s => {
+          const full = s.spotsRemaining <= 0;
+          return `
+            <button class="week-session-pill${full ? ' week-session-pill--full' : ''} week-session-register"
+                    data-year="${calYear}" data-month="${calMonth}" data-day="${d}" data-session-id="${s.sessionId}"
+                    ${full ? 'disabled' : ''}
+                    type="button">
+              <span class="week-session-pill-time">${formatTime(s['Time'])}</span>
+              <span class="week-session-pill-age">${s['Age Group']} ${s['Program']}</span>
+            </button>`;
+        }).join('');
 
         return `
           <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
             <div class="week-day-header">
-              <span class="week-day-label">${dow}</span>
-              <span class="week-day-num">${d}</span>
+              <span class="week-day-label${isWeekend ? ' week-day-label--weekend' : ''}">${dow}</span>
             </div>
             <div class="week-sessions">${sessionsHtml}</div>
           </div>`;
@@ -1202,7 +1132,7 @@
     }
 
     // ---- Modal ----
-    function openModal(year, month, day) {
+    function openModal(year, month, day, preselectedSessionId) {
       // Show all programs' sessions for the chosen day
       const daySessions = allSessions.filter(s => {
         const { day: d, month: m, year: y } = parseSessionDate(s['Date']);
@@ -1247,9 +1177,22 @@
         });
       });
 
-      // Auto-select if only one option
+      // Auto-select: specific session pill clicked > URL ?program= param > single available session
       const available = container.querySelectorAll('.session-card:not(.session-card--full)');
-      if (available.length === 1) {
+      const preselected = preselectedSessionId
+        ? container.querySelector(`.session-card[data-session-id="${preselectedSessionId}"]`)
+        : null;
+      const programMatch = !preselected && urlProgram
+        ? [...available].find(c => {
+            const badge = c.querySelector('.program-badge');
+            return badge && badge.textContent.trim().toLowerCase() === urlProgram.toLowerCase();
+          })
+        : null;
+      if (preselected && !preselected.classList.contains('session-card--full')) {
+        selectSessionCard(preselected);
+      } else if (programMatch) {
+        selectSessionCard(programMatch);
+      } else if (available.length === 1) {
         selectSessionCard(available[0]);
       } else {
         document.getElementById('modal-session-id').value = '';
@@ -1265,8 +1208,9 @@
       const errEl = document.getElementById('form-error-msg');
       if (errEl) errEl.remove();
       const submitBtn = document.getElementById('submit-btn');
-      submitBtn.disabled = false;
+      submitBtn.disabled = true; // stays disabled until consent is checked
       submitBtn.textContent = 'Submit Registration';
+      document.getElementById('consent-check').checked = false;
       form.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(el => {
         el.style.borderColor = '';
       });
@@ -1286,6 +1230,11 @@
       document.getElementById('modal-overlay').classList.remove('open');
       document.body.style.overflow = '';
     }
+
+    // ---- Consent checkbox enables submit ----
+    document.getElementById('consent-check').addEventListener('change', function() {
+      document.getElementById('submit-btn').disabled = !this.checked;
+    });
 
     document.getElementById('modal-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('modal-overlay')) closeModal();
@@ -1342,6 +1291,9 @@
       }
     }
 
+    // ---- Read ?program= URL param to pre-select a program when modal opens ----
+    const urlProgram = new URLSearchParams(window.location.search).get('program') || '';
+
     // Init
     const now  = new Date();
     calYear    = now.getFullYear();
@@ -1366,6 +1318,9 @@
         return;
       }
 
+      // Consent must be checked
+      if (!document.getElementById('consent-check').checked) return;
+
       // Required field validation
       let valid = true;
       form.querySelectorAll('[required]').forEach(field => {
@@ -1385,12 +1340,11 @@
         sessionId,
         player_first: form.player_first.value.trim(),
         player_last:  form.player_last.value.trim(),
-        birth_year:   form.birth_year.value.trim(),
-        position:     form.position.value,
-        parent_name:  form.parent_name.value.trim(),
+        level:        form.level.value,
+        parent_first: form.parent_first.value.trim(),
+        parent_last:  form.parent_last.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
-        notes:        form.notes.value.trim(),
       };
 
       try {

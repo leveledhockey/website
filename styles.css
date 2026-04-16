@@ -79,14 +79,22 @@ h1, h2, h3, h4, h5 {
               box-shadow var(--trans);
   white-space: nowrap;
 }
-.btn:hover  { transform: translateY(-2px); }
-.btn:active { transform: translateY(0); }
+.btn:hover:not(:disabled)  { transform: translateY(-2px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
 
 .btn-primary {
   background: var(--accent);
   color: #fff;
 }
-.btn-primary:hover { background: var(--accent-dark); box-shadow: 0 8px 24px rgba(232,121,42,0.35); }
+.btn-primary:hover:not(:disabled) { background: var(--accent-dark); box-shadow: 0 8px 24px rgba(232,121,42,0.35); }
+.btn-primary:disabled {
+  background: #3a3a3a;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 1;
+}
 
 .btn-outline {
   background: transparent;
@@ -137,7 +145,7 @@ h1, h2, h3, h4, h5 {
   gap: 0.85rem;
   flex-shrink: 0;
 }
-.nav-logo { height: 46px; width: auto; }
+.nav-logo { height: 46px; width: 46px; object-fit: contain; }
 .nav-brand-text {
   display: flex;
   flex-direction: column;
@@ -1012,7 +1020,7 @@ h1, h2, h3, h4, h5 {
   gap: clamp(2rem, 4vw, 4rem);
 }
 .footer-brand { display: flex; flex-direction: column; gap: 1rem; }
-.footer-logo { height: 52px; width: auto; }
+.footer-logo { height: 86px; width: 86px; object-fit: contain; }
 .footer-tagline {
   font-size: 0.875rem;
   color: var(--text-muted);
