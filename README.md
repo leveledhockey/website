@@ -222,6 +222,141 @@ The trial account prepends "Sent from your Twilio trial account" to every SMS an
 - Upgrade the Twilio account
 - The SMS character limit expands — restore the full message in `api/register.js` with both approve and deny links
 
+#### 4. Add Cloudflare Turnstile CAPTCHA to registration form
+
+Without bot protection, a malicious actor could spam the registration form and exhaust the Resend 100 emails/day free limit, blocking real parents from receiving confirmations. Turnstile is free with no usage limits.
+
+**Steps:**
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Turnstile → Add site → choose **Managed**
+2. Add the Site Key to `register.html` (widget embed + script tag)
+3. Add the Secret Key as `TURNSTILE_SECRET_KEY` in Vercel env vars
+4. In `api/register.js`, verify the `cf-turnstile-response` token against Cloudflare's verify API before processing the registration
+
+#### 5. Stripe payment integration
+
+Replace the current manual payment step (e-transfer / cash instructions shown after registration) with an online payment option via Stripe Checkout (which also auto-enables Apple Pay on Safari/iOS). A "Cash or E-transfer" path for in-person payment will still exist and use the current manual approval flow.
+
+##### Overview of the two flows
+
+**Path A — Pay Online (Stripe / Apple Pay)**
+1. User selects "Pay Online" on the registration form and submits
+2. `POST /api/register` writes the row to Sheets with `Status = "Pending Payment"`, `Paid? = FALSE`
+3. API creates a Stripe Checkout Session (amount: $55 CAD) and returns `{ stripeUrl }` in the response
+4. Frontend redirects the browser to `stripeUrl`
+5. User pays on the Stripe-hosted page (Apple Pay shown automatically on eligible devices)
+6. Stripe redirects back to `SITE_URL/register.html?payment=success` (or `?payment=cancel`)
+7. Stripe fires a `checkout.session.completed` webhook to `POST /api/stripe-webhook`
+8. Webhook verifies signature, finds the registration row by token, sets `Status = "Confirmed"` and `Paid? = TRUE`, then sends **one** combined confirmation email to the parent — no SMS needed
+
+**Path B — Cash or E-transfer (unchanged)**
+- Admin receives SMS review link as usual
+- Manual approve/deny via existing `/api/review`, `/api/approve`, `/api/deny`
+- Parent gets two emails: receipt on submit + confirmation/denial after admin review
+
+##### Files to create / modify
+
+| File | Change |
+|---|---|
+| `register.html` | Add payment method radio buttons (before submit), update submit button label, redirect to `stripeUrl` on success, show banner on `?payment=success` / `?payment=cancel` |
+| `api/register.js` | Accept `paymentMethod` field (`'stripe'` or `'cash'`). For Stripe: write row with `Status = "Pending Payment"`, create Stripe Checkout Session, return `{ stripeUrl }` — skip email and SMS. For cash: existing flow unchanged. |
+| `api/stripe-webhook.js` | **New file.** Read raw body from the request stream (needed for Stripe signature verification — do NOT use `req.body`), verify with `stripe.webhooks.constructEvent`, handle `checkout.session.completed`: find row by token from `event.data.object.metadata.token`, update `Paid?` (col J) and `Status` (col K), send one confirmation email via Resend. |
+| `package.json` | Add `"stripe": "^17.0.0"` |
+
+##### Stripe Checkout Session (api/register.js)
+
+```js
+const Stripe = require('stripe');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// inside the stripe branch:
+const session = await stripe.checkout.sessions.create({
+  payment_method_types: ['card'],  // Apple Pay auto-included by Stripe Checkout
+  line_items: [{
+    price_data: {
+      currency: 'cad',
+      unit_amount: 5500,  // $55.00
+      product_data: { name: `Leveled Hockey — ${programCode.replace(/_/g, ' ')}` },
+    },
+    quantity: 1,
+  }],
+  mode: 'payment',
+  metadata: { token },  // used by webhook to find the registration row
+  success_url: `${process.env.SITE_URL}/register.html?payment=success`,
+  cancel_url:  `${process.env.SITE_URL}/register.html?payment=cancel`,
+});
+return res.status(200).json({ ok: true, stripeUrl: session.url });
+```
+
+##### Stripe webhook (api/stripe-webhook.js)
+
+```js
+const Stripe = require('stripe');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Read raw body from stream — required for signature verification
+function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+module.exports = async function handler(req, res) {
+  const rawBody = await getRawBody(req);
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    return res.status(400).send(`Webhook error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const { token } = event.data.object.metadata;
+    // look up row by token in Registrations sheet (col L, index 11)
+    // update col J (Paid? = TRUE) and col K (Status = Confirmed)
+    // send one confirmation email via Resend (same template as _handleDecision.js confirmed branch)
+  }
+
+  res.json({ received: true });
+};
+```
+
+Columns in the Registrations sheet (0-based): `A=0 Timestamp, B=1 Session ID, C=2 Session Label, D=3 Player First, E=4 Player Last, F=5 Level, G=6 Parent Name, H=7 Phone, I=8 Email, J=9 Paid?, K=10 Status, L=11 Token`
+
+##### New environment variables
+
+| Variable | Where to get it |
+|---|---|
+| `STRIPE_SECRET_KEY` | Stripe Dashboard → Developers → API Keys |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Webhooks → (your endpoint) → Signing secret |
+
+Add both to Vercel (Production + Preview + Development) and re-run `npx vercel env pull .env.local`.
+
+##### Apple Pay one-time setup (after deploying)
+
+Stripe Checkout shows Apple Pay automatically on eligible Safari/iOS devices, but requires domain verification:
+1. Stripe Dashboard → Settings → Payment Methods → Apple Pay → Add domain → `leveledhockey.com`
+2. Download the domain association file Stripe provides
+3. Host it at `/.well-known/apple-developer-merchantid-domain-association` (a static file in the project root — no route needed, Vercel serves static files automatically)
+
+##### Testing checklist
+
+1. `npm install` (adds Stripe SDK)
+2. Add `STRIPE_SECRET_KEY` (test key from Stripe dashboard) to `.env.local`
+3. `npx vercel dev`
+4. Register → select "Pay Online" → confirm browser redirects to Stripe Checkout
+5. Pay with Stripe test card `4242 4242 4242 4242`, any future date, any CVC
+6. Confirm redirect back to `register.html?payment=success` and success banner appears
+7. Check Registrations sheet: `Status = Confirmed`, `Paid? = TRUE`
+8. Confirm ONE confirmation email arrived (no second email)
+9. Register → select "Cash or E-transfer" → confirm existing SMS + 2-email flow is unchanged
+10. In Stripe Dashboard → Webhooks, add endpoint `https://leveledhockey.com/api/stripe-webhook`, event: `checkout.session.completed`
+11. Copy the Signing Secret → add as `STRIPE_WEBHOOK_SECRET` in Vercel env vars
+12. Re-test end-to-end in production with the webhook active
+
 #### 3. Verify sending domain in Resend
 
 Currently using `onboarding@resend.dev` which can only send to your own Resend account email. Before launch:
