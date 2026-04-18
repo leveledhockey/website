@@ -149,12 +149,26 @@ Each program tab has this header row (6 columns — no "Program" column):
 
 Populated automatically when someone submits the registration form. Columns (do not reorder):
 
-| Timestamp | Session ID | Session Label | Player First | Player Last | Birth Year | Position | Parent Name | Phone | Email | Notes | Paid? | Status | Token |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Col | Letter | Field | Notes |
+|---|---|---|---|
+| 0 | A | Timestamp | ISO 8601, written by server |
+| 1 | B | Session ID | e.g. `PEP-2026-04-05-09` |
+| 2 | C | Session Label | Human-readable string, e.g. `PEP - 05-04-2026 at 09:00:00 (NSWC)` |
+| 3 | D | Player First | |
+| 4 | E | Player Last | |
+| 5 | F | Level | U11 / U13 / U15 / U18 |
+| 6 | G | Parent Name | |
+| 7 | H | Phone | |
+| 8 | I | Email | |
+| 9 | J | Paid? | `FALSE` on submit; `TRUE` after Stripe payment confirmed by webhook |
+| 10 | K | Status | `Pending` (cash/e-transfer) · `Pending Payment` (Stripe, pre-payment) · `Confirmed` · `Denied` |
+| 11 | L | Token | UUID. Used to authenticate approve/deny links. Do not edit. |
+| 12 | M | Payment Method | `stripe` · `cash` · `etransfer`. Written at registration time. |
 
-- **Paid?** — web submissions write `FALSE`. Mark `TRUE` manually once payment is received.
-- **Status** — web submissions write `Pending`. Use the SMS review link to confirm or deny, which also emails the parent automatically. You can also change this manually in the sheet — see the Apps Script TODO for auto-email on manual edits.
-- **Token** — a UUID generated at registration time. Used to authenticate the approve/deny links. Do not edit.
+- **Paid?** — `FALSE` on all submissions. Set to `TRUE` automatically by the Stripe webhook after a successful payment. For cash/e-transfer, mark `TRUE` manually once payment is received.
+- **Status** — Stripe path writes `Pending Payment` initially, then the webhook updates it to `Confirmed`. Cash/e-transfer path writes `Pending`; use the SMS review link to confirm or deny (which also emails the parent). You can also change Status manually — see the Apps Script TODO for auto-email on manual edits.
+- **Token** — a UUID generated at registration time. Used to authenticate the approve/deny links and to look up the row from the Stripe webhook. Do not edit.
+- **Payment Method** — written at registration time so the owner can see at a glance how each family paid.
 
 ---
 
@@ -234,128 +248,453 @@ Without bot protection, a malicious actor could spam the registration form and e
 
 #### 5. Stripe payment integration
 
-Replace the current manual payment step (e-transfer / cash instructions shown after registration) with an online payment option via Stripe Checkout (which also auto-enables Apple Pay on Safari/iOS). A "Cash or E-transfer" path for in-person payment will still exist and use the current manual approval flow.
+Replace the current manual payment step (e-transfer / cash instructions shown after registration) with an online payment option via **Stripe Checkout** — a Stripe-hosted payment page that automatically shows Apple Pay on Safari/iOS and Google Pay on Chrome/Android. A "Cash or E-transfer" path will still exist and use the current manual approval flow.
+
+> **Account note:** Set up the Stripe account under the business email (`info@leveledhockey.com`) from day one — bank details, KYC verification, and tax documents (1099s) are tied to the account holder. Use test keys (`sk_test_`, `pk_test_`) during development so no real money moves. Swap to live keys only when going to production.
+
+---
 
 ##### Overview of the two flows
 
-**Path A — Pay Online (Stripe / Apple Pay)**
-1. User selects "Pay Online" on the registration form and submits
-2. `POST /api/register` writes the row to Sheets with `Status = "Pending Payment"`, `Paid? = FALSE`
-3. API creates a Stripe Checkout Session (amount: $55 CAD) and returns `{ stripeUrl }` in the response
-4. Frontend redirects the browser to `stripeUrl`
-5. User pays on the Stripe-hosted page (Apple Pay shown automatically on eligible devices)
-6. Stripe redirects back to `SITE_URL/register.html?payment=success` (or `?payment=cancel`)
-7. Stripe fires a `checkout.session.completed` webhook to `POST /api/stripe-webhook`
-8. Webhook verifies signature, finds the registration row by token, sets `Status = "Confirmed"` and `Paid? = TRUE`, then sends **one** combined confirmation email to the parent — no SMS needed
+**Path A — Pay Online (Stripe Checkout / Apple Pay / Google Pay)**
 
-**Path B — Cash or E-transfer (unchanged)**
-- Admin receives SMS review link as usual
-- Manual approve/deny via existing `/api/review`, `/api/approve`, `/api/deny`
-- Parent gets two emails: receipt on submit + confirmation/denial after admin review
+1. User fills out the registration form and selects **"Pay Online"**
+2. A clear note is shown: *"You will be redirected to a secure Stripe payment page. Your spot is confirmed immediately upon payment."*
+3. User submits the form → `POST /api/register`
+4. API writes the row to Sheets: `Status = "Pending Payment"`, `Paid? = FALSE`, `Payment Method = "stripe"`
+5. API creates a Stripe Checkout Session and returns `{ stripeUrl }` — **no email sent, no SMS sent at this stage**
+6. Frontend JS redirects the browser to `stripeUrl` (Stripe-hosted page)
+7. On the Stripe page: Apple Pay button appears automatically on Safari/iOS; Google Pay on Chrome/Android; card form always shown as fallback
+8. User completes payment → Stripe redirects back to `SITE_URL/register.html?payment=success`
+9. Stripe simultaneously fires a `checkout.session.completed` webhook to `POST /api/stripe-webhook`
+10. Webhook verifies the Stripe signature, finds the registration row using the `token` stored in the Checkout Session metadata, sets `Paid? = TRUE` and `Status = "Confirmed"`, then sends **one** confirmation email to the parent mentioning their payment was received
+11. No SMS is sent to the owner — the registration is fully self-serve
+
+**Path B — Cash or E-transfer (existing flow, minor copy changes)**
+
+1. User selects **"Cash or E-transfer"**
+2. A prominent warning is shown on the form: *"Important: Selecting cash or e-transfer does NOT hold your spot. Your registration is pending until payment is received and approved by the coach."*
+3. User submits → `POST /api/register` (existing flow, no changes to logic)
+4. Row written: `Status = "Pending"`, `Paid? = FALSE`, `Payment Method = "cash"` or `"etransfer"`
+5. **Pending email** sent to parent — updated to explicitly state: *"Your spot is not confirmed. It will be held once payment is received and your registration is approved by the coach."*
+6. **SMS sent to owner** with the one-tap review link (unchanged)
+7. Owner approves or denies via `/api/review` → **second email** sent (confirmation or denial)
+
+---
 
 ##### Files to create / modify
 
-| File | Change |
-|---|---|
-| `register.html` | Add payment method radio buttons (before submit), update submit button label, redirect to `stripeUrl` on success, show banner on `?payment=success` / `?payment=cancel` |
-| `api/register.js` | Accept `paymentMethod` field (`'stripe'` or `'cash'`). For Stripe: write row with `Status = "Pending Payment"`, create Stripe Checkout Session, return `{ stripeUrl }` — skip email and SMS. For cash: existing flow unchanged. |
-| `api/stripe-webhook.js` | **New file.** Read raw body from the request stream (needed for Stripe signature verification — do NOT use `req.body`), verify with `stripe.webhooks.constructEvent`, handle `checkout.session.completed`: find row by token from `event.data.object.metadata.token`, update `Paid?` (col J) and `Status` (col K), send one confirmation email via Resend. |
-| `package.json` | Add `"stripe": "^17.0.0"` |
+| File | Action | Summary of changes |
+|---|---|---|
+| `register.html` | Modify | Add payment method radio buttons before the submit button. Show a context-sensitive note under each option. On Stripe path: redirect browser to `stripeUrl` after API responds. Show a success/cancel banner when returning from Stripe (`?payment=success` or `?payment=cancel`). Remove the existing post-submission message about cash/e-transfer being the payment method. |
+| `api/register.js` | Modify | Accept new `paymentMethod` field in request body (`'stripe'`, `'cash'`, or `'etransfer'`). Write `Payment Method` as column M. For Stripe: skip email and SMS, create Checkout Session, return `{ stripeUrl }`. For cash/etransfer: update pending email copy, everything else unchanged. |
+| `api/stripe-webhook.js` | **Create** | New file. Disable Vercel's default body parser (required for Stripe signature verification). Read raw body from stream, verify with `stripe.webhooks.constructEvent`. Handle `checkout.session.completed`: look up row by token, update `Paid?` and `Status`, send confirmation email. |
+| `api/_handleDecision.js` | Modify | The idempotency check currently blocks re-processing any status that isn't `"Pending"`. Since Stripe registrations arrive with `"Pending Payment"`, they will correctly never enter the review flow — no code change needed. However, add a guard so that if the review link is somehow followed for a `"Pending Payment"` row, it shows a clear message rather than an error. |
+| `package.json` | Modify | Add `"stripe": "^17.0.0"` |
+| `vercel.json` | Modify | Add a function config entry for `api/stripe-webhook.js` to increase `maxDuration` to 15s (webhook processing involves multiple Sheets API calls). |
 
-##### Stripe Checkout Session (api/register.js)
+---
 
-```js
-const Stripe = require('stripe');
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+##### register.html — payment method UI
 
-// inside the stripe branch:
-const session = await stripe.checkout.sessions.create({
-  payment_method_types: ['card'],  // Apple Pay auto-included by Stripe Checkout
-  line_items: [{
-    price_data: {
-      currency: 'cad',
-      unit_amount: 5500,  // $55.00
-      product_data: { name: `Leveled Hockey — ${programCode.replace(/_/g, ' ')}` },
-    },
-    quantity: 1,
-  }],
-  mode: 'payment',
-  metadata: { token },  // used by webhook to find the registration row
-  success_url: `${process.env.SITE_URL}/register.html?payment=success`,
-  cancel_url:  `${process.env.SITE_URL}/register.html?payment=cancel`,
-});
-return res.status(200).json({ ok: true, stripeUrl: session.url });
+Add these radio buttons inside the form, immediately before the submit button:
+
+```html
+<div class="payment-section">
+  <p><strong>How would you like to pay?</strong></p>
+
+  <label>
+    <input type="radio" name="paymentMethod" value="stripe" required>
+    Pay Online (Credit Card / Apple Pay / Google Pay)
+    <span class="payment-note">Your spot is confirmed immediately upon payment.</span>
+  </label>
+
+  <label>
+    <input type="radio" name="paymentMethod" value="cash">
+    Cash
+    <span class="payment-note warning">
+      ⚠️ Your spot is <strong>not held</strong> until payment is received
+      and your registration is approved by the coach.
+    </span>
+  </label>
+
+  <label>
+    <input type="radio" name="paymentMethod" value="etransfer">
+    E-Transfer (to info@leveledhockey.com)
+    <span class="payment-note warning">
+      ⚠️ Your spot is <strong>not held</strong> until payment is received
+      and your registration is approved by the coach.
+    </span>
+  </label>
+</div>
 ```
 
-##### Stripe webhook (api/stripe-webhook.js)
+After the API call succeeds, the JS submit handler should branch:
 
 ```js
-const Stripe = require('stripe');
+const data = await res.json();
+
+if (data.stripeUrl) {
+  // Stripe path — redirect to Stripe Checkout
+  window.location.href = data.stripeUrl;
+} else {
+  // Cash / e-transfer path — show existing success message
+  showSuccessMessage();
+}
+```
+
+On page load, check for `?payment=success` or `?payment=cancel` in the URL and show an appropriate banner:
+
+```js
+const params = new URLSearchParams(window.location.search);
+if (params.get('payment') === 'success') {
+  showBanner('Payment received! Your registration is confirmed. Check your email for details.', 'success');
+} else if (params.get('payment') === 'cancel') {
+  showBanner('Payment was cancelled. Your registration has not been confirmed. Please try again or choose a different payment method.', 'warning');
+}
+```
+
+---
+
+##### api/register.js — changes
+
+Add `paymentMethod` to the destructured request body:
+
+```js
+const {
+  sessionId, player_first, player_last, level,
+  parent_name, phone, email, paymentMethod,
+} = req.body || {};
+```
+
+Validate it:
+
+```js
+if (!['stripe', 'cash', 'etransfer'].includes(paymentMethod)) {
+  return res.status(400).json({ error: 'Invalid payment method.' });
+}
+```
+
+Update the row written to Sheets to include column M (Payment Method). The append range becomes `A:M` and the values array gains one entry at the end:
+
+```js
+// existing 12 values, plus:
+paymentMethod,   // Payment Method (col M, index 12)
+```
+
+After writing the row, branch on `paymentMethod`:
+
+**Stripe branch** — create Checkout Session, return URL, skip email and SMS:
+
+```js
+if (paymentMethod === 'stripe') {
+  const Stripe = require('stripe');
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+  const session = await stripe.checkout.sessions.create({
+    // Omit payment_method_types — Stripe auto-detects Apple Pay, Google Pay, card
+    line_items: [{
+      price_data: {
+        currency: 'cad',
+        unit_amount: 5500,           // $55.00 CAD — update this if price changes
+        product_data: {
+          name: `Leveled Hockey — ${programCode.replace(/_/g, ' ')}`,
+        },
+      },
+      quantity: 1,
+    }],
+    mode: 'payment',
+    metadata: { token },             // webhook uses this to find the row
+    success_url: `${process.env.SITE_URL}/register.html?payment=success`,
+    cancel_url:  `${process.env.SITE_URL}/register.html?payment=cancel`,
+  });
+
+  return res.status(200).json({ ok: true, stripeUrl: session.url });
+}
+```
+
+**Cash / e-transfer branch** — existing flow, but update the pending email body to include the explicit warning (see email copy below):
+
+```js
+// existing email + SMS logic, with updated email HTML
+```
+
+---
+
+##### api/stripe-webhook.js — new file
+
+> **Critical:** Vercel parses request bodies as JSON by default. Stripe signature verification requires the **raw, unparsed body bytes**. Export a `config` object to disable the body parser for this route.
+
+```js
+const { google } = require('googleapis');
+const { Resend }  = require('resend');
+const Stripe      = require('stripe');
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Read raw body from stream — required for signature verification
+const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
+const SHEET_REGISTRATIONS           = 'Registrations';
+
+// Column indices (0-based)
+const COL_TOKEN          = 11;  // L
+const COL_PAID           = 9;   // J
+const COL_STATUS         = 10;  // K
+const COL_PLAYER_FIRST   = 3;   // D
+const COL_PLAYER_LAST    = 4;   // E
+const COL_LEVEL          = 5;   // F
+const COL_PARENT_NAME    = 6;   // G
+const COL_EMAIL          = 8;   // I
+const COL_SESSION_LABEL  = 2;   // C
+
+// MUST export config to disable body parsing — Stripe needs raw bytes for signature verification
+module.exports.config = {
+  api: { bodyParser: false },
+};
+
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('end',  () => resolve(Buffer.concat(chunks)));
     req.on('error', reject);
   });
 }
 
+function getAuth() {
+  let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  raw = raw.replace(/\n/g, '\\n');
+  const credentials = JSON.parse(raw);
+  return new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+}
+
 module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+
   const rawBody = await getRawBody(req);
-  const sig = req.headers['stripe-signature'];
+  const sig     = req.headers['stripe-signature'];
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
+    console.error('Stripe webhook signature error:', err.message);
     return res.status(400).send(`Webhook error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const { token } = event.data.object.metadata;
-    // look up row by token in Registrations sheet (col L, index 11)
-    // update col J (Paid? = TRUE) and col K (Status = Confirmed)
-    // send one confirmation email via Resend (same template as _handleDecision.js confirmed branch)
+  if (event.type !== 'checkout.session.completed') {
+    return res.json({ received: true });
   }
 
-  res.json({ received: true });
+  const { token } = event.data.object.metadata || {};
+  if (!token) {
+    console.error('Webhook: no token in metadata');
+    return res.status(400).send('Missing token in metadata.');
+  }
+
+  try {
+    const auth   = await getAuth().getClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const { data } = await sheets.spreadsheets.values.get({
+      spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
+      range:         `${SHEET_REGISTRATIONS}!A1:M10000`,
+    });
+
+    const rows     = data.values || [];
+    const dataRows = rows.slice(1);
+    const rowIndex = dataRows.findIndex(row => row[COL_TOKEN] === token);
+
+    if (rowIndex === -1) {
+      console.error('Webhook: token not found:', token);
+      return res.status(404).send('Registration not found.');
+    }
+
+    const row      = dataRows[rowIndex];
+    const sheetRow = rowIndex + 2; // 1-based + header row
+
+    // Update Paid? (col J) and Status (col K) in a single call
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: [
+          { range: `${SHEET_REGISTRATIONS}!J${sheetRow}`, values: [['TRUE']] },
+          { range: `${SHEET_REGISTRATIONS}!K${sheetRow}`, values: [['Confirmed']] },
+        ],
+      },
+    });
+
+    // Send one confirmation email — mention payment was received
+    try {
+      const resend      = new Resend(process.env.RESEND_API_KEY);
+      const playerFirst = row[COL_PLAYER_FIRST]  || '';
+      const playerLast  = row[COL_PLAYER_LAST]   || '';
+      const parentName  = row[COL_PARENT_NAME]   || '';
+      const parentFirst = parentName.split(' ')[0];
+      const parentEmail = row[COL_EMAIL]         || '';
+      const level       = row[COL_LEVEL]         || '';
+      const sessionLabel = row[COL_SESSION_LABEL] || '';
+
+      const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+      const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
+      const sessionTime = labelMatch ? (() => {
+        const [h, m] = labelMatch[2].split(':').map(Number);
+        return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+      })() : '';
+      const sessionLoc  = labelMatch ? labelMatch[3] : '';
+
+      await resend.emails.send({
+        from:    process.env.EMAIL_FROM,
+        to:      parentEmail,
+        subject: `Registration Confirmed - ${playerFirst} ${playerLast}`,
+        html: `<p>Hi ${parentFirst},</p>
+               <p>Great news! ${playerFirst} ${playerLast}'s registration is confirmed and your payment has been received.</p>
+               <p>
+                 <strong>Session: ${sessionName}</strong><br>
+                 <strong>Time: ${sessionTime}</strong><br>
+                 <strong>Location: ${sessionLoc}</strong>
+               </p>
+               <p>Payment of $55.00 CAD was received via credit card / Apple Pay.</p>
+               <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+               <p>See you on the ice!<br>Leveled Hockey</p>`,
+      });
+    } catch (emailErr) {
+      console.error('Webhook confirmation email error:', emailErr);
+      // Do not fail the webhook response — sheet is already updated
+    }
+
+    return res.json({ received: true });
+  } catch (err) {
+    console.error('stripe-webhook error:', err);
+    return res.status(500).send('Server error.');
+  }
 };
 ```
 
-Columns in the Registrations sheet (0-based): `A=0 Timestamp, B=1 Session ID, C=2 Session Label, D=3 Player First, E=4 Player Last, F=5 Level, G=6 Parent Name, H=7 Phone, I=8 Email, J=9 Paid?, K=10 Status, L=11 Token`
+---
+
+##### Updated email copy
+
+**Pending email (cash / e-transfer path) — update in `api/register.js`**
+
+The existing pending email says *"We'll be in touch shortly to confirm your spot."* Replace the body with:
+
+```html
+<p>Hi ${parentName},</p>
+<p>We've received your registration request for the following session:</p>
+<p>
+  <strong>Session: ${sessionName}</strong><br>
+  <strong>Time: ${sessionTime}</strong><br>
+  <strong>Location: ${sessionLoc}</strong>
+</p>
+<p><strong>⚠️ Important: Your spot is not confirmed yet.</strong><br>
+  You selected cash or e-transfer as your payment method. Your registration will only be
+  approved once payment is received and confirmed by the coach. You will receive a second
+  email when your spot is confirmed.</p>
+<p>
+  <strong>E-transfer:</strong> Send to info@leveledhockey.com<br>
+  <strong>Cash:</strong> Arrange with the coach directly
+</p>
+<p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+<p>Leveled Hockey</p>
+```
+
+**Confirmation email (Stripe path) — in `api/stripe-webhook.js`**
+
+Already shown in the webhook file above. Key additions vs the existing confirmed email template:
+- *"your payment has been received"* in the opening line
+- *"Payment of $55.00 CAD was received via credit card / Apple Pay."* paragraph
+
+---
 
 ##### New environment variables
 
-| Variable | Where to get it |
-|---|---|
-| `STRIPE_SECRET_KEY` | Stripe Dashboard → Developers → API Keys |
-| `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Webhooks → (your endpoint) → Signing secret |
+| Variable | Where to get it | Notes |
+|---|---|---|
+| `STRIPE_SECRET_KEY` | Stripe Dashboard → Developers → API Keys | Use `sk_test_...` locally, `sk_live_...` in production |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Webhooks → your endpoint → Signing secret | Different for local (Stripe CLI) vs production (Dashboard) |
 
 Add both to Vercel (Production + Preview + Development) and re-run `npx vercel env pull .env.local`.
 
-##### Apple Pay one-time setup (after deploying)
+> **No publishable key needed.** Stripe Checkout is fully server-side — the browser is redirected to `session.url` on Stripe's domain. There is no Stripe.js to load on your site.
 
-Stripe Checkout shows Apple Pay automatically on eligible Safari/iOS devices, but requires domain verification:
-1. Stripe Dashboard → Settings → Payment Methods → Apple Pay → Add domain → `leveledhockey.com`
-2. Download the domain association file Stripe provides
-3. Host it at `/.well-known/apple-developer-merchantid-domain-association` (a static file in the project root — no route needed, Vercel serves static files automatically)
+---
 
-##### Testing checklist
+##### Apple Pay & Google Pay
 
-1. `npm install` (adds Stripe SDK)
-2. Add `STRIPE_SECRET_KEY` (test key from Stripe dashboard) to `.env.local`
-3. `npx vercel dev`
-4. Register → select "Pay Online" → confirm browser redirects to Stripe Checkout
-5. Pay with Stripe test card `4242 4242 4242 4242`, any future date, any CVC
-6. Confirm redirect back to `register.html?payment=success` and success banner appears
-7. Check Registrations sheet: `Status = Confirmed`, `Paid? = TRUE`
-8. Confirm ONE confirmation email arrived (no second email)
-9. Register → select "Cash or E-transfer" → confirm existing SMS + 2-email flow is unchanged
-10. In Stripe Dashboard → Webhooks, add endpoint `https://leveledhockey.com/api/stripe-webhook`, event: `checkout.session.completed`
-11. Copy the Signing Secret → add as `STRIPE_WEBHOOK_SECRET` in Vercel env vars
-12. Re-test end-to-end in production with the webhook active
+No extra setup required. Because payment happens on Stripe's hosted domain (`checkout.stripe.com`), Apple Pay domain verification against `leveledhockey.com` is **not needed**. Stripe handles it. Apple Pay will appear automatically for users on Safari (iOS or macOS with Apple Pay set up). Google Pay appears automatically on Chrome/Android. No developer account, no domain association file.
+
+---
+
+##### vercel.json update
+
+Increase the timeout for the webhook handler (it makes multiple Sheets API calls):
+
+```json
+{
+  "functions": {
+    "api/*.js": {
+      "memory": 256,
+      "maxDuration": 10
+    },
+    "api/stripe-webhook.js": {
+      "memory": 256,
+      "maxDuration": 15
+    }
+  }
+}
+```
+
+---
+
+##### Step-by-step implementation checklist
+
+**Setup (do once before writing any code)**
+- [ ] Create Stripe account at stripe.com under the business email (`info@leveledhockey.com`)
+- [ ] In Stripe Dashboard → Developers → API Keys: copy the test secret key (`sk_test_...`)
+- [ ] Add `STRIPE_SECRET_KEY=sk_test_...` to Vercel env vars (all environments) and re-run `npx vercel env pull .env.local`
+- [ ] Run `npm install stripe` in the project root
+- [ ] Confirm the Registrations Google Sheet has a column M header: `Payment Method` (add it manually if not present)
+
+**Local development & testing**
+- [ ] `npx vercel dev` — confirm the existing registration flow still works
+- [ ] Implement the changes to `register.html` (payment radio buttons, redirect logic, success/cancel banner)
+- [ ] Implement the changes to `api/register.js` (accept `paymentMethod`, write col M, Stripe Checkout Session creation)
+- [ ] Create `api/stripe-webhook.js`
+- [ ] Update `vercel.json` to increase webhook timeout
+- [ ] To test the webhook locally, install the Stripe CLI: `stripe listen --forward-to localhost:3000/api/stripe-webhook`
+- [ ] The Stripe CLI prints a webhook signing secret (`whsec_...`) — add it as `STRIPE_WEBHOOK_SECRET` in `.env.local`
+- [ ] Test the full Stripe flow:
+  - [ ] Submit form with "Pay Online" selected → browser redirects to Stripe Checkout page
+  - [ ] Pay with test card `4242 4242 4242 4242`, any future expiry, any CVC
+  - [ ] Confirm redirect back to `register.html?payment=success` and success banner appears
+  - [ ] Check Registrations sheet: `Status = Confirmed`, `Paid? = TRUE`, `Payment Method = stripe`
+  - [ ] Confirm exactly ONE email arrived (no pending email, just the confirmation)
+  - [ ] Confirm the confirmation email mentions payment received
+  - [ ] Confirm NO SMS was sent to the owner
+- [ ] Test the cancellation flow:
+  - [ ] Submit form → Stripe page → click Back / Cancel
+  - [ ] Confirm redirect to `register.html?payment=cancel` and cancel banner appears
+  - [ ] Check sheet: row exists with `Status = Pending Payment`, `Paid? = FALSE` (no cleanup needed — these rows are harmless)
+- [ ] Test the cash/e-transfer flow:
+  - [ ] Submit form with "Cash" selected
+  - [ ] Confirm pending email arrived with the updated warning copy
+  - [ ] Confirm SMS sent to owner with review link
+  - [ ] Approve via review link → confirm second email (confirmation) arrives
+  - [ ] Check sheet: `Status = Confirmed`, `Paid? = FALSE`, `Payment Method = cash`
+
+**Production deployment**
+- [ ] In Stripe Dashboard → Webhooks → Add endpoint:
+  - URL: `https://leveledhockey.com/api/stripe-webhook`
+  - Event: `checkout.session.completed`
+- [ ] Copy the production webhook signing secret → add as `STRIPE_WEBHOOK_SECRET` in Vercel env vars (Production only — leave Development pointing at the Stripe CLI secret)
+- [ ] Swap `STRIPE_SECRET_KEY` in Vercel Production env to the live key (`sk_live_...`)
+- [ ] Deploy to production
+- [ ] Do one real end-to-end test in production with a real card (then issue a refund from the Stripe Dashboard)
 
 #### 3. Verify sending domain in Resend
 
