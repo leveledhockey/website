@@ -6,18 +6,29 @@ const SHEET_REGISTRATIONS           = 'Registrations';
 
 // Column indices (0-based) in the Registrations sheet:
 // A=0 Timestamp, B=1 Session ID, C=2 Session Label, D=3 Player First,
-// E=4 Player Last, F=5 Birth Year, G=6 Position, H=7 Parent Name,
-// I=8 Phone, J=9 Email, K=10 Notes, L=11 Paid?, M=12 Status, N=13 Token
-const COL_TOKEN         = 13;
-const COL_STATUS        = 12;
+// E=4 Player Last, F=5 Level, G=6 Parent Name, H=7 Phone,
+// I=8 Email, J=9 Paid?, K=10 Status, L=11 Token
+const COL_TOKEN         = 11;
+const COL_STATUS        = 10;
 const COL_PLAYER_FIRST  = 3;
 const COL_PLAYER_LAST   = 4;
+const COL_LEVEL         = 5;
+const COL_PARENT_NAME   = 6;
 const COL_SESSION_LABEL = 2;
-const COL_EMAIL         = 9;
+const COL_EMAIL         = 8;
+
+// "HH:MM" (24h) -> "H:MM AM/PM"
+function formatTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour   = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  raw = raw.replace(/\n/g, '\\n');
   const credentials = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials,
@@ -41,7 +52,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
 
     const { data } = await sheets.spreadsheets.values.get({
       spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-      range:         `${SHEET_REGISTRATIONS}!A1:N10000`,
+      range:         `${SHEET_REGISTRATIONS}!A1:L10000`,
     });
 
     const rows     = data.values || [];
@@ -56,7 +67,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
     const row           = dataRows[rowIndex];
     const currentStatus = row[COL_STATUS] || '';
 
-    // Idempotent — if already processed, just show the result.
+    // Idempotent - if already processed, just show the result.
     if (currentStatus !== 'Pending') {
       return res.status(200).send(page(
         `Already processed`,
@@ -69,7 +80,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!M${sheetRow}`,
+      range:            `${SHEET_REGISTRATIONS}!K${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody:      { values: [[newStatus]] },
     });
@@ -84,17 +95,31 @@ module.exports = async function handleDecision(req, res, newStatus) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       const subject = newStatus === 'Confirmed'
-        ? `Registration Confirmed — ${playerFirst} ${playerLast}`
-        : `Registration Update — ${playerFirst} ${playerLast}`;
+        ? `Registration Confirmed - ${playerFirst} ${playerLast}`
+        : `Registration Update - ${playerFirst} ${playerLast}`;
+      const parentFirst = row[COL_PARENT_NAME] ? row[COL_PARENT_NAME].split(' ')[0] : '';
+      const level       = row[COL_LEVEL] || '';
+
+      // Parse "PROGRAM - DD-MM-YYYY at HH:MM:SS (Location)" stored in the sheet
+      const labelMatch    = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+      const sessionName   = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
+      const sessionTime   = labelMatch ? formatTime(labelMatch[2]) : '';
+      const sessionLoc    = labelMatch ? labelMatch[3] : '';
+
       const body = newStatus === 'Confirmed'
-        ? `<p>Hi,</p>
-           <p>Great news! <strong>${playerFirst} ${playerLast}</strong>'s registration for <strong>${sessionLabel}</strong> has been confirmed. See you on the ice!</p>
-           <p>If you have any questions, reply to this email or contact us at info@leveledhockey.com.</p>
-           <p>— Leveled Hockey</p>`
-        : `<p>Hi,</p>
-           <p>Unfortunately, we weren't able to confirm <strong>${playerFirst} ${playerLast}</strong>'s registration for <strong>${sessionLabel}</strong>.</p>
-           <p>Please contact us at info@leveledhockey.com if you have any questions.</p>
-           <p>— Leveled Hockey</p>`;
+        ? `<p>Hi ${parentFirst},</p>
+           <p>Great news! We have confirmed ${playerFirst} ${playerLast}'s registration for the following session:</p>
+           <p>
+             <strong>Session Name: ${sessionName}</strong><br>
+             <strong>Time: ${sessionTime}</strong><br>
+             <strong>Location: ${sessionLoc}</strong>
+           </p>
+           <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+           <p>See you on the ice!<br>Leveled Hockey</p>`
+        : `<p>Hi ${parentFirst},</p>
+           <p>Unfortunately, we weren't able to confirm <strong>${playerFirst} ${playerLast}</strong>'s registration for <strong>${sessionLabel.replace(/_/g, ' ')}</strong>.</p>
+           <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+           <p>Leveled Hockey</p>`;
 
       await resend.emails.send({
         from:    process.env.EMAIL_FROM,
@@ -110,7 +135,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
     return res.status(200).send(page(
       `Registration ${newStatus}`,
       `<strong>${playerFirst} ${playerLast}</strong> has been ${action}.<br>
-       <span style="color:#888;font-size:0.9em;">${sessionLabel}</span>`
+       <span style="color:#888;font-size:0.9em;">${sessionLabel.replace(/_/g, ' ')}</span>`
     ));
   } catch (err) {
     console.error('decision error:', err);
