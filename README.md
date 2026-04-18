@@ -222,6 +222,16 @@ The trial account prepends "Sent from your Twilio trial account" to every SMS an
 - Upgrade the Twilio account
 - The SMS character limit expands — restore the full message in `api/register.js` with both approve and deny links
 
+#### 4. Add Cloudflare Turnstile CAPTCHA to registration form
+
+Without bot protection, a malicious actor could spam the registration form and exhaust the Resend 100 emails/day free limit, blocking real parents from receiving confirmations. Turnstile is free with no usage limits.
+
+**Steps:**
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Turnstile → Add site → choose **Managed**
+2. Add the Site Key to `register.html` (widget embed + script tag)
+3. Add the Secret Key as `TURNSTILE_SECRET_KEY` in Vercel env vars
+4. In `api/register.js`, verify the `cf-turnstile-response` token against Cloudflare's verify API before processing the registration
+
 #### 3. Verify sending domain in Resend
 
 Currently using `onboarding@resend.dev` which can only send to your own Resend account email. Before launch:

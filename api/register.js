@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const twilio = require('twilio');
+const { Resend } = require('resend');
 const { randomUUID } = require('crypto');
 
 const SPREADSHEET_ID              = process.env.GOOGLE_SPREADSHEET_ID;
@@ -12,6 +13,7 @@ const VALID_PROGRAM_CODES = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', '
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  raw = raw.replace(/\n/g, '\\n');
   const credentials = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials,
@@ -25,21 +27,17 @@ module.exports = async function handler(req, res) {
   }
 
   const {
-    sessionId, player_first, player_last, birth_year, position,
-    parent_name, phone, email, notes,
+    sessionId, player_first, player_last, level,
+    parent_name, phone, email,
   } = req.body || {};
 
   // Server-side validation
-  const requiredFields = { sessionId, player_first, player_last, birth_year, parent_name, phone, email };
+  const requiredFields = { sessionId, player_first, player_last, parent_name, phone, email };
   if (Object.values(requiredFields).some(v => !v || !String(v).trim())) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
   if (!String(email).includes('@')) {
     return res.status(400).json({ error: 'Invalid email address.' });
-  }
-  const birthYearNum = parseInt(birth_year, 10);
-  if (isNaN(birthYearNum) || birthYearNum < 2000 || birthYearNum > 2022) {
-    return res.status(400).json({ error: 'Invalid birth year.' });
   }
 
   // Derive program code from session ID (format: {PROGRAM}-{YYYY}-{MM}-{DD}-{HH}).
@@ -90,7 +88,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Human-readable label written to the Registrations sheet for admin readability.
-    const sessionLabel = `${programCode} — ${sessionObj['Date']} at ${sessionObj['Time']} (${sessionObj['Location']})`;
+    const sessionLabel = `${programCode.replace(/_/g, ' ')} - ${sessionObj['Date']} at ${sessionObj['Time']} (${sessionObj['Location']})`;
 
     // Generate token once so it can be written to the sheet and used in the SMS.
     const token = randomUUID();
@@ -103,23 +101,49 @@ module.exports = async function handler(req, res) {
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
-          new Date().toISOString(),
-          String(sessionId).trim(),
-          sessionLabel,
-          String(player_first).trim(),
-          String(player_last).trim(),
-          String(birth_year).trim(),
-          String(position || '').trim(),
-          String(parent_name).trim(),
-          String(phone).trim(),
-          String(email).trim(),
-          String(notes || '').trim(),
-          'FALSE',
-          'Pending',
-          token,
+          new Date().toISOString(),        // Timestamp
+          String(sessionId).trim(),        // Session ID
+          sessionLabel,                    // Session Label
+          String(player_first).trim(),     // Player First
+          String(player_last).trim(),      // Player Last
+          String(level || '').trim(),      // Level
+          parent_name,                     // Parent Name
+          String(phone).trim(),            // Phone
+          String(email).trim(),            // Email
+          'FALSE',                         // Paid?
+          'Pending',                       // Status
+          token,                           // Token
         ]],
       },
     });
+
+    // Send confirmation email to parent.
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from:    process.env.EMAIL_FROM,
+        to:      String(email).trim(),
+        subject: `Registration Received - ${String(player_first).trim()} ${String(player_last).trim()}`,
+        html:    (() => {
+          const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+          const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + String(level).trim() : ''}` : sessionLabel.replace(/_/g, ' ');
+          const sessionTime = labelMatch ? (() => { const [h, m] = labelMatch[2].split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; })() : '';
+          const sessionLoc  = labelMatch ? labelMatch[3] : '';
+          return `<p>Hi ${String(parent_name).trim()},</p>
+                  <p>We've received your registration for the following session:</p>
+                  <p>
+                    <strong>Session Name: ${sessionName}</strong><br>
+                    <strong>Time: ${sessionTime}</strong><br>
+                    <strong>Location: ${sessionLoc}</strong>
+                  </p>
+                  <p>We'll be in touch shortly to confirm your spot.</p>
+                  <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+                  <p>Leveled Hockey</p>`;
+        })(),
+      });
+    } catch (emailErr) {
+      console.error('receipt email error:', emailErr);
+    }
 
     // Send SMS to owner with one-tap approve/deny links.
     // SMS failure should not block the registration from succeeding.

@@ -3,12 +3,13 @@ const { google } = require('googleapis');
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 
-// One sheet per program — names must match the tab names in Google Sheets exactly.
+// One sheet per program - names must match the tab names in Google Sheets exactly.
 const PROGRAM_SHEETS = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  raw = raw.replace(/\n/g, '\\n');
   const credentials = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials,
@@ -82,7 +83,7 @@ module.exports = async function handler(req, res) {
 
         result.push({
           sessionId:          obj['Session ID'],
-          Program:            programCode,
+          Program:            programCode.replace(/_/g, ' '),
           Date:               obj['Date'],
           Time:               obj['Time'],
           Location:           obj['Location'],

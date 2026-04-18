@@ -6,14 +6,15 @@ const SHEET_REGISTRATIONS           = 'Registrations';
 const COL_PLAYER_FIRST  = 3;
 const COL_PLAYER_LAST   = 4;
 const COL_SESSION_LABEL = 2;
-const COL_PARENT_NAME   = 7;
-const COL_EMAIL         = 9;
-const COL_STATUS        = 12;
-const COL_TOKEN         = 13;
+const COL_PARENT_NAME   = 6;
+const COL_EMAIL         = 8;
+const COL_STATUS        = 10;
+const COL_TOKEN         = 11;
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
+  raw = raw.replace(/\n/g, '\\n');
   const credentials = JSON.parse(raw);
   return new google.auth.GoogleAuth({
     credentials,
@@ -33,7 +34,7 @@ module.exports = async function handler(req, res) {
 
     const { data } = await sheets.spreadsheets.values.get({
       spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-      range:         `${SHEET_REGISTRATIONS}!A1:N10000`,
+      range:         `${SHEET_REGISTRATIONS}!A1:L10000`,
     });
 
     const rows     = data.values || [];
@@ -48,7 +49,7 @@ module.exports = async function handler(req, res) {
     const playerLast    = row[COL_PLAYER_LAST]   || '';
     const parentName    = row[COL_PARENT_NAME]   || '';
     const email         = row[COL_EMAIL]         || '';
-    const sessionLabel  = row[COL_SESSION_LABEL] || '';
+    const sessionLabel  = (row[COL_SESSION_LABEL] || '').replace(/_/g, ' ');
 
     if (currentStatus !== 'Pending') {
       return res.status(200).send(page('Already Processed', `
@@ -62,8 +63,6 @@ module.exports = async function handler(req, res) {
       `));
     }
 
-    const siteUrl = process.env.SITE_URL || '';
-
     return res.status(200).send(page(`New Registration`, `
       <div class="card">
         <div class="label">Player</div>
@@ -75,18 +74,40 @@ module.exports = async function handler(req, res) {
         <div class="label">Email</div>
         <div class="meta">${email}</div>
       </div>
-      <div class="actions">
-        <form method="POST" action="${siteUrl}/api/approve"
-              onsubmit="return confirm('Confirm registration for ${playerFirst} ${playerLast}?')">
-          <input type="hidden" name="token" value="${token}">
-          <button class="btn btn--confirm" type="submit">Confirm</button>
-        </form>
-        <form method="POST" action="${siteUrl}/api/deny"
-              onsubmit="return confirm('Deny registration for ${playerFirst} ${playerLast}?')">
-          <input type="hidden" name="token" value="${token}">
-          <button class="btn btn--deny" type="submit">Deny</button>
-        </form>
+      <div class="actions" id="actions">
+        <button class="btn btn--confirm" onclick="decide('approve')">Confirm</button>
+        <button class="btn btn--deny"    onclick="decide('deny')">Deny</button>
       </div>
+      <p id="status-msg" style="display:none;margin-top:1rem;font-size:0.95rem;"></p>
+      <script>
+        async function decide(action) {
+          const label = action === 'approve' ? 'confirm' : 'deny';
+          if (!window.confirm('Are you sure you want to ' + label + ' this registration?')) return;
+          const btns = document.querySelectorAll('.btn');
+          btns.forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+          const msg = document.getElementById('status-msg');
+          msg.style.display = 'block';
+          msg.style.color = '#888';
+          msg.textContent = action === 'approve' ? 'Confirming...' : 'Denying...';
+          try {
+            const resp = await fetch('/api/' + action + '?token=${token}', { method: 'POST' });
+            const text = await resp.text();
+            if (resp.ok) {
+              document.getElementById('actions').style.display = 'none';
+              msg.style.color = action === 'approve' ? '#16a34a' : '#dc2626';
+              msg.textContent = action === 'approve' ? 'Registration confirmed.' : 'Registration denied.';
+            } else {
+              msg.style.color = '#dc2626';
+              msg.textContent = 'Error: ' + text;
+              btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+            }
+          } catch (e) {
+            msg.style.color = '#dc2626';
+            msg.textContent = 'Network error. Please try again.';
+            btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+          }
+        }
+      </script>
     `));
   } catch (err) {
     console.error('review error:', err);
@@ -100,7 +121,7 @@ function page(title, body) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title} — Leveled Hockey</title>
+  <title>${title} - Leveled Hockey</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {

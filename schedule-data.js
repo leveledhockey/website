@@ -1,4 +1,4 @@
-// Auto-generated from programs.csv — do not edit by hand.
+// Auto-generated from programs.csv - do not edit by hand.
 // Re-run generate_schedule.py after updating programs.csv.
 window.SCHEDULE_DATA = [
   {

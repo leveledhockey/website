@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Register for Leveled Hockey Development programs — Power Edge Pro, Development Sessions, and 1-on-1 training in North Vancouver, BC.">
+  <meta name="description" content="Register for Leveled Hockey Development programs - Power Edge Pro, Development Sessions, and 1-on-1 training in North Vancouver, BC.">
   <title>Register | Leveled Hockey Development</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,17 +153,40 @@
         border-radius: 2px;
       }
       .cal-day-program-item {
-        font-family: var(--font-display);
-        font-size: 0.6rem;
-        letter-spacing: 0.03em;
-        color: var(--accent);
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
         background: var(--accent-glow);
         border: 1px solid rgba(232,121,42,0.2);
         border-radius: 2px;
-        padding: 0.15rem 0.3rem;
+        padding: 0.18rem 0.3rem;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .cal-day-prog-name {
+        font-family: var(--font-display);
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--accent);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .cal-day-prog-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cal-day-prog-meta .meta-icon {
+        width: 0.65rem;
+        height: 0.65rem;
         flex-shrink: 0;
       }
     }
@@ -630,18 +653,26 @@
       opacity: 0.4;
       cursor: not-allowed;
     }
-    .week-session-pill-time {
+    .week-session-pill-program {
       font-family: var(--font-display);
-      font-size: 0.62rem;
-      font-weight: 600;
-      letter-spacing: 0.03em;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
       color: var(--accent);
       white-space: nowrap;
     }
-    .week-session-pill-age {
-      font-size: 0.6rem;
+    .week-session-pill-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       white-space: nowrap;
+    }
+    .week-session-pill-meta .meta-icon {
+      width: 0.8rem;
+      height: 0.8rem;
+      flex-shrink: 0;
     }
 
     /* ============================================================
@@ -781,13 +812,9 @@
         <div class="modal-form-section">
           <p class="modal-section-label">Parent / Guardian Information</p>
           <div class="reg-grid">
-            <div class="form-group">
-              <label class="form-label" for="parent-first">First Name <span class="required">*</span></label>
-              <input class="form-input" type="text" id="parent-first" name="parent_first" placeholder="e.g. Jordan" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="parent-last">Last Name <span class="required">*</span></label>
-              <input class="form-input" type="text" id="parent-last" name="parent_last" placeholder="e.g. Smith" required>
+            <div class="form-group full">
+              <label class="form-label" for="parent-name">Full Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
             </div>
             <div class="form-group">
               <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
@@ -872,12 +899,15 @@
 
         <div class="form-submit-row">
           <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Submit Registration</button>
-          <p class="form-note">We'll respond within 1&ndash;2 business days to confirm your spot and share payment details.</p>
+
         </div>
       </form>
 
       <div class="success-msg" id="success-msg">
-        <strong>Registration received!</strong> Thanks for signing up. We'll be in touch within 1&ndash;2 business days to confirm your spot and share next steps. If you have any urgent questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color:var(--accent);">604-500-6574</a>.
+        <strong>Registration received!</strong> Thanks for signing up. We'll be in touch to confirm your spot and share next steps.<br><br>
+        Payment can be delivered through e-transfer to <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a>, or by cash.<br><br>
+        <strong>You will receive an email once your spot is confirmed.</strong><br><br>
+        If you have any questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color:var(--accent);">604-500-6574</a>.
       </div>
     </div>
   </div>
@@ -920,10 +950,6 @@
             <div class="footer-contact-label">Email</div>
             <div class="footer-contact-value"><a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a></div>
           </div>
-          <div class="footer-contact-item">
-            <div class="footer-contact-label">Location</div>
-            <div class="footer-contact-value">North Shore Winter Club<br>1325 Keith Road East<br>North Vancouver, BC V7J 1J3</div>
-          </div>
         </div>
 
       </div>
@@ -941,6 +967,10 @@
       hamburger.classList.toggle('open');
       navMenu.classList.toggle('open');
     });
+
+    // ---- Icons ----
+    const ICON_CLOCK = `<svg class="meta-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>`;
+    const ICON_AGE   = `<svg class="meta-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="2.5"/><path d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg>`;
 
     // ---- Helpers ----
     function formatTime(timeStr) {
@@ -1030,7 +1060,7 @@
           cell.dataset.weekIdx = weekIdx;
 
           const programsHtml = (hasSessions && !isPast) ? daySessions.map(s =>
-            `<span class="cal-day-program-item">${formatTime(s['Time'])} ${s['Age Group']} ${s['Program']}</span>`
+            `<span class="cal-day-program-item"><span class="cal-day-prog-name">${s['Program']}</span><span class="cal-day-prog-meta">${ICON_CLOCK}${formatTime(s['Time'])} ${ICON_AGE}${s['Age Group']}</span></span>`
           ).join('') : '';
 
           cell.innerHTML = `
@@ -1108,8 +1138,8 @@
                     data-year="${calYear}" data-month="${calMonth}" data-day="${d}" data-session-id="${s.sessionId}"
                     ${full ? 'disabled' : ''}
                     type="button">
-              <span class="week-session-pill-time">${formatTime(s['Time'])}</span>
-              <span class="week-session-pill-age">${s['Age Group']} ${s['Program']}</span>
+              <span class="week-session-pill-program">${s['Program']}</span>
+              <span class="week-session-pill-meta">${ICON_CLOCK}${formatTime(s['Time'])} ${ICON_AGE}${s['Age Group']}</span>
             </button>`;
         }).join('');
 
@@ -1169,6 +1199,11 @@
         `;
       }).join('');
 
+      // Reset form state before auto-selection so reset doesn't wipe the session ID
+      const form = document.getElementById('reg-form');
+      form.reset();
+      form.style.display = '';
+
       // Click handlers for available cards
       container.querySelectorAll('.session-card:not(.session-card--full)').forEach(card => {
         card.addEventListener('click', () => selectSessionCard(card));
@@ -1197,13 +1232,6 @@
       } else {
         document.getElementById('modal-session-id').value = '';
       }
-
-      // Reset form state
-      const form = document.getElementById('reg-form');
-      form.reset();
-      form.style.display = '';
-      document.getElementById('modal-session-id').value =
-        available.length === 1 ? available[0].dataset.sessionId : '';
       document.getElementById('success-msg').style.display = 'none';
       const errEl = document.getElementById('form-error-msg');
       if (errEl) errEl.remove();
@@ -1341,8 +1369,7 @@
         player_first: form.player_first.value.trim(),
         player_last:  form.player_last.value.trim(),
         level:        form.level.value,
-        parent_first: form.parent_first.value.trim(),
-        parent_last:  form.parent_last.value.trim(),
+        parent_name:  form.parent_name.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
       };
