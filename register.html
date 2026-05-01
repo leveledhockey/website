@@ -673,20 +673,30 @@
 
     .week-day-header {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      min-width: 36px;
+      min-width: 44px;
       flex-shrink: 0;
     }
 
     .week-day-label {
       font-family: var(--font-display);
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
+      line-height: 1;
     }
     .week-day-label--weekend { color: var(--accent); }
+
+    .week-day-date {
+      font-size: 0.62rem;
+      color: var(--text-subtle);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
 
     .week-sessions {
       display: flex;
@@ -901,6 +911,7 @@
           </div>
         </div>
 
+        <!-- ---- Waiver ---- -->
         <div class="modal-form-section">
           <p class="modal-section-label">Waiver &amp; Consent</p>
           <div class="waiver-box">
@@ -1057,9 +1068,9 @@
     }
 
     function parseSessionDate(dateStr) {
-      // Expects DD-MM-YYYY
-      const [d, m, y] = dateStr.split('-').map(Number);
-      return { day: d, month: m, year: y };
+      // Expects MM-DD-YY
+      const [m, d, y] = dateStr.split('-').map(Number);
+      return { day: d, month: m, year: 2000 + y };
     }
 
     // ---- Calendar state ----
@@ -1260,10 +1271,12 @@
             </button>`;
         }).join('');
 
+        const monthShort = MONTH_NAMES[calMonth - 1].slice(0, 3);
         return `
           <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
             <div class="week-day-header">
               <span class="week-day-label${isWeekend ? ' week-day-label--weekend' : ''}">${dow}</span>
+              <span class="week-day-date">${monthShort} ${d}</span>
             </div>
             <div class="week-sessions">${sessionsHtml}</div>
           </div>`;

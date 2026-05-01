@@ -100,8 +100,8 @@ module.exports = async function handleDecision(req, res, newStatus) {
       const parentFirst = row[COL_PARENT_NAME] ? row[COL_PARENT_NAME].split(' ')[0] : '';
       const level       = row[COL_LEVEL] || '';
 
-      // Parse "PROGRAM - DD-MM-YYYY at HH:MM:SS (Location)" stored in the sheet
-      const labelMatch    = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+      // Parse "Program - MM-DD-YY at H:MM (Location)" stored in the sheet
+      const labelMatch    = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2} at (\d{1,2}:\d{2}) \((.+)\)$/);
       const sessionName   = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
       const sessionTime   = labelMatch ? formatTime(labelMatch[2]) : '';
       const sessionLoc    = labelMatch ? labelMatch[3] : '';
