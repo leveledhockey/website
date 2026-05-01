@@ -84,13 +84,11 @@ Populated automatically when someone submits the registration form. Do not reord
 | H | Phone | |
 | I | Email | |
 | J | Paid? | `FALSE` on submit; `TRUE` after Stripe payment confirmed by webhook. For cash/e-transfer, mark `TRUE` manually. |
-| K | Status | `Pending` (cash/e-transfer, awaiting approval) · `Pending Payment` (Stripe, pre-payment) · `Confirmed` · `Denied` |
-| L | Token | UUID generated at registration. Used to authenticate approve/deny links. Do not edit. |
-| M | Payment Method | `stripe` · `cash` · `etransfer`. Written at registration time. |
+| K | Token | UUID generated at registration. Do not edit. |
 
 
 ### Manually Adding Registration
-Fill out "Session ID", "Player First", and "Player Last" in the Registrations excel. You can leave all other fields blank. The site will automatically recognize the registration if you do it manually.
+Fill out "Session ID", "Player First", and "Player Last" in the Registrations excel (Highlighted in green for your convenience). You can leave all other fields blank. The site will automatically recognize the registration if you do it manually.
 ---
 
 # 3. Services
@@ -117,7 +115,7 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 ---
 
 ## Resend
-**Purpose:** Sends transactional emails to parents — a pending email when they register via cash/e-transfer, and a confirmation or denial email when the owner approves or denies the registration.
+**Purpose:** Sends transactional emails to parents — a confirmation email immediately upon registration.
 
 **Cost:** Free tier — 100 emails/day, 3,000/month. Pro plan is $20 USD/month for 50,000 emails/month if needed. The free tier is sufficient for current volume.
 
@@ -125,14 +123,6 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 
 ---
 
-## Twilio
-**Purpose:** Sends an SMS to the owner after every cash/e-transfer registration, containing a one-tap link to the review page to approve or deny.
-
-**Cost:** Pay-as-you-go. Phone number rental ~$1.15 USD/month. Outbound SMS to Canadian numbers ~$0.0085 USD/message. At low volume (a few dozen registrations per season), cost is negligible.
-
-**Note:** The trial account prepends "Sent from your Twilio trial account" to every SMS and can only deliver to verified numbers. Upgrade the account before launch to remove these restrictions.
-
----
 
 ## Stripe *(not yet implemented)*
 **Purpose:** Handles online payments at registration — Stripe Checkout supports credit card, Apple Pay, and Google Pay. A webhook updates the registration record automatically when payment is confirmed.

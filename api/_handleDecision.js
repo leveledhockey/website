@@ -7,9 +7,8 @@ const SHEET_REGISTRATIONS           = 'Registrations';
 // Column indices (0-based) in the Registrations sheet:
 // A=0 Timestamp, B=1 Session ID, C=2 Session Label, D=3 Player First,
 // E=4 Player Last, F=5 Level, G=6 Parent Name, H=7 Phone,
-// I=8 Email, J=9 Paid?, K=10 Status, L=11 Token
-const COL_TOKEN         = 11;
-const COL_STATUS        = 10;
+// I=8 Email, J=9 Paid?, K=10 Token
+const COL_TOKEN         = 10;
 const COL_PLAYER_FIRST  = 3;
 const COL_PLAYER_LAST   = 4;
 const COL_LEVEL         = 5;
@@ -52,7 +51,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
 
     const { data } = await sheets.spreadsheets.values.get({
       spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-      range:         `${SHEET_REGISTRATIONS}!A1:L10000`,
+      range:         `${SHEET_REGISTRATIONS}!A1:K10000`,
     });
 
     const rows     = data.values || [];
@@ -64,26 +63,7 @@ module.exports = async function handleDecision(req, res, newStatus) {
       return res.status(400).send('Invalid or expired link.');
     }
 
-    const row           = dataRows[rowIndex];
-    const currentStatus = row[COL_STATUS] || '';
-
-    // Idempotent - if already processed, just show the result.
-    if (currentStatus !== 'Pending') {
-      return res.status(200).send(page(
-        `Already processed`,
-        `This registration has already been <strong>${currentStatus.toLowerCase()}</strong>.`
-      ));
-    }
-
-    // Sheet row number is 1-based + 1 for the header row.
-    const sheetRow = rowIndex + 2;
-
-    await sheets.spreadsheets.values.update({
-      spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!K${sheetRow}`,
-      valueInputOption: 'RAW',
-      requestBody:      { values: [[newStatus]] },
-    });
+    const row = dataRows[rowIndex];
 
     const playerFirst  = row[COL_PLAYER_FIRST]  || '';
     const playerLast   = row[COL_PLAYER_LAST]   || '';

@@ -1,5 +1,4 @@
 const { google } = require('googleapis');
-const twilio = require('twilio');
 const { Resend } = require('resend');
 const { randomUUID } = require('crypto');
 
@@ -108,53 +107,37 @@ module.exports = async function handler(req, res) {
           String(phone).trim(),            // Phone
           String(email).trim(),            // Email
           'FALSE',                         // Paid?
-          'Pending',                       // Status
           token,                           // Token
         ]],
       },
     });
 
-    // Send confirmation email to parent.
+    // Send registration confirmed email to parent.
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from:    process.env.EMAIL_FROM,
         to:      String(email).trim(),
-        subject: `Registration Received - ${String(player_first).trim()} ${String(player_last).trim()}`,
+        subject: `Registration Confirmed - ${String(player_first).trim()} ${String(player_last).trim()}`,
         html:    (() => {
           // Parses "Program - MM-DD-YY at H:MM (Location)"
           const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2} at (\d{1,2}:\d{2}) \((.+)\)$/);
           const sessionName = labelMatch ? `${labelMatch[1]}${level ? ' - ' + String(level).trim() : ''}` : sessionLabel;
           const sessionTime = labelMatch ? (() => { const [h, m] = labelMatch[2].split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; })() : '';
           const sessionLoc  = labelMatch ? labelMatch[3] : '';
-          return `<p>Hi ${String(parent_name).trim()},</p>
-                  <p>We've received your registration for the following session:</p>
+          return `<p>Hello ${String(parent_name).trim()},</p>
+                  <p>We have received your payment and confirmed ${String(player_first).trim()} ${String(player_last).trim()}'s registration for the following session with Leveled Hockey:</p>
                   <p>
                     <strong>Session Name: ${sessionName}</strong><br>
                     <strong>Time: ${sessionTime}</strong><br>
                     <strong>Location: ${sessionLoc}</strong>
                   </p>
-                  <p>We'll be in touch shortly to confirm your spot.</p>
                   <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
-                  <p>Leveled Hockey</p>`;
+                  <p>See you on the ice!<br>Leveled Hockey</p>`;
         })(),
       });
     } catch (emailErr) {
-      console.error('receipt email error:', emailErr);
-    }
-
-    // Send SMS to owner with one-tap approve/deny links.
-    // SMS failure should not block the registration from succeeding.
-    try {
-      const smsClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      const msg = await smsClient.messages.create({
-        from: process.env.TWILIO_FROM_NUMBER,
-        to:   process.env.OWNER_PHONE_NUMBER,
-        body: `New reg: ${String(player_first).trim()} ${String(player_last).trim()}\n${process.env.SITE_URL}/api/review?token=${token}`,
-      });
-      console.log('SMS sent:', msg.sid, msg.status);
-    } catch (smsErr) {
-      console.error('SMS error:', smsErr);
+      console.error('confirmation email error:', emailErr);
     }
 
     return res.status(200).json({ ok: true, message: 'Registration received.' });
