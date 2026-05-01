@@ -417,6 +417,7 @@
       white-space: nowrap;
     }
     .session-spots--full { color: #e05a5a; }
+    .prog-full-label { color: #e05a5a; font-weight: 700; }
 
     .session-card-details {
       font-size: 0.8rem;
@@ -673,20 +674,30 @@
 
     .week-day-header {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      min-width: 36px;
+      min-width: 44px;
       flex-shrink: 0;
     }
 
     .week-day-label {
       font-family: var(--font-display);
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
+      line-height: 1;
     }
     .week-day-label--weekend { color: var(--accent); }
+
+    .week-day-date {
+      font-size: 0.62rem;
+      color: var(--text-subtle);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
 
     .week-sessions {
       display: flex;
@@ -874,6 +885,7 @@
               <label class="form-label" for="level">Level of Play <span class="required">*</span></label>
               <select class="form-select" id="level" name="level" required>
                 <option value="">Select level</option>
+                <option value="U9">U9</option>
                 <option value="U11">U11</option>
                 <option value="U13">U13</option>
                 <option value="U15">U15</option>
@@ -901,6 +913,7 @@
           </div>
         </div>
 
+        <!-- ---- Waiver ---- -->
         <div class="modal-form-section">
           <p class="modal-section-label">Waiver &amp; Consent</p>
           <div class="waiver-box">
@@ -978,9 +991,7 @@
       </form>
 
       <div class="success-msg" id="success-msg">
-        <strong>Registration received!</strong> Thanks for signing up. We'll be in touch to confirm your spot and share next steps.<br><br>
-        Payment can be delivered through e-transfer to <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a>, or by cash.<br><br>
-        <strong>You will receive an email once your spot is confirmed.</strong><br><br>
+        <strong>Registration received!</strong> Thanks for signing up, we've received your payment and confirmed your spot. Please check your email for more information.<br><br>
         If you have any questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color:var(--accent);">604-500-6574</a>.
       </div>
     </div>
@@ -1057,9 +1068,9 @@
     }
 
     function parseSessionDate(dateStr) {
-      // Expects DD-MM-YYYY
-      const [d, m, y] = dateStr.split('-').map(Number);
-      return { day: d, month: m, year: y };
+      // Expects MM-DD-YY
+      const [m, d, y] = dateStr.split('-').map(Number);
+      return { day: d, month: m, year: 2000 + y };
     }
 
     // ---- Calendar state ----
@@ -1176,9 +1187,10 @@
           cell.setAttribute('tabindex', '0');
           cell.dataset.weekIdx = weekIdx;
 
-          const programsHtml = (hasSessions && !isPast) ? daySessions.map(s =>
-            `<span class="cal-day-program-item"><span class="cal-day-prog-name">${s['Program']}</span><span class="cal-day-prog-meta">${ICON_CLOCK}${formatTime(s['Time'])} ${ICON_AGE}${s['Age Group']}</span></span>`
-          ).join('') : '';
+          const programsHtml = (hasSessions && !isPast) ? daySessions.map(s => {
+            const fullTag = s.spotsRemaining <= 0 ? ' <span class="prog-full-label">(FULL)</span>' : '';
+            return `<span class="cal-day-program-item"><span class="cal-day-prog-name">${s['Program']}${fullTag}</span><span class="cal-day-prog-meta">${ICON_CLOCK}${formatTime(s['Time'])} ${ICON_AGE}${s['Age Group']}</span></span>`;
+          }).join('') : '';
 
           cell.innerHTML = `
             <span class="cal-day-num">${d}</span>
@@ -1255,15 +1267,17 @@
                     data-year="${calYear}" data-month="${calMonth}" data-day="${d}" data-session-id="${s.sessionId}"
                     ${full ? 'disabled' : ''}
                     type="button">
-              <span class="week-session-pill-program">${s['Program']}</span>
+              <span class="week-session-pill-program">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
               <span class="week-session-pill-meta">${ICON_CLOCK}${formatTime(s['Time'])} ${ICON_AGE}${s['Age Group']}</span>
             </button>`;
         }).join('');
 
+        const monthShort = MONTH_NAMES[calMonth - 1].slice(0, 3);
         return `
           <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
             <div class="week-day-header">
               <span class="week-day-label${isWeekend ? ' week-day-label--weekend' : ''}">${dow}</span>
+              <span class="week-day-date">${monthShort} ${d}</span>
             </div>
             <div class="week-sessions">${sessionsHtml}</div>
           </div>`;
@@ -1332,7 +1346,7 @@
                data-session-id="${s.sessionId}"
                ${full ? '' : 'role="radio" tabindex="0"'}>
             <div class="session-card-top">
-              <span class="program-badge">${s['Program']}</span>
+              <span class="program-badge">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
               <span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>
             </div>
             <div class="session-card-details">

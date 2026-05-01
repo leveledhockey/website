@@ -2,9 +2,7 @@ const { google } = require('googleapis');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
-
-// One sheet per program - names must match the tab names in Google Sheets exactly.
-const PROGRAM_SHEETS = ['PEP', 'OVERSPEED', 'PUCK_SKILLS', 'BATTLE_CAMP', 'DEFENSE_CAMP'];
+const SCHEDULE_SHEET               = 'Schedule';
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -26,25 +24,11 @@ module.exports = async function handler(req, res) {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Discover which program sheets actually exist in this spreadsheet.
-    const { data: meta } = await sheets.spreadsheets.get({
-      spreadsheetId: SPREADSHEET_ID,
-      fields: 'sheets.properties.title',
-    });
-    const existingSheets = (meta.sheets || [])
-      .map(s => s.properties.title)
-      .filter(t => PROGRAM_SHEETS.includes(t));
-
-    if (existingSheets.length === 0) {
-      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
-      return res.status(200).json([]);
-    }
-
-    // Fetch all program sheets and the registrations sheet in parallel.
-    const [programData, regData] = await Promise.all([
-      sheets.spreadsheets.values.batchGet({
+    // Fetch the unified schedule sheet and registrations in parallel.
+    const [scheduleData, regData] = await Promise.all([
+      sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        ranges: existingSheets.map(name => `${name}!A1:F`),
+        range:         `${SCHEDULE_SHEET}!A1:G`,
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
@@ -53,9 +37,8 @@ module.exports = async function handler(req, res) {
     ]);
 
     // Build a map of sessionId → confirmed/pending registration count.
-    // Columns in the fetched range: B=0 Session ID, ..., M=11 Status
-    // (we fetched B:M so indices are shifted: B=0, M=11)
-    const regRows = (regData.data.values || []).slice(1); // skip header
+    // Fetched range B:M → indices: B=0 Session ID, M=11 Status
+    const regRows = (regData.data.values || []).slice(1);
     const regCountMap = {};
     regRows.forEach(row => {
       const sessionId = row[0]  || '';
@@ -65,32 +48,33 @@ module.exports = async function handler(req, res) {
       }
     });
 
-    const result = [];
+    const scheduleRows = scheduleData.data.values || [];
+    if (scheduleRows.length < 2) {
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+      return res.status(200).json([]);
+    }
 
-    (programData.data.valueRanges || []).forEach((vr, idx) => {
-      const programCode = existingSheets[idx];
-      const rows = vr.values || [];
-      if (rows.length < 2) return;
+    const headers = scheduleRows[0];
+    const result  = [];
 
-      const headers = rows[0];
-      rows.slice(1).forEach(row => {
-        const obj = {};
-        headers.forEach((h, i) => { obj[h] = row[i] || ''; });
-        if (!obj['Session ID']) return;
+    scheduleRows.slice(1).forEach(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] || ''; });
 
-        const maxParticipants = parseInt(obj['Max Participants'], 10) || 0;
-        const registered      = regCountMap[obj['Session ID']] || 0;
+      if (!obj['SessionID']) return;
 
-        result.push({
-          sessionId:          obj['Session ID'],
-          Program:            programCode.replace(/_/g, ' '),
-          Date:               obj['Date'],
-          Time:               obj['Time'],
-          Location:           obj['Location'],
-          'Max Participants': obj['Max Participants'],
-          'Age Group':        obj['Age Group'],
-          spotsRemaining:     Math.max(0, maxParticipants - registered),
-        });
+      const maxParticipants = parseInt(obj['Max Participants'], 10) || 0;
+      const registered      = regCountMap[obj['SessionID']] || 0;
+
+      result.push({
+        sessionId:          obj['SessionID'],
+        Program:            obj['Program'],
+        Date:               obj['Date (MM-DD-YY)'],
+        Time:               obj['Time (24H clock)'],
+        Location:           obj['Location'],
+        'Max Participants': obj['Max Participants'],
+        'Age Group':        obj['Age Group'],
+        spotsRemaining:     Math.max(0, maxParticipants - registered),
       });
     });
 
