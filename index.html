@@ -317,8 +317,11 @@
     const conn = navigator.connection;
     const slowConn = conn && (conn.saveData || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g');
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    const srcKey = (isMobile || slowConn) ? 'mobile' : 'desktop';
-    heroVideo.querySelectorAll('source').forEach(s => { s.src = s.dataset[srcKey]; });
+    if (isMobile || slowConn) {
+      heroVideo.querySelector('source[type="video/mp4"]').src = 'images/hero-video-mobile.mp4';
+    } else {
+      heroVideo.querySelectorAll('source').forEach(s => { s.src = s.dataset.desktop; });
+    }
     heroVideo.load();
 
     // Private lessons modal
