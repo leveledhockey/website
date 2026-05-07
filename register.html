@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     /* ---- Calendar ---- */
     .calendar-section { margin-bottom: 1.5rem; }
@@ -768,6 +769,24 @@
       .modal-overlay.open .modal { transform: translateY(0) !important; }
       .mob-sheet-handle { display: block; }
     }
+
+    .pay-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin: 1.1rem 0 0.25rem;
+      color: var(--text-subtle);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .pay-divider::before,
+    .pay-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
   </style>
 </head>
 <body>
@@ -913,6 +932,25 @@
           </div>
         </div>
 
+        <!-- ---- Payment ---- -->
+        <div class="modal-form-section">
+          <p class="modal-section-label">Payment</p>
+
+          <div id="express-checkout-section" style="display:none">
+            <div id="payment-request-button"></div>
+            <div class="pay-divider"><span>or pay with card</span></div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label" id="card-label">Card Details <span class="required">*</span></label>
+            <div id="card-element" class="form-input" style="padding-top: 0.85rem; padding-bottom: 0.85rem; cursor: text;"></div>
+            <div id="card-errors" style="color: #e05a5a; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.65rem; line-height: 1.5;">
+            Amount: <strong style="color: var(--text);">$55.00 CAD</strong> per session &mdash; processed securely by Stripe.
+          </p>
+        </div>
+
         <!-- ---- Waiver ---- -->
         <div class="modal-form-section">
           <p class="modal-section-label">Waiver &amp; Consent</p>
@@ -992,7 +1030,7 @@
 
       <div class="success-msg" id="success-msg">
         <strong>Registration received!</strong> Thanks for signing up, we've received your payment and confirmed your spot. Please check your email for more information.<br><br>
-        If you have any questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a> or <a href="tel:+16045006574" style="color:var(--accent);">604-500-6574</a>.
+        If you have any questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a>.
       </div>
     </div>
   </div>
@@ -1028,9 +1066,6 @@
         <div>
           <h4 class="footer-col-title">Contact</h4>
           <div class="footer-contact-item">
-            <div class="footer-contact-label">Phone</div>
-            <div class="footer-contact-value"><a href="tel:+16045006574">604 500 6574</a></div>
-          </div>
           <div class="footer-contact-item">
             <div class="footer-contact-label">Email</div>
             <div class="footer-contact-value"><a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a></div>
@@ -1493,6 +1528,107 @@
 
     loadSchedule();
 
+    // ---- Stripe setup ----
+    const stripe   = Stripe('pk_test_51TOuUSDhL74192Pr35xnE3esn0qYYTk9V8A4BdMfQtcex7RXwwE9NHtGuIo1WOCwNODgOWeF4pDirjbf83VzdnYI00vlj0Qglw');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card', {
+      hidePostalCode: true,
+      disableLink: true,
+      style: {
+        base: {
+          color:           '#e0e0e0',
+          fontFamily:      'Inter, system-ui, sans-serif',
+          fontSize:        '15px',
+          fontSmoothing:   'antialiased',
+          '::placeholder': { color: '#555' },
+        },
+        invalid: { color: '#e05a5a' },
+      },
+    });
+    cardElement.mount('#card-element');
+    cardElement.on('change', e => {
+      const errEl = document.getElementById('card-errors');
+      if (e.error) {
+        errEl.textContent = e.error.message;
+        errEl.style.display = 'block';
+      } else {
+        errEl.style.display = 'none';
+      }
+    });
+
+    // ---- Apple Pay / Google Pay ----
+    const paymentRequest = stripe.paymentRequest({
+      country:          'CA',
+      currency:         'cad',
+      total:            { label: 'Leveled Hockey Session', amount: 5500 },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    const prButton = elements.create('paymentRequestButton', {
+      paymentRequest,
+      style: { paymentRequestButton: { theme: 'light', height: '48px' } },
+    });
+
+    paymentRequest.canMakePayment().then(result => {
+      if (result) {
+        prButton.mount('#payment-request-button');
+        document.getElementById('express-checkout-section').style.display = '';
+      }
+    });
+
+    paymentRequest.on('paymentmethod', async ev => {
+      const form      = document.getElementById('reg-form');
+      const sessionId = document.getElementById('modal-session-id').value;
+
+      // Validate before calling the API
+      if (!sessionId || !document.getElementById('consent-check').checked) {
+        ev.complete('fail'); return;
+      }
+      let valid = true;
+      form.querySelectorAll('[required]').forEach(f => { if (!f.value.trim()) valid = false; });
+      if (!valid) { ev.complete('fail'); return; }
+
+      const payload = {
+        sessionId,
+        player_first: form.player_first.value.trim(),
+        player_last:  form.player_last.value.trim(),
+        level:        form.level.value,
+        parent_name:  form.parent_name.value.trim(),
+        phone:        form.phone.value.trim(),
+        email:        form.email.value.trim(),
+      };
+
+      let clientSecret;
+      try {
+        const resp = await fetch('/api/register', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok) { ev.complete('fail'); return; }
+        clientSecret = data.clientSecret;
+      } catch { ev.complete('fail'); return; }
+
+      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
+        clientSecret,
+        { payment_method: ev.paymentMethod.id },
+        { handleActions: false },
+      );
+
+      if (confirmError) { ev.complete('fail'); return; }
+      ev.complete('success');
+
+      if (paymentIntent.status === 'requires_action') {
+        const { error } = await stripe.confirmCardPayment(clientSecret);
+        if (error) return;
+      }
+
+      form.style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+    });
+
     // ---- Form submission ----
     document.getElementById('reg-form').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -1524,7 +1660,20 @@
 
       const submitBtn = document.getElementById('submit-btn');
       submitBtn.disabled    = true;
-      submitBtn.textContent = 'Submitting\u2026';
+      submitBtn.textContent = 'Processing\u2026';
+
+      function showFormError(msg) {
+        let errEl = document.getElementById('form-error-msg');
+        if (!errEl) {
+          errEl = document.createElement('p');
+          errEl.id = 'form-error-msg';
+          errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
+          form.querySelector('.form-submit-row').prepend(errEl);
+        }
+        errEl.textContent     = msg;
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Submit Registration';
+      }
 
       const payload = {
         sessionId,
@@ -1536,6 +1685,8 @@
         email:        form.email.value.trim(),
       };
 
+      // Step 1: Create the registration and get a PaymentIntent client secret.
+      let clientSecret;
       try {
         const resp = await fetch('/api/register', {
           method:  'POST',
@@ -1543,27 +1694,36 @@
           body:    JSON.stringify(payload),
         });
         const data = await resp.json();
-
-        if (resp.ok) {
-          form.style.display = 'none';
-          document.getElementById('success-msg').style.display = 'block';
-        } else {
-          let errEl = document.getElementById('form-error-msg');
-          if (!errEl) {
-            errEl = document.createElement('p');
-            errEl.id = 'form-error-msg';
-            errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
-            form.querySelector('.form-submit-row').prepend(errEl);
-          }
-          errEl.textContent     = data.error || 'Something went wrong. Please try again.';
-          submitBtn.disabled    = false;
-          submitBtn.textContent = 'Submit Registration';
+        if (!resp.ok) {
+          showFormError(data.error || 'Something went wrong. Please try again.');
+          return;
         }
-      } catch (err) {
-        alert('Network error. Please check your connection and try again.');
-        submitBtn.disabled    = false;
-        submitBtn.textContent = 'Submit Registration';
+        clientSecret = data.clientSecret;
+      } catch {
+        showFormError('Network error. Please check your connection and try again.');
+        return;
       }
+
+      // Step 2: Confirm the card payment with Stripe.
+      submitBtn.textContent = 'Completing payment\u2026';
+      const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card:             cardElement,
+          billing_details:  {
+            name:  form.parent_name.value.trim(),
+            email: form.email.value.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        showFormError(error.message || 'Payment failed. Please try again.');
+        return;
+      }
+
+      // Step 3: Payment succeeded \u2014 show confirmation.
+      form.style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
     });
   </script>
 </body>
