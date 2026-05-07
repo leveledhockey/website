@@ -121,6 +121,8 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 
 **Important:** The sending domain `leveledhockey.com` must be verified in the Resend dashboard (requires adding DNS records). Until then, use `onboarding@resend.dev` for testing — it can only deliver to the email registered with your Resend account.
 
+**DNS note:** Wix does not support subdomain MX records, which Resend requires for domain verification. If DNS is managed through Wix, verification will fail. The fix is to move DNS management to Cloudflare (free) — keep the domain registered at Wix but point the nameservers to Cloudflare, then add the Resend verification records there. Domain registration and DNS management are separate; only the DNS needs to move.
+
 ---
 
 
