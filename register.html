@@ -1185,12 +1185,18 @@
         `${MONTH_NAMES[calMonth - 1]} ${calYear}`;
 
       // Group sessions by day for this month (respects active filters)
+      const nmMonth = calMonth === 12 ? 1 : calMonth + 1;
+      const nmYear  = calMonth === 12 ? calYear + 1 : calYear;
       const byDay = {};
+      const byDayNext = {};
       getFilteredSessions().forEach(s => {
         const { day, month, year } = parseSessionDate(s['Date']);
         if (year === calYear && month === calMonth) {
           if (!byDay[day]) byDay[day] = [];
           byDay[day].push(s);
+        } else if (year === nmYear && month === nmMonth) {
+          if (!byDayNext[day]) byDayNext[day] = [];
+          byDayNext[day].push(s);
         }
       });
 
@@ -1203,10 +1209,28 @@
       const daysInMonth = new Date(calYear, calMonth, 0).getDate();
 
       // Build flat slot array, then split into weeks of 7
+      // Leading nulls = empty cells; negative numbers = next-month overflow days
       const slots = [];
       for (let i = 0; i < firstDow; i++) slots.push(null);
       for (let d = 1; d <= daysInMonth; d++) slots.push(d);
-      while (slots.length % 7 !== 0) slots.push(null);
+      let nmDay = 1;
+      while (slots.length % 7 !== 0) slots.push(-(nmDay++));
+
+      // When viewing the current month and today is in the last 2 weeks,
+      // drop leading weeks that are entirely in the past and replace them
+      // with next-month weeks at the bottom.
+      if (calYear === todayY && calMonth === todayM && todayD > daysInMonth - 14) {
+        let weeksToRemove = 0;
+        for (let i = 0; i < slots.length; i += 7) {
+          const lastCurDay = slots.slice(i, i + 7).filter(d => d !== null && d > 0).pop();
+          if (lastCurDay !== undefined && lastCurDay < todayD) weeksToRemove++;
+          else break;
+        }
+        if (weeksToRemove > 0) {
+          slots.splice(0, weeksToRemove * 7);
+          for (let i = 0; i < weeksToRemove * 7; i++) slots.push(-(nmDay++));
+        }
+      }
 
       const weeks = [];
       for (let i = 0; i < slots.length; i += 7) weeks.push(slots.slice(i, i + 7));
@@ -1222,10 +1246,14 @@
             return;
           }
 
-          const daySessions = byDay[d] || [];
+          const isOverflow  = d < 0;
+          const effDay      = isOverflow ? -d : d;
+          const effMonth    = isOverflow ? nmMonth : calMonth;
+          const effYear     = isOverflow ? nmYear  : calYear;
+          const daySessions = isOverflow ? (byDayNext[effDay] || []) : (byDay[effDay] || []);
           const hasSessions = daySessions.length > 0;
-          const isToday = calYear === todayY && calMonth === todayM && d === todayD;
-          const isPast  = new Date(calYear, calMonth - 1, d) < new Date(todayY, todayM - 1, todayD);
+          const isToday     = effYear === todayY && effMonth === todayM && effDay === todayD;
+          const isPast      = new Date(effYear, effMonth - 1, effDay) < new Date(todayY, todayM - 1, todayD);
 
           const classes = ['cal-day'];
           if (isToday)                classes.push('cal-day--today');
@@ -1243,7 +1271,7 @@
           }).join('') : '';
 
           cell.innerHTML = `
-            <span class="cal-day-num">${d}</span>
+            <span class="cal-day-num">${effDay}</span>
             ${hasSessions && !isPast ? `
               <span class="cal-day-dot"></span>
               <div class="cal-day-programs">${programsHtml}</div>
@@ -1262,7 +1290,7 @@
         const detail = document.createElement('div');
         detail.className = 'cal-week-detail';
         detail.id = `cal-week-detail-${weekIdx}`;
-        detail.innerHTML = buildWeekDetailHTML(week, byDay);
+        detail.innerHTML = buildWeekDetailHTML(week, byDay, byDayNext, nmMonth, nmYear);
 
         detail.querySelectorAll('.week-session-register').forEach(btn => {
           btn.addEventListener('click', e => {
@@ -1297,24 +1325,27 @@
     }
 
     // ---- Build the HTML inside a week detail panel ----
-    function buildWeekDetailHTML(week, byDay) {
+    function buildWeekDetailHTML(week, byDay, byDayNext, nmMonth, nmYear) {
       const today = new Date();
       const cols = week.map(d => {
         if (d === null) return '';
 
-        const daySessions = byDay[d] || [];
-        const dowIndex = new Date(calYear, calMonth - 1, d).getDay();
-        const dow = DOW_NAMES[dowIndex].slice(0, 3).toUpperCase();
-        const isWeekend = dowIndex === 0 || dowIndex === 6;
-        const isToday = calYear === today.getFullYear()
-                     && calMonth === today.getMonth() + 1
-                     && d === today.getDate();
+        const isOverflow  = d < 0;
+        const effDay      = isOverflow ? -d : d;
+        const effMonth    = isOverflow ? nmMonth : calMonth;
+        const effYear     = isOverflow ? nmYear  : calYear;
+        const daySessions = isOverflow ? ((byDayNext || {})[effDay] || []) : (byDay[effDay] || []);
+        const dowIndex    = new Date(effYear, effMonth - 1, effDay).getDay();
+        const dow         = DOW_NAMES[dowIndex].slice(0, 3).toUpperCase();
+        const isWeekend   = dowIndex === 0 || dowIndex === 6;
+        const isToday     = effYear === today.getFullYear() && effMonth === today.getMonth() + 1 && effDay === today.getDate();
+        const monthShort  = MONTH_NAMES[effMonth - 1].slice(0, 3);
 
         const sessionsHtml = daySessions.map(s => {
           const full = s.spotsRemaining <= 0;
           return `
             <button class="week-session-pill${full ? ' week-session-pill--full' : ''} week-session-register"
-                    data-year="${calYear}" data-month="${calMonth}" data-day="${d}" data-session-id="${s.sessionId}"
+                    data-year="${effYear}" data-month="${effMonth}" data-day="${effDay}" data-session-id="${s.sessionId}"
                     ${full ? 'disabled' : ''}
                     type="button">
               <span class="week-session-pill-program">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
@@ -1322,12 +1353,11 @@
             </button>`;
         }).join('');
 
-        const monthShort = MONTH_NAMES[calMonth - 1].slice(0, 3);
         return `
           <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
             <div class="week-day-header">
               <span class="week-day-label${isWeekend ? ' week-day-label--weekend' : ''}">${dow}</span>
-              <span class="week-day-date">${monthShort} ${d}</span>
+              <span class="week-day-date">${monthShort} ${effDay}</span>
             </div>
             <div class="week-sessions">${sessionsHtml}</div>
           </div>`;
