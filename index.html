@@ -38,7 +38,10 @@
 
   <!-- ===================== HERO ===================== -->
   <section class="hero">
-    <div class="hero-bg" id="hero-bg"></div>
+    <video class="hero-bg" id="hero-bg" autoplay muted loop playsinline preload="none" poster="images/action/D38A1128.webp">
+      <source src="images/hero-video.webm" type="video/webm">
+      <source src="images/hero-video.mp4" type="video/mp4">
+    </video>
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <p class="hero-eyebrow">Leveled Hockey Development</p>
@@ -309,12 +312,12 @@
       navMenu.classList.toggle('open');
     });
 
-    // Hero image subtle zoom on load
-    const heroBg = document.getElementById('hero-bg');
-    if (document.readyState === 'complete') {
-      heroBg.classList.add('loaded');
-    } else {
-      window.addEventListener('load', () => heroBg.classList.add('loaded'));
+    // Skip hero video on slow/data-saver connections — poster image shows instead
+    const heroVideo = document.getElementById('hero-bg');
+    const conn = navigator.connection;
+    if (heroVideo && conn && (conn.saveData || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g')) {
+      heroVideo.removeAttribute('autoplay');
+      heroVideo.load(); // reset so poster stays visible
     }
 
     // Private lessons modal

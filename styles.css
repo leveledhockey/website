@@ -219,20 +219,11 @@ h1, h2, h3, h4, h5 {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background-image: url('images/action/D38A1128.jpg');
-  background-image: image-set(
-    url('images/action/D38A1128.webp') type('image/webp'),
-    url('images/action/D38A1128.jpg') type('image/jpeg')
-  );
-  background-size: cover;
-  background-position: center 30%;
-  transform: scale(1.06);
-  transition: transform 10s var(--ease);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
 }
-@media (max-width: 768px) {
-  .hero-bg { background-image: url('images/action/D38A1128-sm.webp'); }
-}
-.hero-bg.loaded { transform: scale(1); }
 
 .hero-overlay {
   position: absolute;
