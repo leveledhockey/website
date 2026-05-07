@@ -792,7 +792,7 @@
 <body>
 
   <!-- ===================== NAVIGATION ===================== -->
-  <nav class="nav scrolled" id="nav">
+  <nav class="nav" id="nav">
     <div class="nav-inner">
       <a href="index.html" class="nav-brand">
         <picture>
@@ -1086,6 +1086,11 @@
   </footer>
 
   <script>
+    // Transparent → solid nav on scroll
+    const nav = document.getElementById('nav');
+    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     // ---- Hamburger menu ----
     const hamburger = document.getElementById('nav-hamburger');
     const navMenu   = document.getElementById('nav-menu');
