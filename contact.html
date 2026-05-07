@@ -45,7 +45,10 @@
   <nav class="nav scrolled" id="nav">
     <div class="nav-inner">
       <a href="index.html" class="nav-brand">
-        <img src="images/logo-new.png" alt="Leveled Hockey Development" class="nav-logo">
+        <picture>
+          <source srcset="images/logo-new.webp" type="image/webp">
+          <img src="images/logo-new.png" alt="Leveled Hockey Development" class="nav-logo">
+        </picture>
         <div class="nav-brand-text">
           <span class="nav-brand-name">Leveled Hockey</span>
           <span class="nav-brand-tagline">Development</span>
@@ -64,7 +67,7 @@
 
   <!-- ===================== PAGE HERO ===================== -->
   <section class="page-hero">
-    <div class="page-hero-bg" style="background-image: url('images/action/D38A0568.jpg'); background-position: center 10%;"></div>
+    <div class="page-hero-bg" style="background-image: url('images/action/D38A0568.jpg'); background-image: image-set(url('images/action/D38A0568.webp') type('image/webp'), url('images/action/D38A0568.jpg') type('image/jpeg')); background-position: center 10%;"></div>
     <div class="page-hero-overlay"></div>
     <div class="page-hero-content">
       <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -85,7 +88,10 @@
 
         <div class="contact-founder-card">
           <div class="contact-founder-photo">
-            <img src="images/action/D38A0779.jpg" alt="Jacob Taylor-Wong, Founder and Head Coach">
+            <picture>
+              <source srcset="images/action/D38A0779-sm.webp 600w, images/action/D38A0779.webp 1200w" sizes="(max-width: 768px) 100vw, 480px" type="image/webp">
+              <img src="images/action/D38A0779.jpg" alt="Jacob Taylor-Wong, Founder and Head Coach">
+            </picture>
           </div>
           <div class="contact-founder-info">
             <div class="contact-founder-name">Jacob Wong</div>
@@ -152,7 +158,10 @@
       <div class="footer-grid container">
 
         <div class="footer-brand">
-          <img src="images/logo-new.png" alt="Leveled Hockey Development" class="footer-logo">
+          <picture>
+            <source srcset="images/logo-new.webp" type="image/webp">
+            <img src="images/logo-new.png" alt="Leveled Hockey Development" class="footer-logo">
+          </picture>
           <p class="footer-tagline">Instructional Player Development for Youth Hockey Athletes in North Vancouver, BC.</p>
           <div class="footer-social">
             <a href="https://instagram.com/LeveledHockey" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Instagram">
