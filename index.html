@@ -39,8 +39,8 @@
   <!-- ===================== HERO ===================== -->
   <section class="hero">
     <video class="hero-bg" id="hero-bg" autoplay muted loop playsinline preload="none" poster="images/action/D38A1128.webp">
-      <source src="images/hero-video.webm" type="video/webm">
-      <source src="images/hero-video.mp4" type="video/mp4">
+      <source data-desktop="images/hero-video.webm"        data-mobile="images/hero-video-mobile.webm" type="video/webm">
+      <source data-desktop="images/hero-video.mp4"         data-mobile="images/hero-video-mobile.mp4"  type="video/mp4">
     </video>
     <div class="hero-overlay"></div>
     <div class="hero-content">
@@ -312,13 +312,14 @@
       navMenu.classList.toggle('open');
     });
 
-    // Skip hero video on slow/data-saver connections — poster image shows instead
+    // Pick mobile or desktop video source before anything loads
     const heroVideo = document.getElementById('hero-bg');
     const conn = navigator.connection;
-    if (heroVideo && conn && (conn.saveData || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g')) {
-      heroVideo.removeAttribute('autoplay');
-      heroVideo.load(); // reset so poster stays visible
-    }
+    const slowConn = conn && (conn.saveData || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g');
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const srcKey = (isMobile || slowConn) ? 'mobile' : 'desktop';
+    heroVideo.querySelectorAll('source').forEach(s => { s.src = s.dataset[srcKey]; });
+    heroVideo.load();
 
     // Private lessons modal
     const modal    = document.getElementById('private-modal');
