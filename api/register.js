@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { Resend } = require('resend');
+const Stripe = require('stripe');
 const { randomUUID } = require('crypto');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
@@ -86,61 +86,46 @@ module.exports = async function handler(req, res) {
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
-    // Generate token once so it can be written to the sheet and used in the SMS.
     const token = randomUUID();
 
+    // Create a Stripe PaymentIntent — $55.00 CAD. The token in metadata lets the
+    // webhook find this row after payment succeeds.
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount:      5500, // $55.00 CAD in cents
+      currency:    'cad',
+      description: `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']}`,
+      metadata:    { token },
+    });
+
     // Append the registration row.
+    // Column order must match stripe-webhook.js column constants:
+    //   A=Timestamp B=SessionID C=SessionLabel D=PlayerFirst E=PlayerLast
+    //   F=Level G=ParentName H=Phone I=Email J=Paid K=Status L=Token
     await sheets.spreadsheets.values.append({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!A:N`,
+      range:            `${SHEET_REGISTRATIONS}!A:L`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
-          new Date().toISOString(),        // Timestamp
-          String(sessionId).trim(),        // Session ID
-          sessionLabel,                    // Session Label
-          String(player_first).trim(),     // Player First
-          String(player_last).trim(),      // Player Last
-          String(level || '').trim(),      // Level
-          parent_name,                     // Parent Name
-          String(phone).trim(),            // Phone
-          String(email).trim(),            // Email
-          'FALSE',                         // Paid?
-          token,                           // Token
+          new Date().toISOString(),        // A - Timestamp
+          String(sessionId).trim(),        // B - Session ID
+          sessionLabel,                    // C - Session Label
+          String(player_first).trim(),     // D - Player First
+          String(player_last).trim(),      // E - Player Last
+          String(level || '').trim(),      // F - Level
+          parent_name,                     // G - Parent Name
+          String(phone).trim(),            // H - Phone
+          String(email).trim(),            // I - Email
+          'FALSE',                         // J - Paid?
+          '',                              // K - Status (webhook sets to 'Confirmed')
+          token,                           // L - Token (COL_TOKEN=11 in stripe-webhook.js)
         ]],
       },
     });
 
-    // Send registration confirmed email to parent.
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from:    process.env.EMAIL_FROM,
-        to:      String(email).trim(),
-        subject: `Registration Confirmed - ${String(player_first).trim()} ${String(player_last).trim()}`,
-        html:    (() => {
-          // Parses "Program - MM-DD-YY at H:MM (Location)"
-          const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2} at (\d{1,2}:\d{2}) \((.+)\)$/);
-          const sessionName = labelMatch ? `${labelMatch[1]}${level ? ' - ' + String(level).trim() : ''}` : sessionLabel;
-          const sessionTime = labelMatch ? (() => { const [h, m] = labelMatch[2].split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; })() : '';
-          const sessionLoc  = labelMatch ? labelMatch[3] : '';
-          return `<p>Hello ${String(parent_name).trim()},</p>
-                  <p>We have received your payment and confirmed ${String(player_first).trim()} ${String(player_last).trim()}'s registration for the following session with Leveled Hockey:</p>
-                  <p>
-                    <strong>Session Name: ${sessionName}</strong><br>
-                    <strong>Time: ${sessionTime}</strong><br>
-                    <strong>Location: ${sessionLoc}</strong>
-                  </p>
-                  <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
-                  <p>See you on the ice!<br>Leveled Hockey</p>`;
-        })(),
-      });
-    } catch (emailErr) {
-      console.error('confirmation email error:', emailErr);
-    }
-
-    return res.status(200).json({ ok: true, message: 'Registration received.' });
+    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     console.error('register error:', err);
     return res.status(500).json({ error: 'Server error. Please try again.' });

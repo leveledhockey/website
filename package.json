@@ -5,6 +5,7 @@
   "dependencies": {
     "googleapis": "^144.0.0",
     "resend": "^3.5.0",
-    "vercel": "^53.0.1"
+    "stripe": "^22.1.1",
+    "vercel": "^53.2.0"
   }
 }
