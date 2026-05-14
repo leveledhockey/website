@@ -1574,7 +1574,9 @@
     loadSchedule();
 
     // ---- Stripe setup ----
-    const stripe   = Stripe('pk_test_51TOuUSDhL74192Pr35xnE3esn0qYYTk9V8A4BdMfQtcex7RXwwE9NHtGuIo1WOCwNODgOWeF4pDirjbf83VzdnYI00vlj0Qglw');
+    (async () => {
+    const { stripePublishableKey } = await fetch('/api/config').then(r => r.json());
+    const stripe   = Stripe(stripePublishableKey);
     const elements = stripe.elements();
     const cardElement = elements.create('card', {
       hidePostalCode: true,
@@ -1770,6 +1772,7 @@
       form.style.display = 'none';
       document.getElementById('success-msg').style.display = 'block';
     });
+    })();
   </script>
 </body>
 </html>
