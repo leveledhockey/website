@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { Resend } = require('resend');
+const sgMail = require('@sendgrid/mail');
 const Stripe = require('stripe');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -109,8 +109,8 @@ module.exports = async function handler(req, res) {
     const sessionLoc  = labelMatch ? labelMatch[3] : '';
 
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      await sgMail.send({
         from:    process.env.EMAIL_FROM,
         to:      parentEmail,
         subject: `Registration Confirmed - ${playerFirst} ${playerLast}`,

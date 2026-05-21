@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "googleapis": "^144.0.0",
     "resend": "^3.5.0",
     "stripe": "^22.1.1",
