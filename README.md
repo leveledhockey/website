@@ -128,7 +128,7 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 ---
 
 ## SendGrid
-**Purpose:** Sends transactional emails to parents — a confirmation email after payment is received.
+**Purpose:** Sends transactional emails to parents — a confirmation email after payment is received and registration confirmed.
 
 **Cost:** Free tier — 100 emails/day. Sufficient for current volume.
 

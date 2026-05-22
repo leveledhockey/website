@@ -68,10 +68,10 @@ module.exports = async function handler(req, res) {
 
     // Write the confirmed registration row now that payment has succeeded.
     // Column order: A=Timestamp B=SessionID C=SessionLabel D=PlayerFirst E=PlayerLast
-    //               F=Level G=ParentName H=Phone I=Email J=Paid K=Status L=PaymentIntentId
+    //               F=Level G=ParentName H=Phone I=Email J=Token
     await sheets.spreadsheets.values.append({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!A:L`,
+      range:            `${SHEET_REGISTRATIONS}!A:J`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
@@ -85,8 +85,6 @@ module.exports = async function handler(req, res) {
           parent_name  || '',
           phone        || '',
           email,
-          'TRUE',
-          'Confirmed',
           paymentIntent.id,
         ]],
       },

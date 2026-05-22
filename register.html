@@ -1036,7 +1036,9 @@
       </form>
 
       <div class="success-msg" id="success-msg">
-        <strong>Registration received!</strong> Thanks for signing up, we've received your payment and confirmed your spot. Please check your email for more information.<br><br>
+        <strong>Registration received!</strong> Thanks for signing up, we've received your payment and confirmed your spot for the below session. Please check your email for more information.<br><br>
+        <div id="success-summary"></div>
+        <br>
         If you have any questions, reach us at <a href="mailto:info@leveledhockey.com" style="color:var(--accent);">info@leveledhockey.com</a>.
       </div>
     </div>
@@ -1173,6 +1175,7 @@
     const MONTH_NAMES = ['January','February','March','April','May','June',
                          'July','August','September','October','November','December'];
     const DOW_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    let currentModalDate = '';
 
     // ---- Calendar render ----
     function renderCalendar() {
@@ -1411,8 +1414,8 @@
 
       // Date title
       const dow = DOW_NAMES[new Date(year, month - 1, day).getDay()];
-      document.getElementById('modal-date-title').textContent =
-        `${dow}, ${MONTH_NAMES[month - 1]} ${day}`;
+      currentModalDate = `${dow}, ${MONTH_NAMES[month - 1]} ${day}`;
+      document.getElementById('modal-date-title').textContent = currentModalDate;
 
       // Session cards
       const container = document.getElementById('modal-session-cards');
@@ -1424,6 +1427,9 @@
         return `
           <div class="session-card${full ? ' session-card--full' : ''}"
                data-session-id="${s.sessionId}"
+               data-program="${s['Program']}"
+               data-time="${formatTime(s['Time'])}"
+               data-location="${s['Location']}"
                ${full ? '' : 'role="radio" tabindex="0"'}>
             <div class="session-card-top">
               <span class="program-badge">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
@@ -1472,6 +1478,7 @@
         document.getElementById('modal-session-id').value = '';
       }
       document.getElementById('success-msg').style.display = 'none';
+      document.querySelector('.modal-session-section').style.display = '';
       const errEl = document.getElementById('form-error-msg');
       if (errEl) errEl.remove();
       const submitBtn = document.getElementById('submit-btn');
@@ -1603,6 +1610,23 @@
       }
     });
 
+    function showSuccess() {
+      const selectedCard = document.querySelector('.session-card--selected');
+      const summaryEl = document.getElementById('success-summary');
+      if (selectedCard && summaryEl) {
+        const program  = selectedCard.dataset.program || '';
+        const time     = selectedCard.dataset.time || '';
+        const location = selectedCard.dataset.location || '';
+        const level    = document.getElementById('level').value || '';
+        summaryEl.innerHTML =
+          `Session Name: <strong>${program}${level ? ' – ' + level : ''}</strong><br>` +
+          `Time: <strong>${currentModalDate ? currentModalDate + ' - ' : ''}${time}</strong><br>` +
+          `Location: <strong>${location}</strong>`;
+      }
+      document.querySelector('.modal-session-section').style.display = 'none';
+      document.getElementById('success-msg').style.display = 'block';
+    }
+
     // ---- Apple Pay / Google Pay ----
     const paymentRequest = stripe.paymentRequest({
       country:          'CA',
@@ -1673,7 +1697,7 @@
       }
 
       form.style.display = 'none';
-      document.getElementById('success-msg').style.display = 'block';
+      showSuccess();
     });
 
     // ---- Form submission ----
@@ -1770,7 +1794,7 @@
 
       // Step 3: Payment succeeded \u2014 show confirmation.
       form.style.display = 'none';
-      document.getElementById('success-msg').style.display = 'block';
+      showSuccess();
     });
     })();
   </script>
