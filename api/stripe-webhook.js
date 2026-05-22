@@ -5,14 +5,6 @@ const Stripe = require('stripe');
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS = 'Registrations';
 
-const COL_TOKEN         = 11; // L
-const COL_PLAYER_FIRST  = 3;  // D
-const COL_PLAYER_LAST   = 4;  // E
-const COL_LEVEL         = 5;  // F
-const COL_PARENT_NAME   = 6;  // G
-const COL_SESSION_LABEL = 2;  // C
-const COL_EMAIL         = 8;  // I
-
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
@@ -60,10 +52,13 @@ module.exports = async function handler(req, res) {
   }
 
   const paymentIntent = event.data.object;
-  const token = paymentIntent.metadata && paymentIntent.metadata.token;
+  const meta = paymentIntent.metadata || {};
 
-  if (!token) {
-    console.error('stripe-webhook: no token in session metadata');
+  const { sessionId, sessionLabel, player_first, player_last, level,
+          parent_name, phone, email, timestamp } = meta;
+
+  if (!sessionId || !email) {
+    console.error('stripe-webhook: missing metadata fields');
     return res.status(200).json({ received: true });
   }
 
@@ -71,36 +66,34 @@ module.exports = async function handler(req, res) {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    const { data } = await sheets.spreadsheets.values.get({
-      spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-      range:         `${SHEET_REGISTRATIONS}!A1:L10000`,
-    });
-
-    const rows     = data.values || [];
-    const dataRows = rows.slice(1);
-    const rowIndex = dataRows.findIndex(row => row[COL_TOKEN] === token);
-
-    if (rowIndex === -1) {
-      console.error('stripe-webhook: token not found:', token);
-      return res.status(200).json({ received: true });
-    }
-
-    const row      = dataRows[rowIndex];
-    const sheetRow = rowIndex + 2;
-
-    await sheets.spreadsheets.values.update({
+    // Write the confirmed registration row now that payment has succeeded.
+    // Column order: A=Timestamp B=SessionID C=SessionLabel D=PlayerFirst E=PlayerLast
+    //               F=Level G=ParentName H=Phone I=Email J=Token
+    await sheets.spreadsheets.values.append({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!J${sheetRow}:K${sheetRow}`,
+      range:            `${SHEET_REGISTRATIONS}!A:J`,
       valueInputOption: 'RAW',
-      requestBody:      { values: [['TRUE', 'Confirmed']] },
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[
+          timestamp || new Date().toISOString(),
+          sessionId,
+          sessionLabel || '',
+          player_first || '',
+          player_last  || '',
+          level        || '',
+          parent_name  || '',
+          phone        || '',
+          email,
+          paymentIntent.id,
+        ]],
+      },
     });
 
-    const playerFirst  = row[COL_PLAYER_FIRST]  || '';
-    const playerLast   = row[COL_PLAYER_LAST]   || '';
-    const parentEmail  = row[COL_EMAIL]         || '';
-    const parentName   = row[COL_PARENT_NAME]   || '';
-    const sessionLabel = row[COL_SESSION_LABEL] || '';
-    const level        = row[COL_LEVEL]         || '';
+    const playerFirst  = player_first  || '';
+    const playerLast   = player_last   || '';
+    const parentEmail  = email;
+    const parentName   = parent_name   || '';
     const parentFirst  = parentName.split(' ')[0];
 
     const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
@@ -121,7 +114,7 @@ module.exports = async function handler(req, res) {
                  <strong>Time: ${sessionTime}</strong><br>
                  <strong>Location: ${sessionLoc}</strong>
                </p>
-               <p>Payment of $55.00 CAD was received via credit card / Apple Pay.</p>
+               <p>Payment of $55.00 CAD was received successfully.</p>
                <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>See you on the ice!<br>Leveled Hockey</p>`,
       });
