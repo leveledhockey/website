@@ -156,3 +156,60 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 **Note:** The production `STRIPE_WEBHOOK_SECRET` (from the Stripe dashboard) and the local one (from `stripe listen`) are different values — do not mix them up.
 
 ---
+
+# 4. Making the Site Visible on Google Search
+
+## Why the site may not appear in Google results
+
+Google doesn't automatically discover new websites. You need to submit it, and the site needs a few files to help Google crawl it correctly.
+
+## Steps
+
+**1. Add a `sitemap.xml` to the project**
+
+A sitemap tells Google which pages exist. Create a file named `sitemap.xml` in the project root:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://your-domain.com/</loc></url>
+  <url><loc>https://your-domain.com/register.html</loc></url>
+  <url><loc>https://your-domain.com/contact.html</loc></url>
+</urlset>
+```
+Replace `your-domain.com` with the actual live domain. Commit and deploy.
+
+**2. Add a `robots.txt` to the project**
+
+A robots.txt tells Google it is allowed to crawl the site. Create a file named `robots.txt` in the project root:
+```
+User-agent: *
+Allow: /
+
+Sitemap: https://your-domain.com/sitemap.xml
+```
+Replace `your-domain.com` with the actual live domain. Commit and deploy.
+
+**3. Set up Google Search Console**
+
+1. Go to [search.google.com/search-console](https://search.google.com/search-console)
+2. Click **Add property** and enter your domain
+3. Verify ownership — the easiest method is the **HTML file** option: Google gives you a small `.html` file to drop in the project root, then deploy it
+4. Once verified, you have access to the Search Console dashboard for this site
+
+**4. Submit the sitemap**
+
+Inside Google Search Console:
+1. Click **Sitemaps** in the left sidebar
+2. Enter `sitemap.xml` in the field and click **Submit**
+
+Google will now crawl and index the site. Initial indexing typically takes **a few days to a couple of weeks**.
+
+**5. Request indexing (optional, speeds things up)**
+
+In Google Search Console, use the **URL Inspection** tool:
+1. Paste your homepage URL (`https://your-domain.com/`)
+2. Click **Request Indexing**
+
+Repeat for `register.html` and `contact.html` if desired.
+
+---
