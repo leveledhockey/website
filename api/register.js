@@ -1,6 +1,5 @@
 const { google } = require('googleapis');
 const Stripe = require('stripe');
-const { randomUUID } = require('crypto');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -82,46 +81,27 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'Sorry, this session is now full.' });
     }
 
-    // Human-readable label written to the Registrations sheet for admin readability.
+    // Human-readable label stored in metadata for the webhook to use.
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
-    const token = randomUUID();
-
-    // Create a Stripe PaymentIntent — $55.00 CAD. The token in metadata lets the
-    // webhook find this row after payment succeeds.
+    // Store all registration data in PaymentIntent metadata so the webhook can
+    // write the spreadsheet row only after payment actually succeeds.
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
       amount:      5500, // $55.00 CAD in cents
       currency:    'cad',
       description: `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']}`,
-      metadata:    { token },
-    });
-
-    // Append the registration row.
-    // Column order must match stripe-webhook.js column constants:
-    //   A=Timestamp B=SessionID C=SessionLabel D=PlayerFirst E=PlayerLast
-    //   F=Level G=ParentName H=Phone I=Email J=Paid K=Status L=Token
-    await sheets.spreadsheets.values.append({
-      spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            `${SHEET_REGISTRATIONS}!A:L`,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[
-          new Date().toISOString(),        // A - Timestamp
-          String(sessionId).trim(),        // B - Session ID
-          sessionLabel,                    // C - Session Label
-          String(player_first).trim(),     // D - Player First
-          String(player_last).trim(),      // E - Player Last
-          String(level || '').trim(),      // F - Level
-          parent_name,                     // G - Parent Name
-          String(phone).trim(),            // H - Phone
-          String(email).trim(),            // I - Email
-          'FALSE',                         // J - Paid?
-          '',                              // K - Status (webhook sets to 'Confirmed')
-          token,                           // L - Token (COL_TOKEN=11 in stripe-webhook.js)
-        ]],
+      metadata: {
+        sessionId:    String(sessionId).trim(),
+        sessionLabel,
+        player_first: String(player_first).trim(),
+        player_last:  String(player_last).trim(),
+        level:        String(level || '').trim(),
+        parent_name:  String(parent_name).trim(),
+        phone:        String(phone).trim(),
+        email:        String(email).trim(),
+        timestamp:    new Date().toISOString(),
       },
     });
 
