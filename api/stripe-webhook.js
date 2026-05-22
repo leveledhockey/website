@@ -1,5 +1,5 @@
 const { google } = require('googleapis');
-const { Resend } = require('resend');
+const sgMail = require('@sendgrid/mail');
 const Stripe = require('stripe');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -103,14 +103,14 @@ module.exports = async function handler(req, res) {
     const level        = row[COL_LEVEL]         || '';
     const parentFirst  = parentName.split(' ')[0];
 
-    const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+    const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
     const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
     const sessionTime = labelMatch ? formatTime(labelMatch[2]) : '';
     const sessionLoc  = labelMatch ? labelMatch[3] : '';
 
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      await sgMail.send({
         from:    process.env.EMAIL_FROM,
         to:      parentEmail,
         subject: `Registration Confirmed - ${playerFirst} ${playerLast}`,

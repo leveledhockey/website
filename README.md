@@ -39,7 +39,20 @@ npx vercel env pull .env.local
 ```
 This pulls all credentials from the Vercel dashboard into `.env.local`. Never commit this file — it is git-ignored. If a variable is missing, add it in the Vercel dashboard first, then re-run this command.
 
-**4. Start the dev server**
+**4. Start the Stripe webhook listener** (required for registration emails)
+
+Install the [Stripe CLI](https://stripe.com/docs/stripe-cli) if you haven't already, then run:
+```bash
+stripe login
+stripe listen --forward-to localhost:3000/api/stripe-webhook
+```
+The CLI will print a signing secret like `whsec_test_...`. Add it to `.env.local`:
+```
+STRIPE_WEBHOOK_SECRET=whsec_test_...
+```
+Keep this terminal running while you develop. The `STRIPE_WEBHOOK_SECRET` for local dev is **different** from the production one — it comes from `stripe listen`, not the Stripe dashboard.
+
+**5. Start the dev server**
 ```bash
 npx vercel dev
 ```
@@ -114,24 +127,32 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 
 ---
 
-## Resend
-**Purpose:** Sends transactional emails to parents — a confirmation email immediately upon registration.
+## SendGrid
+**Purpose:** Sends transactional emails to parents — a confirmation email after payment is received.
 
-**Cost:** Free tier — 100 emails/day, 3,000/month. Pro plan is $20 USD/month for 50,000 emails/month if needed. The free tier is sufficient for current volume.
+**Cost:** Free tier — 100 emails/day. Sufficient for current volume.
 
-**Important:** The sending domain `leveledhockey.com` must be verified in the Resend dashboard (requires adding DNS records). Until then, use `onboarding@resend.dev` for testing — it can only deliver to the email registered with your Resend account.
-
-**DNS note:** Wix does not support subdomain MX records, which Resend requires for domain verification. If DNS is managed through Wix, verification will fail. The fix is to move DNS management to Cloudflare (free) — keep the domain registered at Wix but point the nameservers to Cloudflare, then add the Resend verification records there. Domain registration and DNS management are separate; only the DNS needs to move.
+**Required env vars:** `SENDGRID_API_KEY`, `EMAIL_FROM` (must be a verified sender in the SendGrid dashboard).
 
 ---
 
 
-## Stripe *(not yet implemented)*
-**Purpose:** Handles online payments at registration — Stripe Checkout supports credit card, Apple Pay, and Google Pay. A webhook updates the registration record automatically when payment is confirmed.
+## Stripe
+**Purpose:** Handles online payments at registration — supports credit card, Apple Pay, and Google Pay. A webhook (`/api/stripe-webhook`) marks the registration as paid in Google Sheets and sends the confirmation email when payment succeeds.
 
 **Cost:** No monthly fee. Per-transaction fee: **2.9% + $0.30 CAD** per successful charge (standard Canadian rate). On a $55 session, Stripe keeps ~$1.90; the remainder is deposited to the linked bank account.
 
-**Note:** Use test keys (`sk_test_...`) during development. Switch to live keys (`sk_live_...`) in the Vercel Production environment only when ready to accept real payments.
+**Required env vars:** `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+
+**Local dev:** Use test keys (`sk_test_...`) and the webhook secret printed by `stripe listen` (see step 4 above).
+
+**Production webhook setup:**
+1. Go to **Stripe Dashboard → Developers → Webhooks → Add endpoint**
+2. URL: `https://your-domain.com/api/stripe-webhook`
+3. Event: `payment_intent.succeeded`
+4. Copy the signing secret (`whsec_...`) and add it to Vercel as `STRIPE_WEBHOOK_SECRET` (production environment)
+
+**Note:** The production `STRIPE_WEBHOOK_SECRET` (from the Stripe dashboard) and the local one (from `stripe listen`) are different values — do not mix them up.
 
 ---
 
