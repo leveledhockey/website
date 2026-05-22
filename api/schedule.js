@@ -32,18 +32,16 @@ module.exports = async function handler(req, res) {
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-        range:         'Registrations!B1:M10000',
+        range:         'Registrations!B1:B10000',
       }),
     ]);
 
-    // Build a map of sessionId → confirmed/pending registration count.
-    // Fetched range B:M → indices: B=0 Session ID, M=11 Status
+    // Build a map of sessionId → registration count. Every row present is approved.
     const regRows = (regData.data.values || []).slice(1);
     const regCountMap = {};
     regRows.forEach(row => {
-      const sessionId = row[0]  || '';
-      const status    = row[11] || '';
-      if (sessionId && status !== 'Denied') {
+      const sessionId = row[0] || '';
+      if (sessionId) {
         regCountMap[sessionId] = (regCountMap[sessionId] || 0) + 1;
       }
     });
