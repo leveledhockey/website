@@ -83,11 +83,11 @@ A single flat tab containing all programs. **Header row (row 1) — must be exac
 
 ## Registrations Spreadsheet — `Registrations` Tab
 
-Populated automatically when someone submits the registration form. Do not reorder columns.
+Populated automatically by the Stripe webhook after payment is confirmed. Do not reorder columns.
 
 | Col | Field | Notes |
 |---|---|---|
-| A | Timestamp | ISO 8601, written by server |
+| A | Timestamp | ISO 8601, written by webhook after payment succeeds |
 | B | Session ID | e.g. `PEP_05-02-26_09:00` |
 | C | Session Label | Human-readable, e.g. `PEP - 05-02-26 at 9:00 (NSWC)` |
 | D | Player First | |
@@ -96,8 +96,9 @@ Populated automatically when someone submits the registration form. Do not reord
 | G | Parent Name | |
 | H | Phone | |
 | I | Email | |
-| J | Paid? | `FALSE` on submit; `TRUE` after Stripe payment confirmed by webhook. For cash/e-transfer, mark `TRUE` manually. |
-| K | Token | UUID generated at registration. Do not edit. |
+| J | Payment Intent ID | Stripe PI ID (e.g. `pi_3abc...`), written by webhook. Leave blank for cash/e-transfer registrations added manually. |
+
+**Note:** No row is written at form submission — the row is only inserted after Stripe confirms payment via the webhook. Any row present in this sheet is considered an approved registration.
 
 
 ### Manually Adding Registration
@@ -155,8 +156,3 @@ Fill out "Session ID", "Player First", and "Player Last" in the Registrations ex
 **Note:** The production `STRIPE_WEBHOOK_SECRET` (from the Stripe dashboard) and the local one (from `stripe listen`) are different values — do not mix them up.
 
 ---
-
-## Cloudflare Turnstile *(not yet implemented)*
-**Purpose:** CAPTCHA protection on the registration form to prevent bots from spamming submissions and exhausting the Resend free-tier email limit.
-
-**Cost:** Free, no usage limits.
