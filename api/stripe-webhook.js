@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
     const level        = row[COL_LEVEL]         || '';
     const parentFirst  = parentName.split(' ')[0];
 
-    const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{4} at (\d{2}:\d{2}):\d{2} \((.+)\)$/);
+    const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
     const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
     const sessionTime = labelMatch ? formatTime(labelMatch[2]) : '';
     const sessionLoc  = labelMatch ? labelMatch[3] : '';
