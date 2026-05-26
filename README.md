@@ -213,3 +213,14 @@ In Google Search Console, use the **URL Inspection** tool:
 Repeat for `register.html` and `contact.html` if desired.
 
 ---
+
+# 5. TODO / Backlog
+
+## Done
+- [x] **Google Search visibility** — `sitemap.xml`, `robots.txt`, Search Console submitted, indexing requested.
+
+## Pending
+- [ ] **Session end time on cards** — Session cards and week-detail pills currently show only start time (e.g. "9:00 AM"). Display the end time or duration (e.g. "9:00 AM – 10:00 AM") so parents know at a glance how long each session runs.
+- [ ] **Email subscription list + admin notifications** — Collect subscriber emails (footer form + opt-in checkbox at registration). Store in Google Sheets. Private admin page lets the site owner compose and blast a notification email to all subscribers, with SMS verification code before sending.
+
+---
