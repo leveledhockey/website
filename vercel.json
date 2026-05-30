@@ -5,6 +5,14 @@
       "maxDuration": 10
     }
   },
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.leveledhockey.com" }],
+      "destination": "https://leveledhockey.com/$1",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/.well-known/apple-developer-merchantid-domain-association",
