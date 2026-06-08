@@ -44,7 +44,7 @@ module.exports = async function handler(req, res) {
     const [scheduleRes, regRes] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range:         `${SCHEDULE_SHEET}!A1:G`,
+        range:         `${SCHEDULE_SHEET}!A1:H`,
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,

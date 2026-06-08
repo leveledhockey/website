@@ -54,7 +54,7 @@ Keep this terminal running while you develop. The `STRIPE_WEBHOOK_SECRET` for lo
 
 **5. Start the dev server**
 ```bash
-npx vercel dev
+3
 ```
 Open [http://localhost:3000/register.html](http://localhost:3000/register.html). The calendar should load sessions from Google Sheets.
 

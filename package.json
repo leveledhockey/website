@@ -6,6 +6,6 @@
     "@sendgrid/mail": "^8.1.6",
     "googleapis": "^144.0.0",
     "stripe": "^22.1.1",
-    "vercel": "^53.2.0"
+    "vercel": "^54.9.1"
   }
 }
