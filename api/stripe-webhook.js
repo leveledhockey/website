@@ -138,35 +138,51 @@ async function handleDropIn(paymentIntent, meta, res) {
 }
 
 async function handleSummerPackage(paymentIntent, meta, res) {
-  const { packageId, packageLabel, player_first, player_last, level,
-          parent_name, phone, email, timestamp } = meta;
+  const { packageId, packageLabel, dates: datesStr, sessionTime, location,
+          timeOverrides: timeOverridesStr,
+          player_first, player_last, level, parent_name, phone, email, timestamp } = meta;
 
+  const dates         = (datesStr || '').split(',').map(d => d.trim()).filter(Boolean);
+  const timeOverrides = timeOverridesStr ? JSON.parse(timeOverridesStr) : {};
   const amountDollars = `$${(paymentIntent.amount / 100).toFixed(2)} CAD`;
+
+  function resolveTime(date) {
+    return (timeOverrides[date] && sessionTime && timeOverrides[date][sessionTime])
+      ? timeOverrides[date][sessionTime]
+      : sessionTime;
+  }
 
   try {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Write to a separate Summer Registrations sheet
+    // One row per session date, written into the shared Registrations sheet
+    const rows = dates.map((date, i) => {
+      const sessionId    = `${packageId}-${i + 1}`;
+      const dateTime     = resolveTime(date);
+      const timeInfo     = dateTime ? ` at ${dateTime}` : '';
+      const locInfo      = location ? ` (${location})`  : '';
+      const sessionLabel = `${packageLabel} — ${date}, 2026${timeInfo}${locInfo}`;
+      return [
+        timestamp || new Date().toISOString(),
+        sessionId,
+        sessionLabel,
+        player_first || '',
+        player_last  || '',
+        level        || '',
+        parent_name  || '',
+        phone        || '',
+        email,
+        paymentIntent.id,
+      ];
+    });
+
     await sheets.spreadsheets.values.append({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
-      range:            'Summer Registrations!A:J',
+      range:            `${SHEET_REGISTRATIONS}!A:J`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[
-          timestamp || new Date().toISOString(),
-          packageId    || '',
-          packageLabel || '',
-          player_first || '',
-          player_last  || '',
-          level        || '',
-          parent_name  || '',
-          phone        || '',
-          email,
-          paymentIntent.id,
-        ]],
-      },
+      requestBody:      { values: rows },
     });
 
     const playerFirst = player_first || '';
@@ -174,14 +190,25 @@ async function handleSummerPackage(paymentIntent, meta, res) {
     const parentFirst = (parent_name || '').split(' ')[0];
 
     try {
+      const sessionsHtml = dates.map((date, i) => {
+        const dateTime = resolveTime(date);
+        return `
+        <p>
+          <strong>Session ${i + 1}:</strong> ${date}<br>
+          ${dateTime ? `Time: ${dateTime}<br>` : ''}
+          ${location ? `Location: ${location}` : ''}
+        </p>`;
+      }).join('');
+
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       await sgMail.send({
         from:    process.env.EMAIL_FROM,
         to:      email,
-        subject: `Summer Program Registration Confirmed - ${playerFirst} ${playerLast}`,
+        subject: `Summer Program Registration Confirmed — ${playerFirst} ${playerLast}`,
         html: `<p>Hi ${parentFirst},</p>
                <p>${playerFirst} ${playerLast} is registered for the summer program below. Your payment has been received.</p>
                <p><strong>${packageLabel || packageId}</strong></p>
+               ${sessionsHtml}
                <p>Payment of ${amountDollars} was received successfully.</p>
                <p>We'll see you on the ice! If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>Leveled Hockey Development</p>`,
