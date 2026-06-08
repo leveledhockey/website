@@ -3,6 +3,7 @@ const Stripe = require('stripe');
 const SUMMER_PACKAGES = {
   'tue-puck-jul': {
     label:    'Tuesday Puck Skills — July 2026',
+    abbrev:   'PUCK',
     amount:   13000,
     dates:    ['July 7', 'July 14', 'July 21'],
     time:     '2:45–3:35 PM',
@@ -10,6 +11,7 @@ const SUMMER_PACKAGES = {
   },
   'thu-def-jul': {
     label:    'Thursday Defensive Skills — July 2026',
+    abbrev:   'DEF',
     amount:   13000,
     dates:    ['July 9', 'July 16', 'July 23'],
     time:     '2:45–3:35 PM',
@@ -17,19 +19,21 @@ const SUMMER_PACKAGES = {
   },
   'sat-over-jul': {
     label:    'Saturday Overspeed — July 2026',
+    abbrev:   'OVERSPEED',
     amount:   15000,
     dates:    ['July 11', 'July 18', 'July 25'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
   'sat-over-aug': {
     label:    'Saturday Overspeed — August 2026',
+    abbrev:   'OVERSPEED',
     amount:   22500,
-    dates:    ['Aug 1', 'Aug 8', 'Aug 15', 'Aug 22', 'Aug 29'],
+    dates:    ['August 1', 'August 8', 'August 15', 'August 22', 'August 29'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
     timeOverrides: {
-      'Aug 22': {
+      'August 22': {
         '3:00–3:50 PM': '3:30–4:20 PM',
         '4:00–4:50 PM': '4:30–5:20 PM',
         '5:00–5:50 PM': '5:30–6:20 PM',
@@ -38,17 +42,19 @@ const SUMMER_PACKAGES = {
   },
   'sun-pep-jul': {
     label:    'Sunday Power Edge Pro — July 2026',
+    abbrev:   'PEP',
     amount:   15000,
     dates:    ['July 12', 'July 19', 'July 26'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
   'sun-pep-aug': {
     label:    'Sunday Power Edge Pro — August 2026',
+    abbrev:   'PEP',
     amount:   22500,
-    dates:    ['Aug 2', 'Aug 9', 'Aug 16', 'Aug 23', 'Aug 30'],
+    dates:    ['August 2', 'August 9', 'August 16', 'August 23', 'August 30'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
 };
 
@@ -59,8 +65,8 @@ module.exports = async function handler(req, res) {
 
   const { packageId, player_first, player_last, level, parent_name, phone, email, time_slot } = req.body || {};
 
-  const required = { packageId, player_first, player_last, parent_name, phone, email };
-  if (Object.values(required).some(v => !v || !String(v).trim())) {
+  const requiredFields = { packageId, player_first, player_last, parent_name, phone, email };
+  if (Object.values(requiredFields).some(v => !v || !String(v).trim())) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
   if (!String(email).includes('@')) {
@@ -84,6 +90,7 @@ module.exports = async function handler(req, res) {
         type:          'summer_package',
         packageId:     String(packageId).trim(),
         packageLabel:  pkg.label,
+        abbrev:        pkg.abbrev || '',
         dates:         pkg.dates.join(','),
         sessionTime:   sessionTime,
         location:      pkg.location || '',

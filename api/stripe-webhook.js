@@ -21,6 +21,31 @@ function formatTime(hhmm) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
+const MONTH_NUM = {
+  January:1, February:2, March:3, April:4, May:5, June:6,
+  July:7, August:8, September:9, October:10, November:11, December:12,
+};
+
+// "July 7"  → "07-07-26"
+function summerDateToId(dateStr) {
+  const [monthName, day] = dateStr.trim().split(' ');
+  const mm = String(MONTH_NUM[monthName] || 0).padStart(2, '0');
+  const dd = String(parseInt(day, 10)).padStart(2, '0');
+  return `${mm}-${dd}-26`;
+}
+
+// "3:00–3:50 PM" → "15:00"   "2:45–3:35 PM" → "14:45"
+function summerTimeTo24h(timeStr) {
+  const startPart = timeStr.split(/[–\-]/)[0].trim();        // "3:00" or "2:45"
+  const isPM      = /pm/i.test(timeStr);
+  const [hStr, mStr = '0'] = startPart.replace(/[apm]/gi, '').trim().split(':');
+  let h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isPM && h !== 12) h += 12;
+  if (!isPM && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 // Disable body parser — Stripe needs raw bytes for signature verification
 module.exports.config = { api: { bodyParser: false } };
 
@@ -138,7 +163,7 @@ async function handleDropIn(paymentIntent, meta, res) {
 }
 
 async function handleSummerPackage(paymentIntent, meta, res) {
-  const { packageId, packageLabel, dates: datesStr, sessionTime, location,
+  const { packageId, packageLabel, abbrev, dates: datesStr, sessionTime, location,
           timeOverrides: timeOverridesStr,
           player_first, player_last, level, parent_name, phone, email, timestamp } = meta;
 
@@ -158,8 +183,11 @@ async function handleSummerPackage(paymentIntent, meta, res) {
 
     // One row per session date, written into the shared Registrations sheet
     const rows = dates.map((date, i) => {
-      const sessionId    = `${packageId}-${i + 1}`;
-      const dateTime     = resolveTime(date);
+      const dateTime  = resolveTime(date);
+      const timeCode  = dateTime ? summerTimeTo24h(dateTime) : '';
+      const sessionId = abbrev && timeCode
+        ? `${abbrev}_${summerDateToId(date)}_${timeCode}`
+        : `${packageId}-${i + 1}`;
       const timeInfo     = dateTime ? ` at ${dateTime}` : '';
       const locInfo      = location ? ` (${location})`  : '';
       const sessionLabel = `${packageLabel} — ${date}, 2026${timeInfo}${locInfo}`;
