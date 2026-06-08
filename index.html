@@ -15,6 +15,289 @@
   <link rel="icon" type="image/png" sizes="16x16" href="images/icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="images/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    /* ---- Summer registration overlay modal ---- */
+    .summer-reg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1200;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: clamp(1rem, 4vw, 2.5rem) 1rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s var(--ease);
+    }
+    .summer-reg-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .summer-reg-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.5rem, 4vw, 2.5rem);
+      width: 100%;
+      max-width: 700px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s var(--ease);
+      margin: auto;
+    }
+    .summer-reg-overlay.open .summer-reg-panel { transform: translateY(0); }
+
+    .mob-sheet-handle {
+      display: none;
+      width: 40px; height: 4px;
+      border-radius: 2px;
+      background: var(--surface-3);
+      margin: 0 auto 1.5rem;
+    }
+
+    /* ---- Form modal header ---- */
+    .sreg-eyebrow {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    .sreg-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 3.5vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      padding-right: 2rem;
+    }
+
+    /* ---- Package summary strip ---- */
+    .sreg-pkg-summary {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.4rem 1.5rem;
+    }
+    .sreg-pkg-name {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .sreg-pkg-meta { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .sreg-pkg-price {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    /* ---- Section label ---- */
+    .sreg-section-label {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .sreg-form-section { margin-bottom: 1.75rem; }
+
+    /* ---- Grid + fields ---- */
+    .sreg-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 560px) { .sreg-grid { grid-template-columns: 1fr; } }
+    .sreg-grid .full { grid-column: 1 / -1; }
+
+    .sreg-form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .sreg-label {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .sreg-label .required { color: var(--accent); margin-left: 2px; }
+
+    .sreg-input, .sreg-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem;
+      transition: border-color var(--trans), box-shadow var(--trans);
+      width: 100%;
+    }
+    .sreg-input::placeholder { color: var(--text-subtle); }
+    .sreg-input:focus, .sreg-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .sreg-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+    .sreg-select option { background: var(--surface-2); }
+
+    /* ---- Waiver ---- */
+    .sreg-waiver-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      max-height: 200px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(232,121,42,0.3) transparent;
+      margin-bottom: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .sreg-waiver-box::-webkit-scrollbar { width: 4px; }
+    .sreg-waiver-box::-webkit-scrollbar-track { background: transparent; }
+    .sreg-waiver-box::-webkit-scrollbar-thumb { background: rgba(232,121,42,0.3); border-radius: 2px; }
+    .sreg-waiver-box h4 {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0.9rem 0 0.3rem;
+    }
+    .sreg-waiver-box p { margin: 0 0 0.4rem; }
+    .sreg-waiver-box ul { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; }
+    .sreg-waiver-box ul li { margin-bottom: 0.15rem; }
+    .sreg-waiver-org {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+    .sreg-waiver-title {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+    .sreg-consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.85rem 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans);
+    }
+    .sreg-consent-row:has(#sreg-consent:checked) {
+      border-color: rgba(232,121,42,0.6);
+      background: var(--accent-glow);
+    }
+    .sreg-consent-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .sreg-consent-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sreg-consent-label strong { color: var(--text); }
+
+    /* ---- Pay divider ---- */
+    .sreg-pay-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin: 1.1rem 0 0.25rem;
+      color: var(--text-subtle);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .sreg-pay-divider::before, .sreg-pay-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ---- Submit row + success ---- */
+    .sreg-submit-row {
+      margin-top: 1.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .sreg-success {
+      display: none;
+      background: rgba(50,180,100,0.1);
+      border: 1px solid rgba(50,180,100,0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
+      color: #6cda9a;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Mobile bottom-sheet ---- */
+    @media (max-width: 640px) {
+      .summer-reg-overlay { align-items: flex-end !important; padding: 0 !important; }
+      .summer-reg-panel {
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+        max-width: 100% !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        margin: 0 !important;
+        transform: translateY(100%) !important;
+      }
+      .summer-reg-overlay.open .summer-reg-panel { transform: translateY(0) !important; }
+      .mob-sheet-handle { display: block; }
+    }
+  </style>
 </head>
 <body>
 
@@ -77,6 +360,18 @@
       </div>
     </div>
   </div>
+
+  <!-- ===================== SUMMER PROGRAMS ===================== -->
+  <section class="section section-alt" id="summer">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Summer 2026</p>
+        <h2 class="section-title">Summer Programs</h2>
+        <p class="section-desc">Lock in a full month of sessions at a discounted rate. One payment covers every class in the package — no individual drop-in fees.</p>
+      </div>
+      <div class="programs-grid" id="summer-grid"></div>
+    </div>
+  </section>
 
   <!-- ===================== PROGRAMS OVERVIEW ===================== -->
   <section class="section" id="programs">
@@ -253,6 +548,151 @@
     </div>
   </footer>
 
+  <!-- ===================== SUMMER REGISTRATION MODAL ===================== -->
+  <div class="summer-reg-overlay" id="summer-reg-overlay" role="dialog" aria-modal="true" aria-labelledby="sreg-title">
+    <div class="summer-reg-panel">
+      <div class="mob-sheet-handle" aria-hidden="true"></div>
+      <button class="modal-close" id="summer-reg-close" aria-label="Close">&times;</button>
+
+      <p class="sreg-eyebrow">Register</p>
+      <h2 class="sreg-title" id="sreg-title"></h2>
+      <div class="sreg-pkg-summary" id="sreg-pkg-summary"></div>
+
+      <form id="sreg-form" novalidate>
+        <input type="hidden" id="sreg-pkg-id" name="packageId">
+
+        <!-- Time slot selector — only shown for multi-age programs -->
+        <div id="sreg-time-section" class="sreg-form-section" style="display:none">
+          <p class="sreg-section-label">Select Time Slot</p>
+          <div class="sreg-form-group">
+            <label class="sreg-label" for="sreg-time-slot">Age Group &amp; Time <span class="required">*</span></label>
+            <select class="sreg-select" id="sreg-time-slot" name="time_slot">
+              <option value="">Select your group</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Player info -->
+        <div class="sreg-form-section">
+          <p class="sreg-section-label">Player Information</p>
+          <div class="sreg-grid">
+            <div class="sreg-form-group">
+              <label class="sreg-label" for="sreg-player-first">First Name <span class="required">*</span></label>
+              <input class="sreg-input" type="text" id="sreg-player-first" name="player_first" placeholder="e.g. Alex" required>
+            </div>
+            <div class="sreg-form-group">
+              <label class="sreg-label" for="sreg-player-last">Last Name <span class="required">*</span></label>
+              <input class="sreg-input" type="text" id="sreg-player-last" name="player_last" placeholder="e.g. Smith" required>
+            </div>
+            <div class="sreg-form-group full">
+              <label class="sreg-label" for="sreg-level">Level of Play <span class="required">*</span></label>
+              <select class="sreg-select" id="sreg-level" name="level" required>
+                <option value="">Select level</option>
+                <option value="U7">U7</option>
+                <option value="U9">U9</option>
+                <option value="U11">U11</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U18">U18</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parent / guardian -->
+        <div class="sreg-form-section">
+          <p class="sreg-section-label">Parent / Guardian Information</p>
+          <div class="sreg-grid">
+            <div class="sreg-form-group full">
+              <label class="sreg-label" for="sreg-parent-name">Full Name <span class="required">*</span></label>
+              <input class="sreg-input" type="text" id="sreg-parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+            </div>
+            <div class="sreg-form-group">
+              <label class="sreg-label" for="sreg-phone">Phone Number <span class="required">*</span></label>
+              <input class="sreg-input" type="tel" id="sreg-phone" name="phone" placeholder="e.g. 604-555-0100" required>
+            </div>
+            <div class="sreg-form-group full">
+              <label class="sreg-label" for="sreg-email">Email Address <span class="required">*</span></label>
+              <input class="sreg-input" type="email" id="sreg-email" name="email" placeholder="e.g. jordan@email.com" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="sreg-form-section">
+          <p class="sreg-section-label">Payment</p>
+          <div id="sreg-express-section" style="display:none">
+            <div id="sreg-payment-request-btn"></div>
+            <div class="sreg-pay-divider"><span>or pay with card</span></div>
+          </div>
+          <div class="sreg-form-group full">
+            <label class="sreg-label">Card Details <span class="required">*</span></label>
+            <div id="sreg-card-element" class="sreg-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
+            <div id="sreg-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
+          </div>
+          <p id="sreg-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;"></p>
+        </div>
+
+        <!-- Waiver -->
+        <div class="sreg-form-section">
+          <p class="sreg-section-label">Waiver &amp; Consent</p>
+          <div class="sreg-waiver-box">
+            <p class="sreg-waiver-org">Leveled Hockey Development</p>
+            <p class="sreg-waiver-title">Participant Waiver, Liability Release &amp; Media Consent Agreement</p>
+            <h4>1. Assumption of Risk</h4>
+            <p>I acknowledge that participation in hockey training, skating, and athletic development activities involves inherent risks, including but not limited to:</p>
+            <ul>
+              <li>Falls, collisions with players, boards, glass, or equipment</li>
+              <li>Injuries from sticks, pucks, or other objects</li>
+              <li>Strains, sprains, fractures, concussions, or other physical injuries</li>
+              <li>Risks associated with high-speed skating, shooting, and competitive drills</li>
+            </ul>
+            <p>I fully understand these risks and voluntarily assume all responsibility for any injury, loss, or damage that may occur as a result of participation.</p>
+            <h4>2. Release of Liability</h4>
+            <p>In consideration for participation in Leveled Hockey Development programs, I hereby release, waive, and discharge Leveled Hockey Development, its owners, coaches, staff, contractors, affiliates, and any facility operators from any and all liability, claims, demands, or causes of action arising out of or related to participation, including personal injury, property damage, and losses arising from negligence or any other cause permitted by law.</p>
+            <h4>3. Medical Responsibility &amp; Emergency Authorization</h4>
+            <p>I confirm that the participant is physically fit to safely participate and has no medical conditions that increase risk. In the event of injury I authorize staff to seek emergency medical treatment. I accept full financial responsibility for any medical care required.</p>
+            <h4>4. Conduct &amp; Safety Requirements</h4>
+            <ul>
+              <li>Participants must follow all instructions from coaches and staff at all times</li>
+              <li>Full, CSA-approved hockey equipment is required</li>
+              <li>Unsafe, reckless, or disruptive behavior may result in removal without refund</li>
+            </ul>
+            <h4>5. Media, Filming &amp; Promotional Release</h4>
+            <p>I grant permission for the participant to be filmed, photographed, and recorded during any Leveled Hockey Development sessions. All media content is the exclusive property of Leveled Hockey Development and may be used for marketing and promotional purposes across all platforms without compensation.</p>
+            <h4>6. Indemnification</h4>
+            <p>I agree to indemnify and hold harmless Leveled Hockey Development and its affiliates from any claims, damages, or expenses arising from the participant's actions or breach of this agreement.</p>
+            <h4>7. Governing Law</h4>
+            <p>This agreement shall be governed by and interpreted in accordance with the laws of the Province of British Columbia, Canada.</p>
+          </div>
+          <label class="sreg-consent-row" for="sreg-consent">
+            <input type="checkbox" id="sreg-consent" name="consent">
+            <span class="sreg-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
+          </label>
+        </div>
+
+        <div class="sreg-submit-row">
+          <button type="submit" class="btn btn-primary" id="sreg-submit" disabled>Submit Registration</button>
+        </div>
+      </form>
+
+      <div class="sreg-success" id="sreg-success">
+        <strong>Registration received!</strong> Your payment has been processed and your spot is confirmed.<br><br>
+        <div id="sreg-success-summary"></div>
+        <br>
+        Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SUMMER PROGRAM INFO MODAL ===================== -->
+  <div class="modal-backdrop" id="summer-modal" role="dialog" aria-modal="true" aria-labelledby="summer-modal-title" hidden>
+    <div class="modal modal--summer">
+      <button class="modal-close" id="summer-modal-close" aria-label="Close">&times;</button>
+      <div id="summer-modal-body" style="display:flex;flex-direction:column;gap:1.5rem"></div>
+    </div>
+  </div>
+
   <!-- ===================== PRIVATE LESSONS MODAL ===================== -->
   <div class="modal-backdrop" id="private-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal">
@@ -304,6 +744,7 @@
     </div>
   </div>
 
+  <script src="summer-programs.js"></script>
   <script>
     // Transparent → solid nav on scroll
     const nav = document.getElementById('nav');
@@ -364,6 +805,233 @@
         });
       });
     });
+
+    // ---- Summer programs section ----
+    let summerFocusCard = null;
+
+    renderSummerCards('summer-grid', prog => openSummerModal(prog));
+
+    function openSummerModal(prog) {
+      const modalEl  = document.getElementById('summer-modal');
+      const bodyEl   = document.getElementById('summer-modal-body');
+      const ctaHtml  = `<button type="button" class="btn btn-primary summer-modal-cta-btn" id="summer-to-cal-btn">Register for This Package</button>`;
+      bodyEl.innerHTML = buildSummerModalContent(prog, ctaHtml);
+      summerFocusCard  = document.querySelector(`[data-program-id="${prog.id}"]`);
+      modalEl.hidden   = false;
+      document.body.classList.add('modal-open');
+      document.getElementById('summer-modal-close').focus();
+      document.getElementById('summer-to-cal-btn').addEventListener('click', () => {
+        closeSummerModal();
+        openSummerRegModal(prog);
+      });
+    }
+
+    function closeSummerModal() {
+      const modalEl = document.getElementById('summer-modal');
+      modalEl.hidden = true;
+      document.body.classList.remove('modal-open');
+      if (summerFocusCard) summerFocusCard.focus();
+    }
+
+    document.getElementById('summer-modal-close').addEventListener('click', closeSummerModal);
+    document.getElementById('summer-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('summer-modal')) closeSummerModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !document.getElementById('summer-modal').hidden) closeSummerModal();
+    });
+
+    // ---- Summer registration modal ----
+
+    function openSummerRegModal(prog) {
+      const overlay = document.getElementById('summer-reg-overlay');
+
+      document.getElementById('sreg-title').textContent = `${prog.name} — ${prog.month}`;
+      document.getElementById('sreg-pkg-id').value = prog.id;
+
+      const savings = prog.dropIn * prog.sessionsCount - prog.programRate;
+      document.getElementById('sreg-pkg-summary').innerHTML =
+        `<div><div class="sreg-pkg-name">${prog.name}</div>` +
+        `<div class="sreg-pkg-meta">${prog.day}s &middot; ${prog.month} 2026 &middot; ${prog.sessionsCount} sessions<br>${prog.dates.join(', ')}</div></div>` +
+        `<div class="sreg-pkg-price">$${prog.programRate} <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $${savings}</span></div>`;
+
+      document.getElementById('sreg-amount-line').innerHTML =
+        `Amount: <strong style="color:var(--text)">$${prog.programRate}.00 CAD</strong> for all ${prog.sessionsCount} sessions &mdash; processed securely by Stripe.`;
+
+      const timeSection = document.getElementById('sreg-time-section');
+      const timeSelect  = document.getElementById('sreg-time-slot');
+      if (prog.times.length > 1) {
+        timeSelect.innerHTML = '<option value="">Select your group</option>';
+        prog.times.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.time;
+          opt.textContent = `${t.time}${t.age ? ' — ' + t.age : ''}`;
+          timeSelect.appendChild(opt);
+        });
+        timeSection.style.display = '';
+      } else {
+        timeSection.style.display = 'none';
+        timeSelect.value = '';
+      }
+
+      const form = document.getElementById('sreg-form');
+      form.reset();
+      form.style.display = '';
+      document.getElementById('sreg-success').style.display = 'none';
+      document.getElementById('sreg-consent').checked = false;
+      document.getElementById('sreg-submit').disabled = true;
+      document.getElementById('sreg-submit').textContent = 'Submit Registration';
+      const prevErr = document.getElementById('sreg-form-error');
+      if (prevErr) prevErr.remove();
+      form.querySelectorAll('.sreg-input, .sreg-select').forEach(el => { el.style.borderColor = ''; });
+
+      overlay.classList.add('open');
+      document.body.classList.add('modal-open');
+      document.getElementById('summer-reg-close').focus();
+    }
+
+    function closeSummerRegModal() {
+      document.getElementById('summer-reg-overlay').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    document.getElementById('summer-reg-close').addEventListener('click', closeSummerRegModal);
+    document.getElementById('summer-reg-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('summer-reg-overlay')) closeSummerRegModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('summer-reg-overlay').classList.contains('open')) closeSummerRegModal();
+    });
+
+    document.getElementById('sreg-consent').addEventListener('change', function() {
+      document.getElementById('sreg-submit').disabled = !this.checked;
+    });
+
+    // Stripe setup for summer registration
+    (async () => {
+      try {
+        const { stripePublishableKey } = await fetch('/api/config').then(r => r.json());
+        const stripe   = Stripe(stripePublishableKey);
+        const elements = stripe.elements();
+        const cardEl   = elements.create('card', {
+          hidePostalCode: true,
+          disableLink: true,
+          style: {
+            base: {
+              color: '#e0e0e0',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontSize: '15px',
+              fontSmoothing: 'antialiased',
+              '::placeholder': { color: '#555' },
+            },
+            invalid: { color: '#e05a5a' },
+          },
+        });
+        cardEl.mount('#sreg-card-element');
+
+        cardEl.on('change', e => {
+          const errEl = document.getElementById('sreg-card-errors');
+          if (e.error) { errEl.textContent = e.error.message; errEl.style.display = 'block'; }
+          else         { errEl.style.display = 'none'; }
+        });
+
+        // Apple Pay / Google Pay
+        const paymentRequest = stripe.paymentRequest({
+          country: 'CA', currency: 'cad',
+          total: { label: 'Leveled Hockey Summer Package', amount: 100 },
+          requestPayerName: true, requestPayerEmail: true,
+        });
+        const prBtn = elements.create('paymentRequestButton', {
+          paymentRequest,
+          style: { paymentRequestButton: { theme: 'light', height: '48px' } },
+        });
+        paymentRequest.canMakePayment().then(result => {
+          if (result) {
+            prBtn.mount('#sreg-payment-request-btn');
+            document.getElementById('sreg-express-section').style.display = '';
+          }
+        });
+
+        document.getElementById('sreg-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const form = e.target;
+
+          let valid = true;
+          form.querySelectorAll('[required]').forEach(field => {
+            field.style.borderColor = '';
+            if (!field.value.trim()) { field.style.borderColor = '#e05a5a'; valid = false; }
+          });
+          const timeSection = document.getElementById('sreg-time-section');
+          const timeSelect  = document.getElementById('sreg-time-slot');
+          if (timeSection.style.display !== 'none' && !timeSelect.value) {
+            timeSelect.style.borderColor = '#e05a5a';
+            valid = false;
+          }
+          if (!valid) return;
+
+          const submitBtn = document.getElementById('sreg-submit');
+          submitBtn.disabled    = true;
+          submitBtn.textContent = 'Processing…';
+
+          function showError(msg) {
+            let errEl = document.getElementById('sreg-form-error');
+            if (!errEl) {
+              errEl = document.createElement('p');
+              errEl.id = 'sreg-form-error';
+              errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
+              form.querySelector('.sreg-submit-row').prepend(errEl);
+            }
+            errEl.textContent     = msg;
+            submitBtn.disabled    = false;
+            submitBtn.textContent = 'Submit Registration';
+          }
+
+          const payload = {
+            packageId:    form.packageId.value,
+            player_first: form.player_first.value.trim(),
+            player_last:  form.player_last.value.trim(),
+            level:        form.level.value,
+            parent_name:  form.parent_name.value.trim(),
+            phone:        form.phone.value.trim(),
+            email:        form.email.value.trim(),
+          };
+
+          let clientSecret;
+          try {
+            const resp = await fetch('/api/summer-register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { showError(data.error || 'Something went wrong. Please try again.'); return; }
+            clientSecret = data.clientSecret;
+          } catch {
+            showError('Network error. Please check your connection and try again.');
+            return;
+          }
+
+          submitBtn.textContent = 'Completing payment…';
+          const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card:            cardEl,
+              billing_details: { name: form.parent_name.value.trim(), email: form.email.value.trim() },
+            },
+          });
+
+          if (error) { showError(error.message || 'Payment failed. Please try again.'); return; }
+
+          form.style.display = 'none';
+          const title = document.getElementById('sreg-title').textContent;
+          document.getElementById('sreg-success-summary').innerHTML =
+            `Package: <strong>${title}</strong><br>` +
+            `Player: <strong>${form.player_first.value.trim()} ${form.player_last.value.trim()}</strong>`;
+          document.getElementById('sreg-success').style.display = 'block';
+        });
+      } catch (err) {
+        console.error('Stripe init failed:', err);
+      }
+    })();
   </script>
 </body>
 </html>

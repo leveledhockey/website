@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
     const [scheduleData, regData] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range:         `${SCHEDULE_SHEET}!A1:G`,
+        range:         `${SCHEDULE_SHEET}!A1:H`,
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
@@ -69,6 +69,7 @@ module.exports = async function handler(req, res) {
         Program:            obj['Program'],
         Date:               obj['Date (MM-DD-YY)'],
         Time:               obj['Time (24H clock)'],
+        EndTime:            obj['End Time (24H clock)'],
         Location:           obj['Location'],
         'Max Participants': obj['Max Participants'],
         'Age Group':        obj['Age Group'],

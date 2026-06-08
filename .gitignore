@@ -7,3 +7,4 @@ images/Leveled Hockey (Vertical) Rev1.mp4
 
 .vercel
 .env*.local
+.env*

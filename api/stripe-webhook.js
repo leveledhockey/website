@@ -54,11 +54,24 @@ module.exports = async function handler(req, res) {
   const paymentIntent = event.data.object;
   const meta = paymentIntent.metadata || {};
 
+  if (!meta.email) {
+    console.error('stripe-webhook: missing email in metadata');
+    return res.status(200).json({ received: true });
+  }
+
+  // Route to the appropriate handler based on registration type
+  if (meta.type === 'summer_package') {
+    return handleSummerPackage(paymentIntent, meta, res);
+  }
+  return handleDropIn(paymentIntent, meta, res);
+};
+
+async function handleDropIn(paymentIntent, meta, res) {
   const { sessionId, sessionLabel, player_first, player_last, level,
           parent_name, phone, email, timestamp } = meta;
 
-  if (!sessionId || !email) {
-    console.error('stripe-webhook: missing metadata fields');
+  if (!sessionId) {
+    console.error('stripe-webhook drop-in: missing sessionId');
     return res.status(200).json({ received: true });
   }
 
@@ -66,9 +79,6 @@ module.exports = async function handler(req, res) {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Write the confirmed registration row now that payment has succeeded.
-    // Column order: A=Timestamp B=SessionID C=SessionLabel D=PlayerFirst E=PlayerLast
-    //               F=Level G=ParentName H=Phone I=Email J=Token
     await sheets.spreadsheets.values.append({
       spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
       range:            `${SHEET_REGISTRATIONS}!A:J`,
@@ -90,14 +100,12 @@ module.exports = async function handler(req, res) {
       },
     });
 
-    const playerFirst  = player_first  || '';
-    const playerLast   = player_last   || '';
-    const parentEmail  = email;
-    const parentName   = parent_name   || '';
-    const parentFirst  = parentName.split(' ')[0];
+    const playerFirst = player_first || '';
+    const playerLast  = player_last  || '';
+    const parentFirst = (parent_name || '').split(' ')[0];
 
-    const labelMatch  = sessionLabel.match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
-    const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : sessionLabel.replace(/_/g, ' ');
+    const labelMatch  = (sessionLabel || '').match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
+    const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : (sessionLabel || '').replace(/_/g, ' ');
     const sessionTime = labelMatch ? formatTime(labelMatch[2]) : '';
     const sessionLoc  = labelMatch ? labelMatch[3] : '';
 
@@ -105,7 +113,7 @@ module.exports = async function handler(req, res) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       await sgMail.send({
         from:    process.env.EMAIL_FROM,
-        to:      parentEmail,
+        to:      email,
         subject: `Registration Confirmed - ${playerFirst} ${playerLast}`,
         html: `<p>Hi ${parentFirst},</p>
                <p>Great news! ${playerFirst} ${playerLast}'s registration is confirmed and your payment has been received.</p>
@@ -124,7 +132,67 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ received: true });
   } catch (err) {
-    console.error('stripe-webhook error:', err);
+    console.error('stripe-webhook drop-in error:', err);
+    return res.status(200).json({ received: true });
+  }
+}
+
+async function handleSummerPackage(paymentIntent, meta, res) {
+  const { packageId, packageLabel, player_first, player_last, level,
+          parent_name, phone, email, timestamp } = meta;
+
+  const amountDollars = `$${(paymentIntent.amount / 100).toFixed(2)} CAD`;
+
+  try {
+    const auth = await getAuth().getClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Write to a separate Summer Registrations sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId:    REGISTRATIONS_SPREADSHEET_ID,
+      range:            'Summer Registrations!A:J',
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[
+          timestamp || new Date().toISOString(),
+          packageId    || '',
+          packageLabel || '',
+          player_first || '',
+          player_last  || '',
+          level        || '',
+          parent_name  || '',
+          phone        || '',
+          email,
+          paymentIntent.id,
+        ]],
+      },
+    });
+
+    const playerFirst = player_first || '';
+    const playerLast  = player_last  || '';
+    const parentFirst = (parent_name || '').split(' ')[0];
+
+    try {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      await sgMail.send({
+        from:    process.env.EMAIL_FROM,
+        to:      email,
+        subject: `Summer Program Registration Confirmed - ${playerFirst} ${playerLast}`,
+        html: `<p>Hi ${parentFirst},</p>
+               <p>${playerFirst} ${playerLast} is registered for the summer program below. Your payment has been received.</p>
+               <p><strong>${packageLabel || packageId}</strong></p>
+               <p>Payment of ${amountDollars} was received successfully.</p>
+               <p>We'll see you on the ice! If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
+               <p>Leveled Hockey Development</p>`,
+      });
+    } catch (emailErr) {
+      console.error('stripe-webhook summer email error:', emailErr);
+    }
+
+    return res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('stripe-webhook summer error:', err);
     return res.status(200).json({ received: true });
   }
 };

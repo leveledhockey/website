@@ -1323,3 +1323,274 @@ body.modal-open { overflow: hidden; }
   text-align: center;
   will-change: transform;
 }
+
+
+/* ============================================================
+   SUMMER PROGRAM CARDS
+   ============================================================ */
+.summer-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--trans), transform var(--trans), box-shadow var(--trans);
+}
+.summer-card:hover,
+.summer-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.45);
+}
+
+.summer-card-header {
+  position: relative;
+  height: 195px;
+  background: linear-gradient(145deg, #1c1c1c 0%, #0a0a0a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.summer-card-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -55deg,
+    transparent, transparent 22px,
+    rgba(232, 121, 42, 0.04) 22px, rgba(232, 121, 42, 0.04) 23px
+  );
+  pointer-events: none;
+}
+.summer-card-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--ease);
+}
+.summer-card:hover .summer-card-header::after,
+.summer-card:focus-visible .summer-card-header::after { transform: scaleX(1); }
+
+.summer-card-month-badge {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: var(--accent);
+  color: #000;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.26rem 0.75rem;
+  border-radius: 999px;
+  z-index: 1;
+}
+
+.summer-card-day {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.summer-card-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.5vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.15;
+  position: relative;
+  z-index: 1;
+  padding: 0 1.5rem;
+}
+
+.summer-card-sessions-tag {
+  position: absolute;
+  bottom: 0.85rem; left: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  z-index: 1;
+}
+
+.summer-card-body {
+  padding: 1.35rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.6rem;
+}
+
+.summer-card-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  flex: 1;
+}
+
+.summer-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.summer-card-price {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.summer-card-price span {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  display: block;
+  margin-top: 0.1rem;
+}
+
+.summer-card-cta { margin-left: auto; flex-shrink: 0; }
+
+
+/* ============================================================
+   SUMMER INFO MODAL
+   ============================================================ */
+.modal--summer { max-width: 580px !important; }
+
+.summer-modal-eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+.summer-modal-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.1;
+  padding-right: 2rem;
+}
+.summer-modal-sec { margin-bottom: 0; }
+.summer-modal-sec-label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.7rem;
+}
+.summer-modal-date-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.summer-modal-date-pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.28rem 0.7rem;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.summer-modal-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.85rem;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+.summer-modal-time-row + .summer-modal-time-row { margin-top: 0.3rem; }
+.summer-modal-time-val { color: var(--text); }
+.summer-modal-time-age { color: var(--text-muted); font-size: 0.78rem; }
+.summer-modal-skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.summer-modal-skill-tag {
+  background: var(--accent-glow);
+  border: 1px solid rgba(232,121,42,0.2);
+  border-radius: 999px;
+  padding: 0.22rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.summer-modal-pricing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.summer-modal-price-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  text-align: center;
+}
+.summer-modal-price-box--accent {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.summer-modal-price-box-label {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.summer-modal-price-box--accent .summer-modal-price-box-label { color: var(--accent); }
+.summer-modal-price-box-amount {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.summer-modal-price-box--accent .summer-modal-price-box-amount { color: var(--accent); }
+.summer-modal-price-box-detail {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+.summer-modal-price-box--accent .summer-modal-price-box-detail { color: rgba(232,121,42,0.75); }
+.summer-modal-note {
+  background: var(--surface-2);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.summer-modal-cta-btn {
+  width: 100%;
+  justify-content: center;
+}
