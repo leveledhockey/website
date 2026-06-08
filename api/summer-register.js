@@ -3,6 +3,7 @@ const Stripe = require('stripe');
 const SUMMER_PACKAGES = {
   'tue-puck-jul': {
     label:    'Tuesday Puck Skills — July 2026',
+    abbrev:   'PUCK',
     amount:   13000,
     dates:    ['July 7', 'July 14', 'July 21'],
     time:     '2:45–3:35 PM',
@@ -10,6 +11,7 @@ const SUMMER_PACKAGES = {
   },
   'thu-def-jul': {
     label:    'Thursday Defensive Skills — July 2026',
+    abbrev:   'DEF',
     amount:   13000,
     dates:    ['July 9', 'July 16', 'July 23'],
     time:     '2:45–3:35 PM',
@@ -17,17 +19,19 @@ const SUMMER_PACKAGES = {
   },
   'sat-over-jul': {
     label:    'Saturday Overspeed — July 2026',
+    abbrev:   'OVER',
     amount:   15000,
     dates:    ['July 11', 'July 18', 'July 25'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
   'sat-over-aug': {
     label:    'Saturday Overspeed — August 2026',
+    abbrev:   'OVER',
     amount:   22500,
     dates:    ['Aug 1', 'Aug 8', 'Aug 15', 'Aug 22', 'Aug 29'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
     timeOverrides: {
       'Aug 22': {
         '3:00–3:50 PM': '3:30–4:20 PM',
@@ -38,17 +42,19 @@ const SUMMER_PACKAGES = {
   },
   'sun-pep-jul': {
     label:    'Sunday Power Edge Pro — July 2026',
+    abbrev:   'PEP',
     amount:   15000,
     dates:    ['July 12', 'July 19', 'July 26'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
   'sun-pep-aug': {
     label:    'Sunday Power Edge Pro — August 2026',
+    abbrev:   'PEP',
     amount:   22500,
     dates:    ['Aug 2', 'Aug 9', 'Aug 16', 'Aug 23', 'Aug 30'],
     time:     null,
-    location: '',
+    location: 'Canlan Sports North Shore',
   },
 };
 
@@ -84,6 +90,7 @@ module.exports = async function handler(req, res) {
         type:          'summer_package',
         packageId:     String(packageId).trim(),
         packageLabel:  pkg.label,
+        abbrev:        pkg.abbrev || '',
         dates:         pkg.dates.join(','),
         sessionTime:   sessionTime,
         location:      pkg.location || '',
