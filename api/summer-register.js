@@ -1,13 +1,48 @@
 const Stripe = require('stripe');
 
-// Allowed summer packages with their CAD amounts in cents
 const SUMMER_PACKAGES = {
-  'tue-puck-jul':  { label: 'Tuesday Puck Skills — July 2026',          amount: 13000 },
-  'thu-def-jul':   { label: 'Thursday Defensive Skills — July 2026',     amount: 13000 },
-  'sat-over-jul':  { label: 'Saturday Overspeed — July 2026',            amount: 15000 },
-  'sat-over-aug':  { label: 'Saturday Overspeed — August 2026',          amount: 22500 },
-  'sun-pep-jul':   { label: 'Sunday Power Edge Pro — July 2026',         amount: 15000 },
-  'sun-pep-aug':   { label: 'Sunday Power Edge Pro — August 2026',       amount: 22500 },
+  'tue-puck-jul': {
+    label:    'Tuesday Puck Skills — July 2026',
+    amount:   13000,
+    dates:    ['July 7', 'July 14', 'July 21'],
+    time:     '2:45–3:35 PM',
+    location: 'Canlan Sports North Shore',
+  },
+  'thu-def-jul': {
+    label:    'Thursday Defensive Skills — July 2026',
+    amount:   13000,
+    dates:    ['July 9', 'July 16', 'July 23'],
+    time:     '2:45–3:35 PM',
+    location: 'Canlan Sports North Shore',
+  },
+  'sat-over-jul': {
+    label:    'Saturday Overspeed — July 2026',
+    amount:   15000,
+    dates:    ['July 11', 'July 18', 'July 25'],
+    time:     null,
+    location: '',
+  },
+  'sat-over-aug': {
+    label:    'Saturday Overspeed — August 2026',
+    amount:   22500,
+    dates:    ['Aug 1', 'Aug 8', 'Aug 15', 'Aug 22', 'Aug 29'],
+    time:     null,
+    location: '',
+  },
+  'sun-pep-jul': {
+    label:    'Sunday Power Edge Pro — July 2026',
+    amount:   15000,
+    dates:    ['July 12', 'July 19', 'July 26'],
+    time:     null,
+    location: '',
+  },
+  'sun-pep-aug': {
+    label:    'Sunday Power Edge Pro — August 2026',
+    amount:   22500,
+    dates:    ['Aug 2', 'Aug 9', 'Aug 16', 'Aug 23', 'Aug 30'],
+    time:     null,
+    location: '',
+  },
 };
 
 module.exports = async function handler(req, res) {
@@ -15,7 +50,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { packageId, player_first, player_last, level, parent_name, phone, email } = req.body || {};
+  const { packageId, player_first, player_last, level, parent_name, phone, email, time_slot } = req.body || {};
 
   const required = { packageId, player_first, player_last, parent_name, phone, email };
   if (Object.values(required).some(v => !v || !String(v).trim())) {
@@ -30,6 +65,8 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid package selection.' });
   }
 
+  const sessionTime = time_slot ? String(time_slot).trim() : (pkg.time || '');
+
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
@@ -40,6 +77,9 @@ module.exports = async function handler(req, res) {
         type:         'summer_package',
         packageId:    String(packageId).trim(),
         packageLabel: pkg.label,
+        dates:        pkg.dates.join(','),
+        sessionTime:  sessionTime,
+        location:     pkg.location || '',
         player_first: String(player_first).trim(),
         player_last:  String(player_last).trim(),
         level:        String(level || '').trim(),
