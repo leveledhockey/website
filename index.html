@@ -367,7 +367,7 @@
       <div class="section-header">
         <p class="section-eyebrow">Summer 2026</p>
         <h2 class="section-title">Summer Programs</h2>
-        <p class="section-desc">Lock in a full month of sessions at a discounted rate. One payment covers every class in the package — no individual drop-in fees.</p>
+        <p class="section-desc">Lock in a full month of sessions at a discounted rate. One payment covers every class in the package.</p>
       </div>
       <div class="programs-grid" id="summer-grid"></div>
     </div>
@@ -783,25 +783,6 @@
     let summerFocusCard = null;
 
     renderSummerCards('summer-grid', prog => openSummerModal(prog));
-
-    // Load spot availability from the schedule and update summer cards.
-    (async () => {
-      try {
-        const sessions = await fetch('/api/schedule').then(r => r.json());
-        const spotById = {};
-        sessions.forEach(s => { spotById[s.sessionId] = s.spotsRemaining; });
-
-        const spotsMap = {};
-        SUMMER_PROGRAMS.forEach(prog => {
-          const ids = getSummerSessionIds(prog);
-          const knownIds = ids.filter(id => id in spotById);
-          if (knownIds.length === 0) return;
-          spotsMap[prog.id] = Math.min(...knownIds.map(id => spotById[id]));
-        });
-
-        updateSummerCardSpots('summer-grid', spotsMap);
-      } catch (_) {}
-    })();
 
     function openSummerModal(prog) {
       const modalEl  = document.getElementById('summer-modal');

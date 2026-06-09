@@ -107,7 +107,7 @@ const SUMMER_PROGRAMS = [
     dates: ['July 12', 'July 19', 'July 26'],
     skills: ['Edge control', 'Stick handling', 'Dynamic skating', 'High tempo drills', 'Conditioning'],
     notes: null,
-    desc: 'Led by a Certified PEP Instructor. High-rep edge and puck work that builds elite skating mechanics and conditioning — more reps per session than any traditional practice.',
+    desc: 'Led by a Certified PEP Instructor. High-rep edge and puck work that builds elite skating mechanics and conditioning. More reps per session than any traditional practice.',
   },
   {
     id: 'sun-pep-aug',
@@ -129,7 +129,7 @@ const SUMMER_PROGRAMS = [
     dates: ['Aug 2', 'Aug 9', 'Aug 16', 'Aug 23', 'Aug 30'],
     skills: ['Edge control', 'Stick handling', 'Dynamic skating', 'High tempo drills', 'Conditioning'],
     notes: null,
-    desc: 'Five-session August Power Edge Pro package — the most effective skating system available. Enter the fall season ahead of the competition.',
+    desc: 'Five-session August Power Edge Pro package, the most effective skating system available. Enter the fall season ahead of the competition.',
   },
 ];
 

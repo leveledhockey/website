@@ -1199,6 +1199,8 @@ body.modal-open { overflow: hidden; }
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: clamp(2rem, 5vw, 3rem);
   position: relative;
   display: flex;
