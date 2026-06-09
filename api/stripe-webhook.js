@@ -190,7 +190,7 @@ async function handleSummerPackage(paymentIntent, meta, res) {
         : `${packageId}-${i + 1}`;
       const timeInfo     = dateTime ? ` at ${dateTime}` : '';
       const locInfo      = location ? ` (${location})`  : '';
-      const sessionLabel = `${packageLabel} — ${date}, 2026${timeInfo}${locInfo}`;
+      const sessionLabel = `${packageLabel} - ${date}, 2026${timeInfo}${locInfo}`;
       return [
         timestamp || new Date().toISOString(),
         sessionId,

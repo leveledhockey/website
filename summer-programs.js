@@ -2,6 +2,7 @@
 const SUMMER_PROGRAMS = [
   {
     id: 'tue-puck-jul',
+    abbrev: 'PUCKSKILLS',
     day: 'Tuesday',
     name: 'Puck Skills',
     month: 'July',
@@ -15,10 +16,11 @@ const SUMMER_PROGRAMS = [
     dates: ['July 7', 'July 14', 'July 21'],
     skills: ['Dynamic skating & puck control', 'Stickhandling', 'Passing', 'Shooting', 'Small area games'],
     notes: null,
-    desc: 'Offensive puck skills under pressure — stickhandling in tight areas, passing, shooting, and small area games to build real game confidence.',
+    desc: 'Offensive puck skills under pressure, stickhandling in tight areas, passing, shooting, and small area games to build real game confidence.',
   },
   {
     id: 'thu-def-jul',
+    abbrev: 'DEFENSECAMP',
     day: 'Thursday',
     name: 'Defensive Skills',
     month: 'July',
@@ -32,10 +34,11 @@ const SUMMER_PROGRAMS = [
     dates: ['July 9', 'July 16', 'July 23'],
     skills: ['Defensive dynamic skating', 'Situational drills', 'Shooting', 'Small area games'],
     notes: null,
-    desc: 'Sharpen your defensive game — zone skating, puck control under pressure, situational drills, and small area games for a complete two-way player.',
+    desc: 'Sharpen your defensive game. Zone skating, puck control under pressure, situational drills, and small area games for a complete two-way player.',
   },
   {
     id: 'sat-over-jul',
+    abbrev: 'OVERSPEED',
     day: 'Saturday',
     name: 'Overspeed',
     month: 'July',
@@ -57,6 +60,7 @@ const SUMMER_PROGRAMS = [
   },
   {
     id: 'sat-over-aug',
+    abbrev: 'OVERSPEED',
     day: 'Saturday',
     name: 'Overspeed',
     month: 'August',
@@ -72,12 +76,20 @@ const SUMMER_PROGRAMS = [
       { time: '5:00–5:50 PM', age: 'U15–U18' },
     ],
     dates: ['Aug 1', 'Aug 8', 'Aug 15', 'Aug 22', 'Aug 29'],
+    timeOverrides: {
+      'Aug 22': {
+        '3:00–3:50 PM': '3:30–4:20 PM',
+        '4:00–4:50 PM': '4:30–5:20 PM',
+        '5:00–5:50 PM': '5:30–6:20 PM',
+      },
+    },
     skills: ['Edge control', 'Dynamic skating', 'Speed and power'],
     notes: 'Aug 22 times shift: 3:30–4:20 PM (U7–U9) · 4:30–5:20 PM (U11–U13) · 5:30–6:20 PM (U15–U18).',
     desc: 'Five-session August Overspeed package. Max your edge work and acceleration heading into the fall season with Bronko resistance training.',
   },
   {
     id: 'sun-pep-jul',
+    abbrev: 'PEP',
     day: 'Sunday',
     name: 'Power Edge Pro',
     month: 'July',
@@ -99,6 +111,7 @@ const SUMMER_PROGRAMS = [
   },
   {
     id: 'sun-pep-aug',
+    abbrev: 'PEP',
     day: 'Sunday',
     name: 'Power Edge Pro',
     month: 'August',
@@ -120,8 +133,49 @@ const SUMMER_PROGRAMS = [
   },
 ];
 
+// --- Session ID helpers (mirrors stripe-webhook.js logic) ---
+
+const _MONTH_NUM = {
+  Jan:1, Feb:2, Mar:3, Apr:4, May:5, Jun:6,
+  Jul:7, Aug:8, Sep:9, Oct:10, Nov:11, Dec:12,
+  January:1, February:2, March:3, April:4, June:6,
+  July:7, August:8, September:9, October:10, November:11, December:12,
+};
+
+function _summerDateToId(dateStr) {
+  const [monthToken, day] = dateStr.trim().split(' ');
+  const mm = String(_MONTH_NUM[monthToken] || 0).padStart(2, '0');
+  const dd = String(parseInt(day, 10)).padStart(2, '0');
+  return `${mm}-${dd}-26`;
+}
+
+function _summerTimeTo24h(timeStr) {
+  const startPart = timeStr.split(/[–\-]/)[0].trim();
+  const isPM      = /pm/i.test(timeStr);
+  const [hStr, mStr = '0'] = startPart.replace(/[apm]/gi, '').trim().split(':');
+  let h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isPM && h !== 12) h += 12;
+  if (!isPM && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// Returns all session IDs associated with a program (all dates × all time slots).
+function getSummerSessionIds(prog) {
+  const ids = [];
+  prog.dates.forEach(date => {
+    prog.times.forEach(({ time }) => {
+      const override = prog.timeOverrides && prog.timeOverrides[date] && prog.timeOverrides[date][time];
+      const resolvedTime = override || time;
+      const timeCode = _summerTimeTo24h(resolvedTime);
+      ids.push(`${prog.abbrev}_${_summerDateToId(date)}_${timeCode}`);
+    });
+  });
+  return ids;
+}
+
 // Render summer program cards into a container element.
-// onCardClick(prog) is called when the user clicks a card.
+// onCardClick(prog) is called when the user clicks a non-sold-out card.
 // ctaLabel controls the button text (default: 'Details').
 function renderSummerCards(containerId, onCardClick, ctaLabel = 'Details') {
   const container = document.getElementById(containerId);
@@ -146,16 +200,48 @@ function renderSummerCards(containerId, onCardClick, ctaLabel = 'Details') {
             $${prog.programRate}
             <span>for ${prog.sessionsCount} sessions</span>
           </div>
-          <span class="btn btn-accent-outline summer-card-cta">${ctaLabel}</span>
+          <div class="summer-card-cta-col">
+            <span class="summer-card-spots"></span>
+            <span class="btn btn-accent-outline summer-card-cta">${ctaLabel}</span>
+          </div>
         </div>
       </div>
     `;
-    const handler = () => onCardClick(prog);
+    const handler = () => {
+      if (card.dataset.soldOut === 'true') return;
+      onCardClick(prog);
+    };
     card.addEventListener('click', handler);
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
     });
     container.appendChild(card);
+  });
+}
+
+// Update rendered cards with spot availability.
+// spotsMap: { progId: minSpotsRemaining } — call after fetching /api/schedule.
+// A missing entry means no schedule data found; those cards are left unchanged.
+function updateSummerCardSpots(containerId, spotsMap) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  SUMMER_PROGRAMS.forEach(prog => {
+    const card = container.querySelector(`[data-program-id="${prog.id}"]`);
+    if (!card) return;
+    const spots = spotsMap[prog.id];
+    if (spots === undefined) return;
+
+    const spotsEl = card.querySelector('.summer-card-spots');
+    const ctaEl   = card.querySelector('.summer-card-cta');
+
+    if (spots <= 0) {
+      card.dataset.soldOut = 'true';
+      card.classList.add('summer-card--full');
+      if (spotsEl) { spotsEl.textContent = 'Sold Out'; spotsEl.classList.add('summer-card-spots--full'); }
+      if (ctaEl)   { ctaEl.textContent = 'Sold Out'; ctaEl.classList.add('btn--disabled'); }
+    } else {
+      if (spotsEl) spotsEl.textContent = `${spots} spot${spots !== 1 ? 's' : ''} left`;
+    }
   });
 }
 

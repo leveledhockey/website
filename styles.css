@@ -1473,7 +1473,35 @@ body.modal-open { overflow: hidden; }
   margin-top: 0.1rem;
 }
 
-.summer-card-cta { margin-left: auto; flex-shrink: 0; }
+.summer-card-cta-col {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.summer-card-cta { flex-shrink: 0; }
+
+.summer-card-spots {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+.summer-card-spots--full { color: #e05a5a; }
+
+.summer-card--full {
+  opacity: 0.6;
+  cursor: default;
+  pointer-events: none;
+}
+.summer-card--full .summer-card-header::after { display: none; }
+.btn--disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
 
 
 /* ============================================================
