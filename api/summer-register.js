@@ -3,7 +3,7 @@ const Stripe = require('stripe');
 const SUMMER_PACKAGES = {
   'tue-puck-jul': {
     label:    'Tuesday Puck Skills — July 2026',
-    abbrev:   'PUCK',
+    abbrev:   'PUCKSKILLS',
     amount:   13000,
     dates:    ['July 7', 'July 14', 'July 21'],
     time:     '2:45–3:35 PM',
@@ -11,7 +11,7 @@ const SUMMER_PACKAGES = {
   },
   'thu-def-jul': {
     label:    'Thursday Defensive Skills — July 2026',
-    abbrev:   'DEF',
+    abbrev:   'DEFENSECAMP',
     amount:   13000,
     dates:    ['July 9', 'July 16', 'July 23'],
     time:     '2:45–3:35 PM',
