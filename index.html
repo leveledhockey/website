@@ -784,6 +784,25 @@
 
     renderSummerCards('summer-grid', prog => openSummerModal(prog));
 
+    // Load spot availability from the schedule and update summer cards.
+    (async () => {
+      try {
+        const sessions = await fetch('/api/schedule').then(r => r.json());
+        const spotById = {};
+        sessions.forEach(s => { spotById[s.sessionId] = s.spotsRemaining; });
+
+        const spotsMap = {};
+        SUMMER_PROGRAMS.forEach(prog => {
+          const ids = getSummerSessionIds(prog);
+          const knownIds = ids.filter(id => id in spotById);
+          if (knownIds.length === 0) return;
+          spotsMap[prog.id] = Math.min(...knownIds.map(id => spotById[id]));
+        });
+
+        updateSummerCardSpots('summer-grid', spotsMap);
+      } catch (_) {}
+    })();
+
     function openSummerModal(prog) {
       const modalEl  = document.getElementById('summer-modal');
       const bodyEl   = document.getElementById('summer-modal-body');
@@ -829,7 +848,7 @@
         `<div class="sreg-pkg-price">$${prog.programRate} <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $${savings}</span></div>`;
 
       document.getElementById('sreg-amount-line').innerHTML =
-        `Amount: <strong style="color:var(--text)">$${prog.programRate}.00 CAD</strong> for all ${prog.sessionsCount} sessions &mdash; processed securely by Stripe.`;
+        `Amount: <strong style="color:var(--text)">$${prog.programRate}.00 CAD</strong> for all ${prog.sessionsCount} sessions - processed securely by Stripe.`;
 
       const timeSection = document.getElementById('sreg-time-section');
       const timeSelect  = document.getElementById('sreg-time-slot');
