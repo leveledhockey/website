@@ -21,6 +21,18 @@ function formatTime(hhmm) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+const DOW_NAMES   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// "MM-DD-YY" → "Wednesday, July 10, 2026"
+function formatDate(mmddyy) {
+  const [mm, dd, yy] = mmddyy.split('-').map(Number);
+  const year = yy < 100 ? 2000 + yy : yy;
+  const d = new Date(year, mm - 1, dd);
+  return `${DOW_NAMES[d.getDay()]}, ${MONTH_NAMES[mm - 1]} ${dd}, ${year}`;
+}
+
 const MONTH_NUM = {
   January:1, February:2, March:3, April:4, May:5, June:6,
   July:7, August:8, September:9, October:10, November:11, December:12,
@@ -129,10 +141,11 @@ async function handleDropIn(paymentIntent, meta, res) {
     const playerLast  = player_last  || '';
     const parentFirst = (parent_name || '').split(' ')[0];
 
-    const labelMatch  = (sessionLabel || '').match(/^(.+?) - \d{2}-\d{2}-\d{2,4} at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
+    const labelMatch  = (sessionLabel || '').match(/^(.+?) - (\d{2}-\d{2}-\d{2,4}) at (\d{2}:\d{2})(?::\d{2})? \((.+)\)$/);
     const sessionName = labelMatch ? `${labelMatch[1].replace(/_/g, ' ')}${level ? ' - ' + level : ''}` : (sessionLabel || '').replace(/_/g, ' ');
-    const sessionTime = labelMatch ? formatTime(labelMatch[2]) : '';
-    const sessionLoc  = labelMatch ? labelMatch[3] : '';
+    const sessionDate = labelMatch ? formatDate(labelMatch[2]) : '';
+    const sessionTime = labelMatch ? formatTime(labelMatch[3]) : '';
+    const sessionLoc  = labelMatch ? labelMatch[4] : '';
 
     try {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -144,6 +157,7 @@ async function handleDropIn(paymentIntent, meta, res) {
                <p>Great news! ${playerFirst} ${playerLast}'s registration is confirmed and your payment has been received.</p>
                <p>
                  <strong>Session Name: ${sessionName}</strong><br>
+                 <strong>Date: ${sessionDate}</strong><br>
                  <strong>Time: ${sessionTime}</strong><br>
                  <strong>Location: ${sessionLoc}</strong>
                </p>
