@@ -1062,15 +1062,23 @@
       return `${h}:${min} ${ampm}`;
     }
 
-    function formatTimeRange(timeStr) {
+    function formatTimeRange(timeStr, endTimeStr) {
       const parts = timeStr.split(':');
       const startH = parseInt(parts[0], 10);
-      const min = parts[1] || '00';
-      const endH = startH + 1;
+      const startMin = parts[1] || '00';
+      let endH, endMin;
+      if (endTimeStr) {
+        const endParts = endTimeStr.split(':');
+        endH   = parseInt(endParts[0], 10);
+        endMin = endParts[1] || '00';
+      } else {
+        endH   = startH + 1;
+        endMin = startMin;
+      }
       const startAmpm = startH >= 12 ? 'PM' : 'AM';
       const endAmpm   = endH   >= 12 ? 'PM' : 'AM';
-      const startDisp = `${startH % 12 || 12}:${min}`;
-      const endDisp   = `${endH   % 12 || 12}:${min}`;
+      const startDisp = `${startH % 12 || 12}:${startMin}`;
+      const endDisp   = `${endH   % 12 || 12}:${endMin}`;
       if (startAmpm === endAmpm) return `${startDisp} – ${endDisp} ${endAmpm}`;
       return `${startDisp} ${startAmpm} – ${endDisp} ${endAmpm}`;
     }
@@ -1226,7 +1234,7 @@
 
           const programsHtml = (hasSessions && !isPast) ? daySessions.map(s => {
             const fullTag = s.spotsRemaining <= 0 ? ' <span class="prog-full-label">(FULL)</span>' : '';
-            return `<span class="cal-day-program-item"><span class="cal-day-prog-name">${s['Program']}${fullTag}</span><span class="cal-day-prog-meta">${ICON_CLOCK}${formatTimeRange(s['Time'])} ${ICON_AGE}${s['Age Group']}</span></span>`;
+            return `<span class="cal-day-program-item"><span class="cal-day-prog-name">${s['Program']}${fullTag}</span><span class="cal-day-prog-meta">${ICON_CLOCK}${formatTimeRange(s['Time'], s.EndTime)} ${ICON_AGE}${s['Age Group']}</span></span>`;
           }).join('') : '';
 
           cell.innerHTML = `
@@ -1308,7 +1316,7 @@
                     ${full ? 'disabled' : ''}
                     type="button">
               <span class="week-session-pill-program">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
-              <span class="week-session-pill-meta">${ICON_CLOCK}${formatTimeRange(s['Time'])} ${ICON_AGE}${s['Age Group']}</span>
+              <span class="week-session-pill-meta">${ICON_CLOCK}${formatTimeRange(s['Time'], s.EndTime)} ${ICON_AGE}${s['Age Group']}</span>
             </button>`;
         }).join('');
 
@@ -1392,7 +1400,7 @@
               <span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>
             </div>
             <div class="session-card-details">
-              <span>${formatTimeRange(s['Time'])}</span>
+              <span>${formatTimeRange(s['Time'], s.EndTime)}</span>
               <span>${s['Location']}</span>
               <span>${s['Age Group']}</span>
             </div>
