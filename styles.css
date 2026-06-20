@@ -1562,7 +1562,28 @@ body.modal-open { overflow: hidden; }
 }
 .summer-modal-time-row + .summer-modal-time-row { margin-top: 0.3rem; }
 .summer-modal-time-val { color: var(--text); }
+.summer-modal-time-right { display: flex; align-items: center; gap: 0.6rem; }
 .summer-modal-time-age { color: var(--text-muted); font-size: 0.78rem; }
+.summer-modal-time-spots { font-size: 0.75rem; color: var(--accent); font-weight: 500; }
+.summer-modal-time-spots--full { color: var(--text-muted); }
+.summer-modal-time-spots--loading {
+  display: inline-block;
+  width: 4rem;
+  height: 0.75rem;
+  border-radius: 4px;
+  background: var(--surface-3, var(--surface-2));
+  animation: summer-spots-pulse 1.2s ease-in-out infinite;
+}
+@keyframes summer-spots-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
+.summer-modal-spots-error {
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
 .summer-modal-skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .summer-modal-skill-tag {
   background: var(--accent-glow);

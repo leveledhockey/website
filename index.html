@@ -781,33 +781,55 @@
 
     // ---- Summer programs section ----
     let summerFocusCard = null;
+    let summerOpenProg  = null;
+    let summerSpotsData = {}; // { [progId]: { [time]: minSpotsRemaining } }
+    let summerSpotsStatus = 'loading'; // 'loading' | 'done' | 'error'
 
     renderSummerCards('summer-grid', prog => openSummerModal(prog));
 
-    // Load spot availability from the schedule and update summer cards.
+    // Fetch schedule and compute per-age-group spots for each program.
     (async () => {
       try {
         const sessions = await fetch('/api/schedule').then(r => r.json());
         const spotById = {};
         sessions.forEach(s => { spotById[s.sessionId] = s.spotsRemaining; });
 
-        const spotsMap = {};
         SUMMER_PROGRAMS.forEach(prog => {
-          const ids = getSummerSessionIds(prog);
-          const knownIds = ids.filter(id => id in spotById);
-          if (knownIds.length === 0) return;
-          spotsMap[prog.id] = Math.min(...knownIds.map(id => spotById[id]));
+          const byTime = getSummerSessionIdsByTime(prog);
+          const spotsPerTime = {};
+          Object.entries(byTime).forEach(([time, ids]) => {
+            const known = ids.filter(id => id in spotById);
+            if (known.length > 0) spotsPerTime[time] = Math.min(...known.map(id => spotById[id]));
+          });
+          if (Object.keys(spotsPerTime).length > 0) summerSpotsData[prog.id] = spotsPerTime;
         });
+        summerSpotsStatus = 'done';
+      } catch (_) {
+        summerSpotsStatus = 'error';
+      }
 
-        updateSummerCardSpots('summer-grid', spotsMap);
-      } catch (_) {}
+      // If a modal is already open, refresh it with the resolved data.
+      if (summerOpenProg && !document.getElementById('summer-modal').hidden) {
+        refreshSummerModalSpots();
+      }
     })();
+
+    function refreshSummerModalSpots() {
+      const bodyEl  = document.getElementById('summer-modal-body');
+      const ctaHtml = `<button type="button" class="btn btn-primary summer-modal-cta-btn" id="summer-to-cal-btn">Register for This Package</button>`;
+      bodyEl.innerHTML = buildSummerModalContent(summerOpenProg, ctaHtml, summerSpotsData[summerOpenProg.id], summerSpotsStatus);
+      document.getElementById('summer-to-cal-btn').addEventListener('click', () => {
+        closeSummerModal();
+        openSummerRegModal(summerOpenProg);
+      });
+    }
 
     function openSummerModal(prog) {
       const modalEl  = document.getElementById('summer-modal');
       const bodyEl   = document.getElementById('summer-modal-body');
       const ctaHtml  = `<button type="button" class="btn btn-primary summer-modal-cta-btn" id="summer-to-cal-btn">Register for This Package</button>`;
-      bodyEl.innerHTML = buildSummerModalContent(prog, ctaHtml);
+      bodyEl.innerHTML = buildSummerModalContent(prog, ctaHtml, summerSpotsData[prog.id], summerSpotsStatus);
+      summerOpenProg   = prog;
       summerFocusCard  = document.querySelector(`[data-program-id="${prog.id}"]`);
       modalEl.hidden   = false;
       document.body.classList.add('modal-open');
@@ -822,6 +844,7 @@
       const modalEl = document.getElementById('summer-modal');
       modalEl.hidden = true;
       document.body.classList.remove('modal-open');
+      summerOpenProg = null;
       if (summerFocusCard) summerFocusCard.focus();
     }
 
@@ -856,8 +879,11 @@
         timeSelect.innerHTML = '<option value="">Select your group</option>';
         prog.times.forEach(t => {
           const opt = document.createElement('option');
+          const spotsPerTime = summerSpotsData[prog.id];
+          const soldOut = summerSpotsStatus === 'done' && spotsPerTime && spotsPerTime[t.time] <= 0;
           opt.value = t.time;
-          opt.textContent = `${t.time}${t.age ? ' — ' + t.age : ''}`;
+          opt.textContent = `${t.time}${t.age ? ' — ' + t.age : ''}${soldOut ? ' (Sold Out)' : ''}`;
+          if (soldOut) opt.disabled = true;
           timeSelect.appendChild(opt);
         });
         timeSection.style.display = '';

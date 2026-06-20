@@ -174,6 +174,20 @@ function getSummerSessionIds(prog) {
   return ids;
 }
 
+// Returns { [time]: [sessionIds] } — one entry per time slot, with all dates' IDs for that slot.
+function getSummerSessionIdsByTime(prog) {
+  const byTime = {};
+  prog.times.forEach(({ time }) => {
+    byTime[time] = prog.dates.map(date => {
+      const override = prog.timeOverrides && prog.timeOverrides[date] && prog.timeOverrides[date][time];
+      const resolvedTime = override || time;
+      const timeCode = _summerTimeTo24h(resolvedTime);
+      return `${prog.abbrev}_${_summerDateToId(date)}_${timeCode}`;
+    });
+  });
+  return byTime;
+}
+
 // Render summer program cards into a container element.
 // onCardClick(prog) is called when the user clicks a non-sold-out card.
 // ctaLabel controls the button text (default: 'Details').
@@ -201,16 +215,12 @@ function renderSummerCards(containerId, onCardClick, ctaLabel = 'Details') {
             <span>for ${prog.sessionsCount} sessions</span>
           </div>
           <div class="summer-card-cta-col">
-            <span class="summer-card-spots"></span>
             <span class="btn btn-accent-outline summer-card-cta">${ctaLabel}</span>
           </div>
         </div>
       </div>
     `;
-    const handler = () => {
-      if (card.dataset.soldOut === 'true') return;
-      onCardClick(prog);
-    };
+    const handler = () => { onCardClick(prog); };
     card.addEventListener('click', handler);
     card.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(); }
@@ -219,40 +229,36 @@ function renderSummerCards(containerId, onCardClick, ctaLabel = 'Details') {
   });
 }
 
-// Update rendered cards with spot availability.
-// spotsMap: { progId: minSpotsRemaining } — call after fetching /api/schedule.
-// A missing entry means no schedule data found; those cards are left unchanged.
-function updateSummerCardSpots(containerId, spotsMap) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  SUMMER_PROGRAMS.forEach(prog => {
-    const card = container.querySelector(`[data-program-id="${prog.id}"]`);
-    if (!card) return;
-    const spots = spotsMap[prog.id];
-    if (spots === undefined) return;
-
-    const spotsEl = card.querySelector('.summer-card-spots');
-    const ctaEl   = card.querySelector('.summer-card-cta');
-
-    if (spots <= 0) {
-      card.dataset.soldOut = 'true';
-      card.classList.add('summer-card--full');
-      if (spotsEl) { spotsEl.textContent = 'Sold Out'; spotsEl.classList.add('summer-card-spots--full'); }
-      if (ctaEl)   { ctaEl.textContent = 'Sold Out'; ctaEl.classList.add('btn--disabled'); }
-    } else {
-      if (spotsEl) spotsEl.textContent = `${spots} spot${spots !== 1 ? 's' : ''} left`;
-    }
-  });
-}
-
 // Build the inner HTML for the summer info/details modal.
 // ctaHtml: HTML string for the CTA area (differs between index.html and register.html).
-function buildSummerModalContent(prog, ctaHtml) {
-  const timesHtml = prog.times.map(t => `
+// spotsPerTime: optional { [time]: spotsRemaining } for per-age-group availability display.
+// spotsStatus: 'loading' | 'done' | 'error' — controls the availability UI state.
+function buildSummerModalContent(prog, ctaHtml, spotsPerTime, spotsStatus) {
+  const timesHtml = prog.times.map(t => {
+    let spotsHtml = '';
+    if (spotsStatus === 'loading') {
+      spotsHtml = `<span class="summer-modal-time-spots summer-modal-time-spots--loading" aria-label="Checking availability"></span>`;
+    } else if (spotsStatus === 'done' && spotsPerTime && t.time in spotsPerTime) {
+      const spots = spotsPerTime[t.time];
+      if (spots <= 0) {
+        spotsHtml = `<span class="summer-modal-time-spots summer-modal-time-spots--full">Sold Out</span>`;
+      } else {
+        spotsHtml = `<span class="summer-modal-time-spots">${spots} spot${spots !== 1 ? 's' : ''} left</span>`;
+      }
+    }
+    return `
     <div class="summer-modal-time-row">
       <span class="summer-modal-time-val">${t.time}</span>
-      ${t.age ? `<span class="summer-modal-time-age">${t.age}</span>` : ''}
-    </div>`).join('');
+      <span class="summer-modal-time-right">
+        ${t.age ? `<span class="summer-modal-time-age">${t.age}</span>` : ''}
+        ${spotsHtml}
+      </span>
+    </div>`;
+  }).join('');
+
+  const spotsErrorHtml = spotsStatus === 'error'
+    ? `<p class="summer-modal-spots-error">Unable to fetch spots remaining. Please contact Jacob to register.</p>`
+    : '';
 
   const datesHtml = prog.dates.map(d =>
     `<span class="summer-modal-date-pill">${d}</span>`).join('');
@@ -285,6 +291,7 @@ function buildSummerModalContent(prog, ctaHtml) {
       <p class="summer-modal-sec-label">Class Times${prog.times.length > 1 ? ' by Age Group' : ''}</p>
       ${timesHtml}
       ${notesHtml}
+      ${spotsErrorHtml}
     </div>
     ${locationHtml}
     <div class="summer-modal-sec">
