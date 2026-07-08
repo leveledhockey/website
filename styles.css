@@ -1002,7 +1002,7 @@ h1, h2, h3, h4, h5 {
 .footer-main { padding: clamp(3rem, 6vw, 5rem) 0 2.5rem; }
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr;
+  grid-template-columns: 1.6fr 1fr 1fr 1.4fr;
   gap: clamp(2rem, 4vw, 4rem);
 }
 .footer-brand { display: flex; flex-direction: column; gap: 1rem; }
@@ -1077,6 +1077,55 @@ h1, h2, h3, h4, h5 {
   transition: color var(--trans);
 }
 .footer-legal-link:hover { color: var(--text-muted); }
+
+.footer-subscribe-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.footer-subscribe-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.footer-subscribe-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color var(--trans);
+}
+.footer-subscribe-input::placeholder { color: var(--text-subtle); }
+.footer-subscribe-input:focus { border-color: var(--accent); }
+.footer-subscribe-btn {
+  padding: 0.55rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background var(--trans);
+  white-space: nowrap;
+}
+.footer-subscribe-btn:hover:not(:disabled) { background: var(--accent-dark); }
+.footer-subscribe-btn:disabled { opacity: 0.6; cursor: default; }
+.footer-subscribe-msg {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  min-height: 1.1em;
+}
+.footer-subscribe-ok  { color: #6dba7a; }
+.footer-subscribe-err { color: var(--accent); }
 
 
 /* ============================================================

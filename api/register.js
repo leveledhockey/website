@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
 
   const {
     sessionId, player_first, player_last, level,
-    parent_name, phone, email,
+    parent_name, phone, email, mailList,
   } = req.body || {};
 
   // Server-side validation
@@ -101,6 +101,7 @@ module.exports = async function handler(req, res) {
         parent_name:  String(parent_name).trim(),
         phone:        String(phone).trim(),
         email:        String(email).trim(),
+        mailList:     mailList === 'true' ? 'true' : 'false',
         timestamp:    new Date().toISOString(),
       },
     });

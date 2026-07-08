@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { packageId, player_first, player_last, level, parent_name, phone, email, time_slot } = req.body || {};
+  const { packageId, player_first, player_last, level, parent_name, phone, email, time_slot, mailList } = req.body || {};
 
   const requiredFields = { packageId, player_first, player_last, parent_name, phone, email };
   if (Object.values(requiredFields).some(v => !v || !String(v).trim())) {
@@ -101,6 +101,7 @@ module.exports = async function handler(req, res) {
         parent_name:   String(parent_name).trim(),
         phone:         String(phone).trim(),
         email:         String(email).trim(),
+        mailList:      mailList === 'true' ? 'true' : 'false',
         timestamp:     new Date().toISOString(),
       },
     });
