@@ -969,6 +969,10 @@
             <input type="checkbox" id="consent-check" name="consent">
             <span class="waiver-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
           </label>
+          <label class="waiver-consent-row" for="mailing-list-check" style="margin-top:0.75rem;">
+            <input type="checkbox" id="mailing-list-check" name="mailing_list">
+            <span class="waiver-consent-label">Add me to the Leveled Hockey mailing list for updates on new sessions and programs.</span>
+          </label>
         </div>
 
         <div class="form-submit-row">
@@ -1020,10 +1024,21 @@
         <div>
           <h4 class="footer-col-title">Contact</h4>
           <div class="footer-contact-item">
-          <div class="footer-contact-item">
             <div class="footer-contact-label">Email</div>
             <div class="footer-contact-value"><a href="mailto:info@leveledhockey.com">info@leveledhockey.com</a></div>
           </div>
+        </div>
+
+        <div>
+          <h4 class="footer-col-title">Stay Updated</h4>
+          <p class="footer-subscribe-desc">Get notified about new sessions and programs.</p>
+          <form class="footer-subscribe-form" id="footer-subscribe-form">
+            <div class="footer-subscribe-row">
+              <input type="email" class="footer-subscribe-input" placeholder="Your email" required>
+              <button type="submit" class="footer-subscribe-btn">Join</button>
+            </div>
+            <p class="footer-subscribe-msg" id="footer-subscribe-msg"></p>
+          </form>
         </div>
 
       </div>
@@ -1633,6 +1648,7 @@
         parent_name:  form.parent_name.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
+        mailList:     document.getElementById('mailing-list-check').checked ? 'true' : 'false',
       };
 
       let clientSecret;
@@ -1719,6 +1735,7 @@
         parent_name:  form.parent_name.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
+        mailList:     document.getElementById('mailing-list-check').checked ? 'true' : 'false',
       };
 
       // Step 1: Create the registration and get a PaymentIntent client secret.
@@ -1761,6 +1778,41 @@
       form.style.display = 'none';
       showSuccess();
     });
+    })();
+  </script>
+  <script>
+    (function () {
+      const form = document.getElementById('footer-subscribe-form');
+      const msg  = document.getElementById('footer-subscribe-msg');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const email = form.querySelector('input[type="email"]').value.trim();
+        const btn   = form.querySelector('button');
+        btn.disabled = true;
+        btn.textContent = '...';
+        msg.textContent = '';
+        try {
+          const res  = await fetch('/api/subscribe', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            msg.textContent = "You're on the list!";
+            msg.className   = 'footer-subscribe-msg footer-subscribe-ok';
+            form.querySelector('input').value = '';
+          } else {
+            msg.textContent = data.error || 'Something went wrong.';
+            msg.className   = 'footer-subscribe-msg footer-subscribe-err';
+          }
+        } catch {
+          msg.textContent = 'Something went wrong.';
+          msg.className   = 'footer-subscribe-msg footer-subscribe-err';
+        }
+        btn.disabled    = false;
+        btn.textContent = 'Join';
+      });
     })();
   </script>
 </body>

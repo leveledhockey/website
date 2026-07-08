@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Unsubscribe | Leveled Hockey Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="images/icons/favicon.ico">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .unsub-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem clamp(1rem, 5vw, 2rem);
+    }
+    .unsub-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(2rem, 5vw, 3rem);
+      width: 100%;
+      max-width: 420px;
+    }
+    .unsub-logo {
+      height: 56px;
+      width: 56px;
+      object-fit: contain;
+      margin-bottom: 1.5rem;
+    }
+    .unsub-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .unsub-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 1.75rem;
+    }
+    .unsub-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 0.4rem;
+    }
+    .unsub-input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color var(--trans);
+      margin-bottom: 1rem;
+    }
+    .unsub-input::placeholder { color: var(--text-subtle); }
+    .unsub-input:focus { border-color: var(--accent); }
+    .unsub-btn {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: border-color var(--trans), color var(--trans);
+    }
+    .unsub-btn:hover:not(:disabled) { border-color: var(--text-muted); color: var(--text); }
+    .unsub-btn:disabled { opacity: 0.5; cursor: default; }
+    .unsub-msg {
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      line-height: 1.5;
+      min-height: 1.2em;
+    }
+    .unsub-ok  { color: #6dba7a; }
+    .unsub-err { color: #e05a5a; }
+    .unsub-success-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .unsub-success-text strong { color: var(--text); }
+    .unsub-home {
+      display: block;
+      margin-top: 1.75rem;
+      font-size: 0.8rem;
+      color: var(--text-subtle);
+      text-align: center;
+      transition: color var(--trans);
+    }
+    .unsub-home:hover { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <main class="unsub-page">
+    <div class="unsub-card">
+      <picture>
+        <source srcset="images/logo-new.webp" type="image/webp">
+        <img src="images/logo-new.png" alt="Leveled Hockey Development" class="unsub-logo">
+      </picture>
+
+      <h1 class="unsub-title">Unsubscribe</h1>
+      <p class="unsub-desc" id="unsub-desc">Enter your email address below and you will be removed from the Leveled Hockey mailing list immediately.</p>
+
+      <form id="unsub-form" novalidate>
+        <label class="unsub-label" for="unsub-email">Email Address</label>
+        <input class="unsub-input" type="email" id="unsub-email" placeholder="you@example.com" required>
+        <button class="unsub-btn" type="submit" id="unsub-btn">Remove me from the list</button>
+        <p class="unsub-msg" id="unsub-msg"></p>
+      </form>
+
+      <div id="unsub-success" style="display:none;">
+        <h2 class="unsub-title" style="margin-bottom:0.75rem;">Unsubscribe</h2>
+        <p class="unsub-success-text">The email address <strong id="unsub-confirmed-email"></strong> has been successfully unsubscribed from the Leveled Hockey mailing list.</p>
+      </div>
+
+      <a href="index.html" class="unsub-home">Back to leveledhockey.com</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const form = document.getElementById('unsub-form');
+      const input = document.getElementById('unsub-email');
+      const btn  = document.getElementById('unsub-btn');
+      const msg  = document.getElementById('unsub-msg');
+
+      // Pre-fill from ?email= query param if present
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('email')) input.value = params.get('email');
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const email = input.value.trim();
+        if (!email) return;
+
+        btn.disabled    = true;
+        btn.textContent = 'Removing…';
+        msg.textContent = '';
+        msg.className   = 'unsub-msg';
+
+        try {
+          const res  = await fetch('/api/unsubscribe', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            form.style.display = 'none';
+            document.getElementById('unsub-desc').style.display = 'none';
+            document.getElementById('unsub-confirmed-email').textContent = "'" + email + "'";
+            document.getElementById('unsub-success').style.display = '';
+          } else {
+            msg.textContent = data.error || 'Something went wrong. Please try again.';
+            msg.className   = 'unsub-msg unsub-err';
+            btn.disabled    = false;
+            btn.textContent = 'Remove me from the list';
+          }
+        } catch {
+          msg.textContent = 'Network error. Please try again.';
+          msg.className   = 'unsub-msg unsub-err';
+          btn.disabled    = false;
+          btn.textContent = 'Remove me from the list';
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

@@ -3,7 +3,9 @@ const sgMail = require('@sendgrid/mail');
 const Stripe = require('stripe');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
+const EMAIL_SPREADSHEET_ID          = process.env.GOOGLE_EMAIL_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS = 'Registrations';
+const SHEET_EMAILS        = 'emails';
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -13,6 +15,19 @@ function getAuth() {
   return new google.auth.GoogleAuth({
     credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+}
+
+async function addToMailingList(sheets, email) {
+  if (!EMAIL_SPREADSHEET_ID) return;
+  await sheets.spreadsheets.values.append({
+    spreadsheetId:    EMAIL_SPREADSHEET_ID,
+    range:            `${SHEET_EMAILS}!A:B`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [[new Date().toISOString(), email.trim().toLowerCase()]],
+    },
   });
 }
 
@@ -105,7 +120,7 @@ module.exports = async function handler(req, res) {
 
 async function handleDropIn(paymentIntent, meta, res) {
   const { sessionId, sessionLabel, player_first, player_last, level,
-          parent_name, phone, email, timestamp } = meta;
+          parent_name, phone, email, mailList, timestamp } = meta;
 
   if (!sessionId) {
     console.error('stripe-webhook drop-in: missing sessionId');
@@ -136,6 +151,10 @@ async function handleDropIn(paymentIntent, meta, res) {
         ]],
       },
     });
+
+    if (mailList === 'true') {
+      try { await addToMailingList(sheets, email); } catch (e) { console.error('mailing list write error:', e); }
+    }
 
     const playerFirst = player_first || '';
     const playerLast  = player_last  || '';
@@ -179,7 +198,7 @@ async function handleDropIn(paymentIntent, meta, res) {
 async function handleSummerPackage(paymentIntent, meta, res) {
   const { packageId, packageLabel, abbrev, dates: datesStr, sessionTime, location,
           timeOverrides: timeOverridesStr,
-          player_first, player_last, level, parent_name, phone, email, timestamp } = meta;
+          player_first, player_last, level, parent_name, phone, email, mailList, timestamp } = meta;
 
   const dates         = (datesStr || '').split(',').map(d => d.trim()).filter(Boolean);
   const timeOverrides = timeOverridesStr ? JSON.parse(timeOverridesStr) : {};
@@ -226,6 +245,10 @@ async function handleSummerPackage(paymentIntent, meta, res) {
       insertDataOption: 'INSERT_ROWS',
       requestBody:      { values: rows },
     });
+
+    if (mailList === 'true') {
+      try { await addToMailingList(sheets, email); } catch (e) { console.error('mailing list write error:', e); }
+    }
 
     const playerFirst = player_first || '';
     const playerLast  = player_last  || '';
