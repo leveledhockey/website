@@ -20,13 +20,28 @@ function getAuth() {
 
 async function addToMailingList(sheets, email, childName, birthYear) {
   if (!EMAIL_SPREADSHEET_ID) return;
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedYear  = (birthYear || '').trim();
+
+  const existing = await sheets.spreadsheets.values.get({
+    spreadsheetId: EMAIL_SPREADSHEET_ID,
+    range:         `${SHEET_EMAILS}!A:C`,
+  });
+  const rows = existing.data.values || [];
+  const isDuplicate = rows.some(row =>
+    String(row[0] || '').trim().toLowerCase() === trimmedEmail &&
+    String(row[2] || '').trim() === trimmedYear
+  );
+  if (isDuplicate) return;
+
   await sheets.spreadsheets.values.append({
     spreadsheetId:    EMAIL_SPREADSHEET_ID,
     range:            `${SHEET_EMAILS}!A:C`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
-      values: [[email.trim().toLowerCase(), (childName || '').trim(), (birthYear || '').trim()]],
+      values: [[trimmedEmail, (childName || '').trim(), trimmedYear]],
     },
   });
 }

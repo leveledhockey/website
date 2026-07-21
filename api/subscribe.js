@@ -38,15 +38,27 @@ module.exports = async function handler(req, res) {
     const auth = await getAuth().getClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId:    EMAIL_SPREADSHEET_ID,
-      range:            `${EMAIL_SHEET}!A:C`,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[trimmed, trimmedName, trimmedYear]],
-      },
+    const existing = await sheets.spreadsheets.values.get({
+      spreadsheetId: EMAIL_SPREADSHEET_ID,
+      range:         `${EMAIL_SHEET}!A:C`,
     });
+    const rows = existing.data.values || [];
+    const isDuplicate = rows.some(row =>
+      String(row[0] || '').trim().toLowerCase() === trimmed &&
+      String(row[2] || '').trim() === trimmedYear
+    );
+
+    if (!isDuplicate) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId:    EMAIL_SPREADSHEET_ID,
+        range:            `${EMAIL_SHEET}!A:C`,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [[trimmed, trimmedName, trimmedYear]],
+        },
+      });
+    }
 
     return res.status(200).json({ ok: true });
   } catch (err) {
