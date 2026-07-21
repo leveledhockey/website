@@ -19,11 +19,19 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email } = req.body || {};
-  const trimmed = String(email || '').trim().toLowerCase();
+  const { email, childName, birthYear } = req.body || {};
+  const trimmed      = String(email || '').trim().toLowerCase();
+  const trimmedName  = String(childName || '').trim();
+  const trimmedYear  = String(birthYear || '').trim();
 
   if (!trimmed || !trimmed.includes('@')) {
     return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+  if (!trimmedName) {
+    return res.status(400).json({ error: "Please enter your child's name." });
+  }
+  if (!/^\d{4}$/.test(trimmedYear)) {
+    return res.status(400).json({ error: "Please enter your child's birth year." });
   }
 
   try {
@@ -32,11 +40,11 @@ module.exports = async function handler(req, res) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId:    EMAIL_SPREADSHEET_ID,
-      range:            `${EMAIL_SHEET}!A:B`,
+      range:            `${EMAIL_SHEET}!A:C`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
-        values: [[new Date().toISOString(), trimmed]],
+        values: [[trimmed, trimmedName, trimmedYear]],
       },
     });
 

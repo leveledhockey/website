@@ -398,6 +398,37 @@ h1, h2, h3, h4, h5 {
 
 
 /* ============================================================
+   DROP IN VS PROGRAMS
+   ============================================================ */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+.option-item {
+  padding: 0 3rem;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.option-item:last-child { border-right: none; }
+.option-title { font-size: 1.4rem; margin-bottom: 0.75rem; color: var(--text); }
+.option-desc {
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 1.75rem;
+  max-width: 38ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.option-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+
+/* ============================================================
    PROGRAM CARDS (HOME OVERVIEW)
    ============================================================ */
 .programs-grid {
@@ -1088,6 +1119,8 @@ h1, h2, h3, h4, h5 {
   display: flex;
   gap: 0.5rem;
 }
+.footer-subscribe-row + .footer-subscribe-row { margin-top: 0.5rem; }
+.footer-subscribe-input--year { flex: 0 0 6.5rem; }
 .footer-subscribe-input {
   flex: 1;
   min-width: 0;
@@ -1186,6 +1219,10 @@ h1, h2, h3, h4, h5 {
   /* Steps */
   .steps-grid { grid-template-columns: 1fr; gap: 1.5rem; }
   .steps-grid::before { display: none; }
+
+  /* Drop In vs Programs */
+  .options-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .option-item { border-right: none; padding: 0; }
 
   /* Contact */
   .contact-grid { grid-template-columns: 1fr; }

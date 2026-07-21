@@ -31,9 +31,9 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { packageId, player_first, player_last, level, parent_name, phone, email, time_slot, mailList } = req.body || {};
+  const { packageId, player_first, player_last, level, birth_year, parent_name, phone, email, time_slot, mailList } = req.body || {};
 
-  const requiredFields = { packageId, player_first, player_last, parent_name, phone, email };
+  const requiredFields = { packageId, player_first, player_last, birth_year, parent_name, phone, email };
   if (Object.values(requiredFields).some(v => !v || !String(v).trim())) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
@@ -66,6 +66,7 @@ module.exports = async function handler(req, res) {
         player_first:  String(player_first).trim(),
         player_last:   String(player_last).trim(),
         level:         String(level || '').trim(),
+        birthYear:     String(birth_year).trim(),
         parent_name:   String(parent_name).trim(),
         phone:         String(phone).trim(),
         email:         String(email).trim(),

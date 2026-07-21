@@ -18,15 +18,15 @@ function getAuth() {
   });
 }
 
-async function addToMailingList(sheets, email) {
+async function addToMailingList(sheets, email, childName, birthYear) {
   if (!EMAIL_SPREADSHEET_ID) return;
   await sheets.spreadsheets.values.append({
     spreadsheetId:    EMAIL_SPREADSHEET_ID,
-    range:            `${SHEET_EMAILS}!A:B`,
+    range:            `${SHEET_EMAILS}!A:C`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
-      values: [[new Date().toISOString(), email.trim().toLowerCase()]],
+      values: [[email.trim().toLowerCase(), (childName || '').trim(), (birthYear || '').trim()]],
     },
   });
 }
@@ -119,7 +119,7 @@ module.exports = async function handler(req, res) {
 };
 
 async function handleDropIn(paymentIntent, meta, res) {
-  const { sessionId, sessionLabel, player_first, player_last, level,
+  const { sessionId, sessionLabel, player_first, player_last, level, birthYear,
           parent_name, phone, email, mailList, timestamp } = meta;
 
   if (!sessionId) {
@@ -153,7 +153,9 @@ async function handleDropIn(paymentIntent, meta, res) {
     });
 
     if (mailList === 'true') {
-      try { await addToMailingList(sheets, email); } catch (e) { console.error('mailing list write error:', e); }
+      try {
+        await addToMailingList(sheets, email, `${player_first || ''} ${player_last || ''}`.trim(), birthYear);
+      } catch (e) { console.error('mailing list write error:', e); }
     }
 
     const playerFirst = player_first || '';
@@ -198,7 +200,7 @@ async function handleDropIn(paymentIntent, meta, res) {
 async function handleSummerPackage(paymentIntent, meta, res) {
   const { packageId, packageLabel, abbrev, dates: datesStr, sessionTime, location,
           timeOverrides: timeOverridesStr,
-          player_first, player_last, level, parent_name, phone, email, mailList, timestamp } = meta;
+          player_first, player_last, level, birthYear, parent_name, phone, email, mailList, timestamp } = meta;
 
   const dates         = (datesStr || '').split(',').map(d => d.trim()).filter(Boolean);
   const timeOverrides = timeOverridesStr ? JSON.parse(timeOverridesStr) : {};
@@ -247,7 +249,9 @@ async function handleSummerPackage(paymentIntent, meta, res) {
     });
 
     if (mailList === 'true') {
-      try { await addToMailingList(sheets, email); } catch (e) { console.error('mailing list write error:', e); }
+      try {
+        await addToMailingList(sheets, email, `${player_first || ''} ${player_last || ''}`.trim(), birthYear);
+      } catch (e) { console.error('mailing list write error:', e); }
     }
 
     const playerFirst = player_first || '';

@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
       sheets.spreadsheets.get({ spreadsheetId: EMAIL_SPREADSHEET_ID }),
       sheets.spreadsheets.values.get({
         spreadsheetId: EMAIL_SPREADSHEET_ID,
-        range:         `${EMAIL_SHEET}!A:B`,
+        range:         `${EMAIL_SHEET}!A:C`,
       }),
     ]);
 
@@ -46,9 +46,9 @@ module.exports = async function handler(req, res) {
 
     const rows = dataRes.data.values || [];
 
-    // Collect row indices (0-based) where column B matches the email
+    // Collect row indices (0-based) where column A matches the email
     const toDelete = rows
-      .map((row, i) => ({ i, cell: String(row[1] || '').trim().toLowerCase() }))
+      .map((row, i) => ({ i, cell: String(row[0] || '').trim().toLowerCase() }))
       .filter(({ cell }) => cell === trimmed)
       .map(({ i }) => i);
 

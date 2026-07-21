@@ -678,6 +678,7 @@
     }
     .week-day-col:last-child { border-bottom: none; }
     .week-day-col--today .week-day-label { color: var(--accent); }
+    .week-day-col--past { opacity: 0.4; }
 
     .week-day-header {
       display: flex;
@@ -920,6 +921,10 @@
                 <option value="U18">U18</option>
               </select>
             </div>
+            <div class="form-group full">
+              <label class="form-label" for="player-birth-year">Birth Year <span class="required">*</span></label>
+              <input class="form-input" type="number" id="player-birth-year" name="birth_year" placeholder="e.g. 2015" min="2000" max="2026" required>
+            </div>
           </div>
         </div>
 
@@ -1033,6 +1038,10 @@
           <h4 class="footer-col-title">Stay Updated</h4>
           <p class="footer-subscribe-desc">Get notified about new sessions and programs.</p>
           <form class="footer-subscribe-form" id="footer-subscribe-form">
+            <div class="footer-subscribe-row">
+              <input type="text" class="footer-subscribe-input" id="footer-subscribe-name" placeholder="Child's name" required>
+              <input type="number" class="footer-subscribe-input footer-subscribe-input--year" id="footer-subscribe-year" placeholder="Birth year" min="2000" max="2026" required>
+            </div>
             <div class="footer-subscribe-row">
               <input type="email" class="footer-subscribe-input" placeholder="Your email" required>
               <button type="submit" class="footer-subscribe-btn">Join</button>
@@ -1321,6 +1330,7 @@
         const dow         = DOW_NAMES[dowIndex].slice(0, 3).toUpperCase();
         const isWeekend   = dowIndex === 0 || dowIndex === 6;
         const isToday     = effYear === today.getFullYear() && effMonth === today.getMonth() + 1 && effDay === today.getDate();
+        const isPast      = new Date(effYear, effMonth - 1, effDay) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const monthShort  = MONTH_NAMES[effMonth - 1].slice(0, 3);
 
         const sessionsHtml = daySessions.map(s => {
@@ -1336,7 +1346,7 @@
         }).join('');
 
         return `
-          <div class="week-day-col${isToday ? ' week-day-col--today' : ''}">
+          <div class="week-day-col${isToday ? ' week-day-col--today' : ''}${isPast ? ' week-day-col--past' : ''}">
             <div class="week-day-header">
               <span class="week-day-label${isWeekend ? ' week-day-label--weekend' : ''}">${dow}</span>
               <span class="week-day-date">${monthShort} ${effDay}</span>
@@ -1645,6 +1655,7 @@
         player_first: form.player_first.value.trim(),
         player_last:  form.player_last.value.trim(),
         level:        form.level.value,
+        birth_year:   form.birth_year.value.trim(),
         parent_name:  form.parent_name.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
@@ -1732,6 +1743,7 @@
         player_first: form.player_first.value.trim(),
         player_last:  form.player_last.value.trim(),
         level:        form.level.value,
+        birth_year:   form.birth_year.value.trim(),
         parent_name:  form.parent_name.value.trim(),
         phone:        form.phone.value.trim(),
         email:        form.email.value.trim(),
@@ -1786,7 +1798,9 @@
       const msg  = document.getElementById('footer-subscribe-msg');
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const email = form.querySelector('input[type="email"]').value.trim();
+        const email     = form.querySelector('input[type="email"]').value.trim();
+        const childName = document.getElementById('footer-subscribe-name').value.trim();
+        const birthYear = document.getElementById('footer-subscribe-year').value.trim();
         const btn   = form.querySelector('button');
         btn.disabled = true;
         btn.textContent = '...';
@@ -1795,13 +1809,13 @@
           const res  = await fetch('/api/subscribe', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ email }),
+            body:    JSON.stringify({ email, childName, birthYear }),
           });
           const data = await res.json();
           if (res.ok) {
             msg.textContent = "You're on the list!";
             msg.className   = 'footer-subscribe-msg footer-subscribe-ok';
-            form.querySelector('input').value = '';
+            form.reset();
           } else {
             msg.textContent = data.error || 'Something went wrong.';
             msg.className   = 'footer-subscribe-msg footer-subscribe-err';
