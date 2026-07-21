@@ -1,30 +1,6 @@
 const Stripe = require('stripe');
 
 const SUMMER_PACKAGES = {
-  'tue-puck-jul': {
-    label:    'Tuesday Puck Skills — July 2026',
-    abbrev:   'PUCKSKILLS',
-    amount:   13000,
-    dates:    ['July 7', 'July 14', 'July 21'],
-    time:     '2:45–3:35 PM',
-    location: 'Canlan Sports North Shore',
-  },
-  'thu-def-jul': {
-    label:    'Thursday Defensive Skills — July 2026',
-    abbrev:   'DEFENSECAMP',
-    amount:   13000,
-    dates:    ['July 9', 'July 16', 'July 23'],
-    time:     '2:45–3:35 PM',
-    location: 'Canlan Sports North Shore',
-  },
-  'sat-over-jul': {
-    label:    'Saturday Overspeed — July 2026',
-    abbrev:   'OVERSPEED',
-    amount:   15000,
-    dates:    ['July 11', 'July 18', 'July 25'],
-    time:     null,
-    location: 'Canlan Sports North Shore',
-  },
   'sat-over-aug': {
     label:    'Saturday Overspeed — August 2026',
     abbrev:   'OVERSPEED',
@@ -39,14 +15,6 @@ const SUMMER_PACKAGES = {
         '5:00–5:50 PM': '5:30–6:20 PM',
       },
     },
-  },
-  'sun-pep-jul': {
-    label:    'Sunday Power Edge Pro — July 2026',
-    abbrev:   'PEP',
-    amount:   15000,
-    dates:    ['July 12', 'July 19', 'July 26'],
-    time:     null,
-    location: 'Canlan Sports North Shore',
   },
   'sun-pep-aug': {
     label:    'Sunday Power Edge Pro — August 2026',
