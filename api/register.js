@@ -6,6 +6,29 @@ const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEE
 const SHEET_REGISTRATIONS          = 'Registrations';
 const SCHEDULE_SHEET               = 'Schedule';
 
+const STANDARD_DROPIN_AMOUNT = 5500; // $55.00 CAD
+
+// Fall 2026 Power Edge Pro sessions are $65/session instead of the standard $55, and
+// run a hard capacity partition: only 4 of each session's 20 seats are ever sold as
+// drop-in — the other 16 are reserved for the 13-session program and never spill over,
+// even if the program under-sells. No sheet schema change: a program registration is
+// told apart from a drop-in registration by the sessionLabel text already written to
+// column C (see FALL_PEP_LABEL). When full-program registration closes, bump
+// FALL_PEP_DROPIN_CAP up (e.g. to 20) to open the unsold program seats to drop-in.
+// Hard-coded to these 13 session IDs (Wednesdays, Sept 23 - Dec 16, 4:00-4:50 PM).
+const FALL_PEP_DROPIN_AMOUNT = 6500; // $65.00 CAD
+const FALL_PEP_DROPIN_CAP    = 4;
+const FALL_PEP_LABEL         = 'Fall 2026 Power Edge Pro — 13-Session Program';
+const FALL_PEP_DROPIN_SESSION_IDS = new Set([
+  'PEP_09-23-26_16:00', 'PEP_09-30-26_16:00', 'PEP_10-07-26_16:00', 'PEP_10-14-26_16:00',
+  'PEP_10-21-26_16:00', 'PEP_10-28-26_16:00', 'PEP_11-04-26_16:00', 'PEP_11-11-26_16:00',
+  'PEP_11-18-26_16:00', 'PEP_11-25-26_16:00', 'PEP_12-02-26_16:00', 'PEP_12-09-26_16:00',
+  'PEP_12-16-26_16:00',
+]);
+function isFallPepProgramLabel(label) {
+  return String(label || '').startsWith(FALL_PEP_LABEL);
+}
+
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
@@ -48,7 +71,7 @@ module.exports = async function handler(req, res) {
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
-        range:         `${SHEET_REGISTRATIONS}!B1:B10000`,
+        range:         `${SHEET_REGISTRATIONS}!B1:C10000`,
       }),
     ]);
 
@@ -70,14 +93,23 @@ module.exports = async function handler(req, res) {
     const sessionObj = {};
     headers.forEach((h, i) => { sessionObj[h] = sessionRow[i] || ''; });
 
-    const maxParticipants = parseInt(sessionObj['Max Participants'], 10);
+    const maxParticipants  = parseInt(sessionObj['Max Participants'], 10);
+    const trimmedSessionId = String(sessionId).trim();
+    const isFallPepDropin  = FALL_PEP_DROPIN_SESSION_IDS.has(trimmedSessionId);
 
-    // Count live registrations for this session to enforce capacity.
+    // Count live registrations for this session to enforce capacity. Fall PEP
+    // sessions run a hard partition, so only drop-in-labeled rows count against
+    // the drop-in cap — program registrations are tracked separately and never
+    // eat into this pool.
     const regCount = regRows
       .slice(1)
-      .filter(([sid]) => sid === String(sessionId).trim()).length;
+      .filter(row => {
+        if (row[0] !== trimmedSessionId) return false;
+        return isFallPepDropin ? !isFallPepProgramLabel(row[1]) : true;
+      }).length;
 
-    if (regCount >= maxParticipants) {
+    const capacity = isFallPepDropin ? FALL_PEP_DROPIN_CAP : maxParticipants;
+    if (regCount >= capacity) {
       return res.status(409).json({ error: 'Sorry, this session is now full.' });
     }
 
@@ -85,16 +117,19 @@ module.exports = async function handler(req, res) {
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
+    const amount = isFallPepDropin ? FALL_PEP_DROPIN_AMOUNT : STANDARD_DROPIN_AMOUNT;
+
     // Store all registration data in PaymentIntent metadata so the webhook can
     // write the spreadsheet row only after payment actually succeeds.
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
-      amount:      5500, // $55.00 CAD in cents
+      amount,
       currency:    'cad',
       description: `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']}`,
       metadata: {
-        sessionId:    String(sessionId).trim(),
+        sessionId:      String(sessionId).trim(),
         sessionLabel,
+        sessionEndTime: String(sessionObj['End Time (24H clock)'] || '').trim(),
         player_first: String(player_first).trim(),
         player_last:  String(player_last).trim(),
         level:        String(level || '').trim(),

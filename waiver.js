@@ -63,12 +63,6 @@
       '<li><strong>Full Refund:</strong> Cancellations made 48 hours or more before the scheduled session start time will receive a full refund.</li>' +
       '<li><strong>No Refund or Credit:</strong> Cancellations made within 48 hours of the session, as well as missed sessions (no-shows), are not eligible for a refund or account credit.</li>' +
     '</ul>' +
-    '<p><strong>Summer Programs</strong></p>' +
-    '<ul>' +
-      '<li><strong>Full Refund:</strong> Cancellations made 7 or more days before the first scheduled class will receive a full refund.</li>' +
-      '<li><strong>50% Refund:</strong> Cancellations made 3–6 days before the first scheduled class will receive a 50% refund.</li>' +
-      '<li><strong>No Refund or Make-Up Classes:</strong> Cancellations made less than 3 days before the first class, or failure to attend the program, are not eligible for a refund, credit, or make-up classes.</li>' +
-    '</ul>' +
     '<p>By registering for any Leveled Hockey Development program or session, participants acknowledge and agree to this cancellation policy.</p>' +
 
     '<h4>10. Acknowledgment &amp; Consent</h4>' +
