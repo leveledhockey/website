@@ -17,8 +17,140 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    /* ---- Summer registration overlay modal ---- */
-    .summer-reg-overlay {
+    /* ---- Fall PEP program landing section ---- */
+    .fpep-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: clamp(2rem, 5vw, 3.5rem);
+      align-items: center;
+    }
+    @media (max-width: 860px) {
+      .fpep-panel { grid-template-columns: 1fr; }
+    }
+    .fpep-subtitle {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    .fpep-meta-list {
+      margin-top: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .fpep-meta-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .fpep-meta-list li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .fpep-dropin-note {
+      margin-top: 1.75rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .fpep-dropin-note strong {
+      color: var(--text);
+      font-family: var(--font-display);
+    }
+    .fpep-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(1.75rem, 4vw, 2.5rem);
+    }
+    .fpep-card-eyebrow {
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .fpep-card-price {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .fpep-card-price span {
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .fpep-card-savings {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #6cda9a;
+      font-weight: 600;
+    }
+    .fpep-feature-list {
+      margin: 1.5rem 0 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .fpep-feature-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+    .fpep-feature-list li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .fpep-cta { width: 100%; justify-content: center; }
+    .fpep-card-spots {
+      margin: 0 0 1rem;
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6cda9a;
+    }
+    .fpep-card-spots--full { color: #e05a5a; }
+
+    .fpep-dropin-strip {
+      margin-top: clamp(2rem, 4vw, 2.75rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .fpep-dropin-strip-title {
+      font-size: 1.05rem;
+      letter-spacing: 0.03em;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+    .fpep-dropin-strip-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      max-width: 48ch;
+    }
+
+    /* ---- Fall PEP registration modals ---- */
+    .fpep-modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.85);
@@ -33,11 +165,11 @@
       pointer-events: none;
       transition: opacity 0.2s var(--ease);
     }
-    .summer-reg-overlay.open {
+    .fpep-modal-overlay.open {
       opacity: 1;
       pointer-events: all;
     }
-    .summer-reg-panel {
+    .fpep-modal-panel {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
@@ -49,7 +181,26 @@
       transition: transform 0.25s var(--ease);
       margin: auto;
     }
-    .summer-reg-overlay.open .summer-reg-panel { transform: translateY(0); }
+    .fpep-modal-overlay.open .fpep-modal-panel { transform: translateY(0); }
+    .fpep-modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--trans), color var(--trans);
+    }
+    .fpep-modal-close:hover { background: var(--surface-3); color: var(--text); }
 
     .mob-sheet-handle {
       display: none;
@@ -59,8 +210,7 @@
       margin: 0 auto 1.5rem;
     }
 
-    /* ---- Form modal header ---- */
-    .sreg-eyebrow {
+    .fpep-eyebrow {
       font-family: var(--font-display);
       font-size: 0.7rem;
       letter-spacing: 0.15em;
@@ -68,7 +218,7 @@
       color: var(--accent);
       margin-bottom: 0.3rem;
     }
-    .sreg-title {
+    .fpep-title {
       font-family: var(--font-display);
       font-size: clamp(1.3rem, 3.5vw, 1.75rem);
       font-weight: 700;
@@ -79,9 +229,7 @@
       margin-bottom: 1.5rem;
       padding-right: 2rem;
     }
-
-    /* ---- Package summary strip ---- */
-    .sreg-pkg-summary {
+    .fpep-pkg-summary {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -92,7 +240,7 @@
       align-items: baseline;
       gap: 0.4rem 1.5rem;
     }
-    .sreg-pkg-name {
+    .fpep-pkg-name {
       font-family: var(--font-display);
       font-size: 0.95rem;
       font-weight: 700;
@@ -100,8 +248,8 @@
       text-transform: uppercase;
       color: var(--accent);
     }
-    .sreg-pkg-meta { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
-    .sreg-pkg-price {
+    .fpep-pkg-meta { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .fpep-pkg-price {
       font-family: var(--font-display);
       font-size: 1.05rem;
       font-weight: 700;
@@ -109,9 +257,23 @@
       margin-left: auto;
       white-space: nowrap;
     }
-
-    /* ---- Section label ---- */
-    .sreg-section-label {
+    .fpep-program-spots {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6cda9a;
+      margin-top: 0.5rem;
+    }
+    .fpep-program-spots--full { color: #e05a5a; }
+    .fpep-dropin-session-spots {
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #e05a5a;
+      min-height: 1.1em;
+    }
+    .fpep-section-label {
       font-family: var(--font-display);
       font-size: 0.72rem;
       letter-spacing: 0.1em;
@@ -121,56 +283,9 @@
       border-bottom: 1px solid var(--border);
       margin-bottom: 1rem;
     }
-    .sreg-form-section { margin-bottom: 1.75rem; }
+    .fpep-form-section { margin-bottom: 1.75rem; }
 
-    /* ---- Grid + fields ---- */
-    .sreg-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-    }
-    @media (max-width: 560px) { .sreg-grid { grid-template-columns: 1fr; } }
-    .sreg-grid .full { grid-column: 1 / -1; }
-
-    .sreg-form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-    .sreg-label {
-      font-family: var(--font-display);
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .sreg-label .required { color: var(--accent); margin-left: 2px; }
-
-    .sreg-input, .sreg-select {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--font-body);
-      font-size: 0.95rem;
-      padding: 0.75rem 1rem;
-      transition: border-color var(--trans), box-shadow var(--trans);
-      width: 100%;
-    }
-    .sreg-input::placeholder { color: var(--text-subtle); }
-    .sreg-input:focus, .sreg-select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-    .sreg-select {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      padding-right: 2.5rem;
-      cursor: pointer;
-    }
-    .sreg-select option { background: var(--surface-2); }
-
-    /* ---- Waiver ---- */
-    .sreg-waiver-box {
+    .fpep-waiver-box {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -184,10 +299,10 @@
       color: var(--text-muted);
       line-height: 1.65;
     }
-    .sreg-waiver-box::-webkit-scrollbar { width: 4px; }
-    .sreg-waiver-box::-webkit-scrollbar-track { background: transparent; }
-    .sreg-waiver-box::-webkit-scrollbar-thumb { background: rgba(232,121,42,0.3); border-radius: 2px; }
-    .sreg-waiver-box h4 {
+    .fpep-waiver-box::-webkit-scrollbar { width: 4px; }
+    .fpep-waiver-box::-webkit-scrollbar-track { background: transparent; }
+    .fpep-waiver-box::-webkit-scrollbar-thumb { background: rgba(232,121,42,0.3); border-radius: 2px; }
+    .fpep-waiver-box h4 {
       font-family: var(--font-display);
       font-size: 0.7rem;
       font-weight: 600;
@@ -196,9 +311,9 @@
       color: var(--text);
       margin: 0.9rem 0 0.3rem;
     }
-    .sreg-waiver-box p { margin: 0 0 0.4rem; }
-    .sreg-waiver-box ul { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; }
-    .sreg-waiver-box ul li { margin-bottom: 0.15rem; }
+    .fpep-waiver-box p { margin: 0 0 0.4rem; }
+    .fpep-waiver-box ul { margin: 0.2rem 0 0.4rem 1.1rem; padding: 0; }
+    .fpep-waiver-box ul li { margin-bottom: 0.15rem; }
     .waiver-org {
       font-family: var(--font-display);
       font-size: 0.7rem;
@@ -217,7 +332,7 @@
       color: var(--text);
       margin-bottom: 1rem;
     }
-    .sreg-consent-row {
+    .fpep-consent-row {
       display: flex;
       align-items: flex-start;
       gap: 0.65rem;
@@ -228,28 +343,23 @@
       cursor: pointer;
       transition: border-color var(--trans), background var(--trans);
     }
-    .sreg-consent-row:has(#sreg-consent:checked) {
-      border-color: rgba(232,121,42,0.6);
-      background: var(--accent-glow);
-    }
-    .sreg-consent-row input[type="checkbox"] {
+    .fpep-consent-row input[type="checkbox"] {
       width: 16px; height: 16px;
       accent-color: var(--accent);
       flex-shrink: 0;
       margin-top: 2px;
       cursor: pointer;
     }
-    .sreg-consent-label {
+    .fpep-consent-label {
       font-size: 0.82rem;
       color: var(--text-muted);
       line-height: 1.5;
       cursor: pointer;
       user-select: none;
     }
-    .sreg-consent-label strong { color: var(--text); }
+    .fpep-consent-label strong { color: var(--text); }
 
-    /* ---- Pay divider ---- */
-    .sreg-pay-divider {
+    .fpep-pay-divider {
       display: flex;
       align-items: center;
       gap: 0.85rem;
@@ -259,19 +369,18 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .sreg-pay-divider::before, .sreg-pay-divider::after {
+    .fpep-pay-divider::before, .fpep-pay-divider::after {
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
-    /* ---- Submit row + success ---- */
-    .sreg-submit-row {
+    .fpep-submit-row {
       margin-top: 1.75rem;
       display: flex;
       align-items: center;
       gap: 1.25rem;
       flex-wrap: wrap;
     }
-    .sreg-success {
+    .fpep-success {
       display: none;
       background: rgba(50,180,100,0.1);
       border: 1px solid rgba(50,180,100,0.3);
@@ -282,10 +391,9 @@
       line-height: 1.6;
     }
 
-    /* ---- Mobile bottom-sheet ---- */
     @media (max-width: 640px) {
-      .summer-reg-overlay { align-items: flex-end !important; padding: 0 !important; }
-      .summer-reg-panel {
+      .fpep-modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+      .fpep-modal-panel {
         border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
         max-width: 100% !important;
         max-height: 88vh !important;
@@ -294,7 +402,7 @@
         margin: 0 !important;
         transform: translateY(100%) !important;
       }
-      .summer-reg-overlay.open .summer-reg-panel { transform: translateY(0) !important; }
+      .fpep-modal-overlay.open .fpep-modal-panel { transform: translateY(0) !important; }
       .mob-sheet-handle { display: block; }
     }
   </style>
@@ -361,46 +469,44 @@
     </div>
   </div>
 
-  <!-- ===================== DROP IN VS PROGRAMS ===================== -->
-  <section class="section" id="get-started">
+  <!-- ===================== FALL PEP PROGRAM ===================== -->
+  <section class="section" id="fall-pep">
     <div class="container">
-      <div class="section-header">
-        <p class="section-eyebrow">Get Started</p>
-        <h2 class="section-title">How Would You Like To Train?</h2>
-        <p class="section-desc">Pick the option that fits your schedule.</p>
-      </div>
-      <div class="options-grid">
-
-        <div class="option-item">
-          <h3 class="option-title">Drop In</h3>
-          <p class="option-desc">No commitment, drop in anytime. Pay per session and train on whatever schedule works for you.</p>
-          <div class="option-actions">
-            <a href="#programs" class="btn btn-outline">View Info</a>
-            <a href="register.html" class="btn btn-primary">Register</a>
-          </div>
+      <div class="fpep-panel">
+        <div>
+          <p class="section-eyebrow">Fall 2026</p>
+          <h2 class="section-title">Fall Power Edge Pro Program</h2>
+          <p class="fpep-subtitle">13-Week Development Program</p>
+          <ul class="fpep-meta-list">
+            <li>Wednesdays &middot; 4:00&ndash;4:50 PM</li>
+            <li>Scotia Barn &middot; Burnaby</li>
+            <li>Sept. 23 - Dec. 16</li>
+          </ul>
+          <p class="fpep-dropin-note">Drop In: <strong>$65</strong> per session</p>
         </div>
 
-        <div class="option-item">
-          <h3 class="option-title">Programs</h3>
-          <p class="option-desc">Book more and save. Lock in a full month of sessions at a discounted rate with one payment.</p>
-          <div class="option-actions">
-            <a href="#summer" class="btn btn-primary">Info</a>
-          </div>
+        <div class="fpep-card">
+          <p class="fpep-card-eyebrow">13 Sessions</p>
+          <p class="fpep-card-price">$699 <span>CAD</span></p>
+          <p class="fpep-card-savings">Save $146 vs. Drop-In</p>
+          <ul class="fpep-feature-list">
+            <li>Reserved weekly spot</li>
+            <li>Consistent weekly development</li>
+            <li>Best available session rate</li>
+            <li>Limited full-program registration</li>
+          </ul>
+          <p id="fpep-card-spots" class="fpep-card-spots">Checking availability&hellip;</p>
+          <button type="button" class="btn btn-primary fpep-cta" id="fpep-register-btn">Register for Fall Program</button>
         </div>
-
       </div>
-    </div>
-  </section>
 
-  <!-- ===================== SUMMER PROGRAMS ===================== -->
-  <section class="section section-alt" id="summer">
-    <div class="container">
-      <div class="section-header">
-        <p class="section-eyebrow">Summer 2026</p>
-        <h2 class="section-title">Summer Programs</h2>
-        <p class="section-desc">Lock in a full month of sessions at a discounted rate. One payment covers every class in the package.</p>
+      <div class="fpep-dropin-strip">
+        <div>
+          <p class="fpep-dropin-strip-title">Can&rsquo;t commit to the full program?</p>
+          <p class="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session, subject to availability.</p>
+        </div>
+        <button type="button" class="btn btn-outline" id="fpep-dropin-btn">Drop-In Registration</button>
       </div>
-      <div class="programs-grid" id="summer-grid"></div>
     </div>
   </section>
 
@@ -594,131 +700,6 @@
     </div>
   </footer>
 
-  <!-- ===================== SUMMER REGISTRATION MODAL ===================== -->
-  <div class="summer-reg-overlay" id="summer-reg-overlay" role="dialog" aria-modal="true" aria-labelledby="sreg-title">
-    <div class="summer-reg-panel">
-      <div class="mob-sheet-handle" aria-hidden="true"></div>
-      <button class="modal-close" id="summer-reg-close" aria-label="Close">&times;</button>
-
-      <p class="sreg-eyebrow">Register</p>
-      <h2 class="sreg-title" id="sreg-title"></h2>
-      <div class="sreg-pkg-summary" id="sreg-pkg-summary"></div>
-
-      <form id="sreg-form" novalidate>
-        <input type="hidden" id="sreg-pkg-id" name="packageId">
-
-        <!-- Time slot selector — only shown for multi-age programs -->
-        <div id="sreg-time-section" class="sreg-form-section" style="display:none">
-          <p class="sreg-section-label">Select Time Slot</p>
-          <div class="sreg-form-group">
-            <label class="sreg-label" for="sreg-time-slot">Age Group &amp; Time <span class="required">*</span></label>
-            <select class="sreg-select" id="sreg-time-slot" name="time_slot">
-              <option value="">Select your group</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Player info -->
-        <div class="sreg-form-section">
-          <p class="sreg-section-label">Player Information</p>
-          <div class="sreg-grid">
-            <div class="sreg-form-group">
-              <label class="sreg-label" for="sreg-player-first">First Name <span class="required">*</span></label>
-              <input class="sreg-input" type="text" id="sreg-player-first" name="player_first" placeholder="e.g. Alex" required>
-            </div>
-            <div class="sreg-form-group">
-              <label class="sreg-label" for="sreg-player-last">Last Name <span class="required">*</span></label>
-              <input class="sreg-input" type="text" id="sreg-player-last" name="player_last" placeholder="e.g. Smith" required>
-            </div>
-            <div class="sreg-form-group full">
-              <label class="sreg-label" for="sreg-level">Level of Play <span class="required">*</span></label>
-              <select class="sreg-select" id="sreg-level" name="level" required>
-                <option value="">Select level</option>
-                <option value="U7">U7</option>
-                <option value="U9">U9</option>
-                <option value="U11">U11</option>
-                <option value="U13">U13</option>
-                <option value="U15">U15</option>
-                <option value="U18">U18</option>
-              </select>
-            </div>
-            <div class="sreg-form-group full">
-              <label class="sreg-label" for="sreg-birth-year">Birth Year <span class="required">*</span></label>
-              <input class="sreg-input" type="number" id="sreg-birth-year" name="birth_year" placeholder="e.g. 2015" min="2000" max="2026" required>
-            </div>
-          </div>
-        </div>
-
-        <!-- Parent / guardian -->
-        <div class="sreg-form-section">
-          <p class="sreg-section-label">Parent / Guardian Information</p>
-          <div class="sreg-grid">
-            <div class="sreg-form-group full">
-              <label class="sreg-label" for="sreg-parent-name">Full Name <span class="required">*</span></label>
-              <input class="sreg-input" type="text" id="sreg-parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
-            </div>
-            <div class="sreg-form-group">
-              <label class="sreg-label" for="sreg-phone">Phone Number <span class="required">*</span></label>
-              <input class="sreg-input" type="tel" id="sreg-phone" name="phone" placeholder="e.g. 604-555-0100" required>
-            </div>
-            <div class="sreg-form-group full">
-              <label class="sreg-label" for="sreg-email">Email Address <span class="required">*</span></label>
-              <input class="sreg-input" type="email" id="sreg-email" name="email" placeholder="e.g. jordan@email.com" required>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment -->
-        <div class="sreg-form-section">
-          <p class="sreg-section-label">Payment</p>
-          <div id="sreg-express-section" style="display:none">
-            <div id="sreg-payment-request-btn"></div>
-            <div class="sreg-pay-divider"><span>or pay with card</span></div>
-          </div>
-          <div class="sreg-form-group full">
-            <label class="sreg-label">Card Details <span class="required">*</span></label>
-            <div id="sreg-card-element" class="sreg-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
-            <div id="sreg-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
-          </div>
-          <p id="sreg-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;"></p>
-        </div>
-
-        <!-- Waiver -->
-        <div class="sreg-form-section">
-          <p class="sreg-section-label">Waiver &amp; Consent</p>
-          <div class="sreg-waiver-box" data-waiver-content></div>
-          <label class="sreg-consent-row" for="sreg-consent">
-            <input type="checkbox" id="sreg-consent" name="consent">
-            <span class="sreg-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
-          </label>
-          <label class="sreg-consent-row" for="sreg-mailing-list" style="margin-top:0.75rem;">
-            <input type="checkbox" id="sreg-mailing-list" name="mailing_list">
-            <span class="sreg-consent-label">Add me to the Leveled Hockey mailing list for updates on new sessions and programs.</span>
-          </label>
-        </div>
-
-        <div class="sreg-submit-row">
-          <button type="submit" class="btn btn-primary" id="sreg-submit" disabled>Submit Registration</button>
-        </div>
-      </form>
-
-      <div class="sreg-success" id="sreg-success">
-        <strong>Registration received!</strong> Your payment has been processed and your spot is confirmed.<br><br>
-        <div id="sreg-success-summary"></div>
-        <br>
-        Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== SUMMER PROGRAM INFO MODAL ===================== -->
-  <div class="modal-backdrop" id="summer-modal" role="dialog" aria-modal="true" aria-labelledby="summer-modal-title" hidden>
-    <div class="modal modal--summer">
-      <button class="modal-close" id="summer-modal-close" aria-label="Close">&times;</button>
-      <div id="summer-modal-body" style="display:flex;flex-direction:column;gap:1.5rem"></div>
-    </div>
-  </div>
-
   <!-- ===================== PRIVATE LESSONS MODAL ===================== -->
   <div class="modal-backdrop" id="private-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal">
@@ -770,8 +751,229 @@
     </div>
   </div>
 
+  <!-- ===================== FALL PEP PROGRAM REGISTRATION MODAL ===================== -->
+  <div class="fpep-modal-overlay" id="fpep-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="fpep-title">
+    <div class="fpep-modal-panel">
+      <div class="mob-sheet-handle" aria-hidden="true"></div>
+      <button class="fpep-modal-close" id="fpep-modal-close" aria-label="Close">&times;</button>
+
+      <p class="fpep-eyebrow">Register</p>
+      <h2 class="fpep-title" id="fpep-title">Fall 2026 Power Edge Pro 13-Session Program</h2>
+      <div class="fpep-pkg-summary">
+        <div>
+          <div class="fpep-pkg-name">Fall PEP Program</div>
+          <div class="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Sept 23 &ndash; Dec 16 &middot; 13 sessions<br>Scotia Barn Burnaby</div>
+          <p id="fpep-program-spots" class="fpep-program-spots">Checking availability&hellip;</p>
+        </div>
+        <div class="fpep-pkg-price">$699 <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
+      </div>
+
+      <form id="fpep-form" novalidate>
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Player Information</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="fpep-player-first">First Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-player-first" name="player_first" placeholder="e.g. Alex" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fpep-player-last">Last Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-player-last" name="player_last" placeholder="e.g. Smith" required>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-level">Level of Play <span class="required">*</span></label>
+              <select class="form-select" id="fpep-level" name="level" required>
+                <option value="">Select level</option>
+                <option value="U7">U7</option>
+                <option value="U9">U9</option>
+                <option value="U11">U11</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U18">U18</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-birth-year">Birth Year <span class="required">*</span></label>
+              <input class="form-input" type="number" id="fpep-birth-year" name="birth_year" placeholder="e.g. 2015" min="2000" max="2026" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Parent / Guardian Information</p>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="form-label" for="fpep-parent-name">Full Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fpep-phone">Phone Number <span class="required">*</span></label>
+              <input class="form-input" type="tel" id="fpep-phone" name="phone" placeholder="e.g. 604-555-0100" required>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-email">Email Address <span class="required">*</span></label>
+              <input class="form-input" type="email" id="fpep-email" name="email" placeholder="e.g. jordan@email.com" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Payment</p>
+          <div id="fpep-express-section" style="display:none">
+            <div id="fpep-payment-request-btn"></div>
+            <div class="fpep-pay-divider"><span>or pay with card</span></div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Card Details <span class="required">*</span></label>
+            <div id="fpep-card-element" class="form-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
+            <div id="fpep-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
+            Amount: <strong style="color:var(--text)">$699.00 CAD</strong> for all 13 sessions (save $146 vs. the $65 drop-in rate) - processed securely by Stripe.
+          </p>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Waiver &amp; Consent</p>
+          <div class="fpep-waiver-box" data-waiver-content></div>
+          <label class="fpep-consent-row" for="fpep-consent">
+            <input type="checkbox" id="fpep-consent" name="consent">
+            <span class="fpep-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
+          </label>
+          <label class="fpep-consent-row" for="fpep-mailing-list" style="margin-top:0.75rem;">
+            <input type="checkbox" id="fpep-mailing-list" name="mailing_list">
+            <span class="fpep-consent-label">Add me to the Leveled Hockey mailing list for updates on new sessions and programs.</span>
+          </label>
+        </div>
+
+        <div class="fpep-submit-row">
+          <button type="submit" class="btn btn-primary" id="fpep-submit" disabled>Register for Fall Program</button>
+        </div>
+      </form>
+
+      <div class="fpep-success" id="fpep-success">
+        <strong>Registration received!</strong> Your payment has been processed and your spot in all 13 sessions is confirmed.<br><br>
+        <div id="fpep-success-summary"></div>
+        <br>
+        Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== FALL PEP DROP-IN REGISTRATION MODAL ===================== -->
+  <div class="fpep-modal-overlay" id="fpep-dropin-overlay" role="dialog" aria-modal="true" aria-labelledby="fpep-dropin-title">
+    <div class="fpep-modal-panel">
+      <div class="mob-sheet-handle" aria-hidden="true"></div>
+      <button class="fpep-modal-close" id="fpep-dropin-close" aria-label="Close">&times;</button>
+
+      <p class="fpep-eyebrow">Register</p>
+      <h2 class="fpep-title" id="fpep-dropin-title">Fall 2026 PEP Drop-In</h2>
+
+      <form id="fpep-dropin-form" novalidate>
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Select a Session</p>
+          <div class="form-group full">
+            <label class="form-label" for="fpep-dropin-session">Session Date <span class="required">*</span></label>
+            <select class="form-select" id="fpep-dropin-session" name="session" required>
+              <option value="">Select a date</option>
+            </select>
+            <p id="fpep-dropin-session-spots" class="fpep-dropin-session-spots"></p>
+          </div>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Player Information</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="fpep-dropin-player-first">First Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-dropin-player-first" name="player_first" placeholder="e.g. Alex" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fpep-dropin-player-last">Last Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-dropin-player-last" name="player_last" placeholder="e.g. Smith" required>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-dropin-level">Level of Play <span class="required">*</span></label>
+              <select class="form-select" id="fpep-dropin-level" name="level" required>
+                <option value="">Select level</option>
+                <option value="U7">U7</option>
+                <option value="U9">U9</option>
+                <option value="U11">U11</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U18">U18</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-dropin-birth-year">Birth Year <span class="required">*</span></label>
+              <input class="form-input" type="number" id="fpep-dropin-birth-year" name="birth_year" placeholder="e.g. 2015" min="2000" max="2026" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Parent / Guardian Information</p>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label class="form-label" for="fpep-dropin-parent-name">Full Name <span class="required">*</span></label>
+              <input class="form-input" type="text" id="fpep-dropin-parent-name" name="parent_name" placeholder="e.g. Jordan Smith" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fpep-dropin-phone">Phone Number <span class="required">*</span></label>
+              <input class="form-input" type="tel" id="fpep-dropin-phone" name="phone" placeholder="e.g. 604-555-0100" required>
+            </div>
+            <div class="form-group full">
+              <label class="form-label" for="fpep-dropin-email">Email Address <span class="required">*</span></label>
+              <input class="form-input" type="email" id="fpep-dropin-email" name="email" placeholder="e.g. jordan@email.com" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Payment</p>
+          <div id="fpep-dropin-express-section" style="display:none">
+            <div id="fpep-dropin-payment-request-btn"></div>
+            <div class="fpep-pay-divider"><span>or pay with card</span></div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Card Details <span class="required">*</span></label>
+            <div id="fpep-dropin-card-element" class="form-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
+            <div id="fpep-dropin-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
+            Amount: <strong style="color:var(--text)">$65.00 CAD</strong> per session, processed securely by Stripe.
+          </p>
+        </div>
+
+        <div class="fpep-form-section">
+          <p class="fpep-section-label">Waiver &amp; Consent</p>
+          <div class="fpep-waiver-box" data-waiver-content></div>
+          <label class="fpep-consent-row" for="fpep-dropin-consent">
+            <input type="checkbox" id="fpep-dropin-consent" name="consent">
+            <span class="fpep-consent-label"><strong>I have read and agree</strong> to the Participant Waiver, Liability Release &amp; Media Consent Agreement above.</span>
+          </label>
+          <label class="fpep-consent-row" for="fpep-dropin-mailing-list" style="margin-top:0.75rem;">
+            <input type="checkbox" id="fpep-dropin-mailing-list" name="mailing_list">
+            <span class="fpep-consent-label">Add me to the Leveled Hockey mailing list for updates on new sessions and programs.</span>
+          </label>
+        </div>
+
+        <div class="fpep-submit-row">
+          <button type="submit" class="btn btn-primary" id="fpep-dropin-submit" disabled>Submit Registration</button>
+        </div>
+      </form>
+
+      <div class="fpep-success" id="fpep-dropin-success">
+        <strong>Registration received!</strong> Your payment has been processed and your spot is confirmed.<br><br>
+        <div id="fpep-dropin-success-summary"></div>
+        <br>
+        Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
+      </div>
+    </div>
+  </div>
+
   <script src="waiver.js"></script>
-  <script src="summer-programs.js"></script>
+  <script src="fall-pep.js"></script>
   <script>
     // Transparent → solid nav on scroll
     const nav = document.getElementById('nav');
@@ -833,198 +1035,223 @@
       });
     });
 
-    // ---- Summer programs section ----
-    let summerFocusCard = null;
-    let summerOpenProg  = null;
-    let summerSpotsData = {}; // { [progId]: { [time]: minSpotsRemaining } }
-    let summerSpotsStatus = 'loading'; // 'loading' | 'done' | 'error'
+    // ---- Fall PEP program ----
+    let fallPepSpotsData   = {};        // { [sessionId]: drop-in spotsRemaining }
+    let fallPepSpotsStatus = 'loading'; // 'loading' | 'done' | 'error'
+    let fallPepProgramSpotsRemaining = null; // null = unknown yet
+    let fallPepProgramFull = false;
 
-    renderSummerCards('summer-grid', prog => openSummerModal(prog));
+    function populateFallPepDropinOptions() {
+      const select = document.getElementById('fpep-dropin-session');
+      const prevValue = select.value;
+      select.innerHTML = '<option value="">Select a date</option>';
+      getFallPepSessionOptions().forEach(({ sessionId, date }) => {
+        const opt = document.createElement('option');
+        const spots = fallPepSpotsData[sessionId];
+        const known = fallPepSpotsStatus === 'done' && spots !== undefined;
+        const soldOut = known && spots <= 0;
+        opt.value = sessionId;
+        opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
+        if (soldOut) opt.disabled = true;
+        select.appendChild(opt);
+      });
+      if (prevValue) select.value = prevValue;
+      updateFpepDropinSessionSpotsDisplay();
+    }
 
-    // Fetch schedule and compute per-age-group spots for each program.
+    // <option> text can't be partially colored (options render as plain text, no
+    // nested markup) — so the highlighted "N drop-in spots remaining" line lives here,
+    // just below the dropdown, and updates as the selected date changes.
+    function updateFpepDropinSessionSpotsDisplay() {
+      const select = document.getElementById('fpep-dropin-session');
+      const el      = document.getElementById('fpep-dropin-session-spots');
+      const spots   = fallPepSpotsData[select.value];
+      if (!select.value || fallPepSpotsStatus !== 'done' || spots === undefined) {
+        el.textContent = '';
+        return;
+      }
+      el.textContent = spots <= 0 ? 'Sold out' : `${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining`;
+    }
+    document.getElementById('fpep-dropin-session').addEventListener('change', updateFpepDropinSessionSpotsDisplay);
+
+    populateFallPepDropinOptions();
+
+    function updateFpepProgramSpotsDisplay() {
+      const modalEl   = document.getElementById('fpep-program-spots');
+      const cardEl     = document.getElementById('fpep-card-spots');
+      const submitBtn  = document.getElementById('fpep-submit');
+      const cardBtn    = document.getElementById('fpep-register-btn');
+
+      if (fallPepProgramSpotsRemaining === null) {
+        modalEl.textContent = 'Checking availability…';
+        cardEl.textContent  = 'Checking availability…';
+        return;
+      }
+
+      fallPepProgramFull = fallPepProgramSpotsRemaining <= 0;
+      const label = fallPepProgramFull
+        ? 'Full Program Registration Is Full'
+        : `${fallPepProgramSpotsRemaining} Full Program Spot${fallPepProgramSpotsRemaining !== 1 ? 's' : ''} Remaining`;
+
+      modalEl.textContent = label;
+      modalEl.classList.toggle('fpep-program-spots--full', fallPepProgramFull);
+      cardEl.textContent = label;
+      cardEl.classList.toggle('fpep-card-spots--full', fallPepProgramFull);
+
+      if (fallPepProgramFull) {
+        submitBtn.disabled    = true;
+        submitBtn.textContent = 'Full Program Registration Closed';
+        cardBtn.disabled      = true;
+        cardBtn.textContent   = 'Full Program Registration Closed';
+      } else {
+        if (submitBtn.textContent === 'Full Program Registration Closed') submitBtn.textContent = 'Register for Fall Program';
+        cardBtn.disabled    = false;
+        cardBtn.textContent = 'Register for Fall Program';
+      }
+    }
+
     (async () => {
       try {
         const sessions = await fetch('/api/schedule').then(r => r.json());
-        const spotById = {};
-        sessions.forEach(s => { spotById[s.sessionId] = s.spotsRemaining; });
-
-        SUMMER_PROGRAMS.forEach(prog => {
-          const byTime = getSummerSessionIdsByTime(prog);
-          const spotsPerTime = {};
-          Object.entries(byTime).forEach(([time, ids]) => {
-            const known = ids.filter(id => id in spotById);
-            if (known.length > 0) spotsPerTime[time] = Math.min(...known.map(id => spotById[id]));
-          });
-          if (Object.keys(spotsPerTime).length > 0) summerSpotsData[prog.id] = spotsPerTime;
+        sessions.forEach(s => {
+          if (isFallPepSession(s.sessionId)) {
+            fallPepSpotsData[s.sessionId] = s.spotsRemaining;
+            if (typeof s.fallPepProgramSpotsRemaining === 'number') {
+              fallPepProgramSpotsRemaining = s.fallPepProgramSpotsRemaining;
+            }
+          }
         });
-        summerSpotsStatus = 'done';
+        fallPepSpotsStatus = 'done';
       } catch (_) {
-        summerSpotsStatus = 'error';
+        fallPepSpotsStatus = 'error';
       }
-
-      // If a modal is already open, refresh it with the resolved data.
-      if (summerOpenProg && !document.getElementById('summer-modal').hidden) {
-        refreshSummerModalSpots();
-      }
+      populateFallPepDropinOptions();
+      updateFpepProgramSpotsDisplay();
     })();
 
-    function refreshSummerModalSpots() {
-      const bodyEl  = document.getElementById('summer-modal-body');
-      const ctaHtml = `<button type="button" class="btn btn-primary summer-modal-cta-btn" id="summer-to-cal-btn">Register for This Package</button>`;
-      bodyEl.innerHTML = buildSummerModalContent(summerOpenProg, ctaHtml, summerSpotsData[summerOpenProg.id], summerSpotsStatus);
-      document.getElementById('summer-to-cal-btn').addEventListener('click', () => {
-        closeSummerModal();
-        openSummerRegModal(summerOpenProg);
-      });
-    }
-
-    function openSummerModal(prog) {
-      const modalEl  = document.getElementById('summer-modal');
-      const bodyEl   = document.getElementById('summer-modal-body');
-      const ctaHtml  = `<button type="button" class="btn btn-primary summer-modal-cta-btn" id="summer-to-cal-btn">Register for This Package</button>`;
-      bodyEl.innerHTML = buildSummerModalContent(prog, ctaHtml, summerSpotsData[prog.id], summerSpotsStatus);
-      summerOpenProg   = prog;
-      summerFocusCard  = document.querySelector(`[data-program-id="${prog.id}"]`);
-      modalEl.hidden   = false;
-      document.body.classList.add('modal-open');
-      document.getElementById('summer-modal-close').focus();
-      document.getElementById('summer-to-cal-btn').addEventListener('click', () => {
-        closeSummerModal();
-        openSummerRegModal(prog);
-      });
-    }
-
-    function closeSummerModal() {
-      const modalEl = document.getElementById('summer-modal');
-      modalEl.hidden = true;
-      document.body.classList.remove('modal-open');
-      summerOpenProg = null;
-      if (summerFocusCard) summerFocusCard.focus();
-    }
-
-    document.getElementById('summer-modal-close').addEventListener('click', closeSummerModal);
-    document.getElementById('summer-modal').addEventListener('click', e => {
-      if (e.target === document.getElementById('summer-modal')) closeSummerModal();
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && !document.getElementById('summer-modal').hidden) closeSummerModal();
-    });
-
-    // ---- Summer registration modal ----
-
-    function openSummerRegModal(prog) {
-      const overlay = document.getElementById('summer-reg-overlay');
-
-      document.getElementById('sreg-title').textContent = `${prog.name} — ${prog.month}`;
-      document.getElementById('sreg-pkg-id').value = prog.id;
-
-      const savings = prog.dropIn * prog.sessionsCount - prog.programRate;
-      document.getElementById('sreg-pkg-summary').innerHTML =
-        `<div><div class="sreg-pkg-name">${prog.name}</div>` +
-        `<div class="sreg-pkg-meta">${prog.day}s &middot; ${prog.month} 2026 &middot; ${prog.sessionsCount} sessions<br>${prog.dates.join(', ')}</div></div>` +
-        `<div class="sreg-pkg-price">$${prog.programRate} <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $${savings}</span></div>`;
-
-      document.getElementById('sreg-amount-line').innerHTML =
-        `Amount: <strong style="color:var(--text)">$${prog.programRate}.00 CAD</strong> for all ${prog.sessionsCount} sessions - processed securely by Stripe.`;
-
-      const timeSection = document.getElementById('sreg-time-section');
-      const timeSelect  = document.getElementById('sreg-time-slot');
-      if (prog.times.length > 1) {
-        timeSelect.innerHTML = '<option value="">Select your group</option>';
-        prog.times.forEach(t => {
-          const opt = document.createElement('option');
-          const spotsPerTime = summerSpotsData[prog.id];
-          const soldOut = summerSpotsStatus === 'done' && spotsPerTime && spotsPerTime[t.time] <= 0;
-          opt.value = t.time;
-          opt.textContent = `${t.time}${t.age ? ' — ' + t.age : ''}${soldOut ? ' (Sold Out)' : ''}`;
-          if (soldOut) opt.disabled = true;
-          timeSelect.appendChild(opt);
-        });
-        timeSection.style.display = '';
-      } else {
-        timeSection.style.display = 'none';
-        timeSelect.value = '';
-      }
-
-      const form = document.getElementById('sreg-form');
+    // ---- Fall PEP: full-program modal ----
+    function openFpepModal() {
+      const overlay = document.getElementById('fpep-modal-overlay');
+      const form = document.getElementById('fpep-form');
       form.reset();
       form.style.display = '';
-      document.getElementById('sreg-success').style.display = 'none';
-      document.getElementById('sreg-consent').checked = false;
-      document.getElementById('sreg-submit').disabled = true;
-      document.getElementById('sreg-submit').textContent = 'Submit Registration';
-      const prevErr = document.getElementById('sreg-form-error');
+      document.getElementById('fpep-success').style.display = 'none';
+      document.getElementById('fpep-consent').checked = false;
+      document.getElementById('fpep-submit').disabled = true;
+      document.getElementById('fpep-submit').textContent = 'Register for Fall Program';
+      const prevErr = document.getElementById('fpep-form-error');
       if (prevErr) prevErr.remove();
-      form.querySelectorAll('.sreg-input, .sreg-select').forEach(el => { el.style.borderColor = ''; });
-
+      form.querySelectorAll('.form-input, .form-select').forEach(el => { el.style.borderColor = ''; });
+      updateFpepProgramSpotsDisplay();
       overlay.classList.add('open');
       document.body.classList.add('modal-open');
-      document.getElementById('summer-reg-close').focus();
+      document.getElementById('fpep-modal-close').focus();
     }
-
-    function closeSummerRegModal() {
-      document.getElementById('summer-reg-overlay').classList.remove('open');
+    function closeFpepModal() {
+      document.getElementById('fpep-modal-overlay').classList.remove('open');
       document.body.classList.remove('modal-open');
     }
-
-    document.getElementById('summer-reg-close').addEventListener('click', closeSummerRegModal);
-    document.getElementById('summer-reg-overlay').addEventListener('click', e => {
-      if (e.target === document.getElementById('summer-reg-overlay')) closeSummerRegModal();
+    document.getElementById('fpep-register-btn').addEventListener('click', openFpepModal);
+    document.getElementById('fpep-modal-close').addEventListener('click', closeFpepModal);
+    document.getElementById('fpep-modal-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('fpep-modal-overlay')) closeFpepModal();
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && document.getElementById('summer-reg-overlay').classList.contains('open')) closeSummerRegModal();
+      if (e.key === 'Escape' && document.getElementById('fpep-modal-overlay').classList.contains('open')) closeFpepModal();
+    });
+    document.getElementById('fpep-consent').addEventListener('change', function() {
+      document.getElementById('fpep-submit').disabled = !this.checked || fallPepProgramFull;
     });
 
-    document.getElementById('sreg-consent').addEventListener('change', function() {
-      document.getElementById('sreg-submit').disabled = !this.checked;
+    // ---- Fall PEP: drop-in modal ----
+    function openFpepDropinModal() {
+      const overlay = document.getElementById('fpep-dropin-overlay');
+      const form = document.getElementById('fpep-dropin-form');
+      populateFallPepDropinOptions();
+      form.reset();
+      updateFpepDropinSessionSpotsDisplay();
+      form.style.display = '';
+      document.getElementById('fpep-dropin-success').style.display = 'none';
+      document.getElementById('fpep-dropin-consent').checked = false;
+      document.getElementById('fpep-dropin-submit').disabled = true;
+      document.getElementById('fpep-dropin-submit').textContent = 'Submit Registration';
+      const prevErr = document.getElementById('fpep-dropin-form-error');
+      if (prevErr) prevErr.remove();
+      form.querySelectorAll('.form-input, .form-select').forEach(el => { el.style.borderColor = ''; });
+      overlay.classList.add('open');
+      document.body.classList.add('modal-open');
+      document.getElementById('fpep-dropin-close').focus();
+    }
+    function closeFpepDropinModal() {
+      document.getElementById('fpep-dropin-overlay').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+    document.getElementById('fpep-dropin-btn').addEventListener('click', openFpepDropinModal);
+    document.getElementById('fpep-dropin-close').addEventListener('click', closeFpepDropinModal);
+    document.getElementById('fpep-dropin-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('fpep-dropin-overlay')) closeFpepDropinModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('fpep-dropin-overlay').classList.contains('open')) closeFpepDropinModal();
+    });
+    document.getElementById('fpep-dropin-consent').addEventListener('change', function() {
+      document.getElementById('fpep-dropin-submit').disabled = !this.checked;
     });
 
-    // Stripe setup for summer registration
+    // ---- Fall PEP: Stripe setup ----
     (async () => {
       try {
         const { stripePublishableKey } = await fetch('/api/config').then(r => r.json());
-        const stripe   = Stripe(stripePublishableKey);
-        const elements = stripe.elements();
-        const cardEl   = elements.create('card', {
-          hidePostalCode: true,
-          disableLink: true,
-          style: {
-            base: {
-              color: '#e0e0e0',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontSize: '15px',
-              fontSmoothing: 'antialiased',
-              '::placeholder': { color: '#555' },
+        const stripe = Stripe(stripePublishableKey);
+
+        function setupCardElement(elements, mountId, errId) {
+          const cardEl = elements.create('card', {
+            hidePostalCode: true,
+            disableLink: true,
+            style: {
+              base: {
+                color:           '#e0e0e0',
+                fontFamily:      'Inter, system-ui, sans-serif',
+                fontSize:        '15px',
+                fontSmoothing:   'antialiased',
+                '::placeholder': { color: '#555' },
+              },
+              invalid: { color: '#e05a5a' },
             },
-            invalid: { color: '#e05a5a' },
-          },
-        });
-        cardEl.mount('#sreg-card-element');
+          });
+          cardEl.mount(`#${mountId}`);
+          cardEl.on('change', e => {
+            const errEl = document.getElementById(errId);
+            if (e.error) { errEl.textContent = e.error.message; errEl.style.display = 'block'; }
+            else         { errEl.style.display = 'none'; }
+          });
+          return cardEl;
+        }
 
-        cardEl.on('change', e => {
-          const errEl = document.getElementById('sreg-card-errors');
-          if (e.error) { errEl.textContent = e.error.message; errEl.style.display = 'block'; }
-          else         { errEl.style.display = 'none'; }
-        });
+        function setupExpressCheckout(elements, amount, label, buttonMountId, sectionId) {
+          const paymentRequest = stripe.paymentRequest({
+            country: 'CA', currency: 'cad',
+            total: { label, amount },
+            requestPayerName: true, requestPayerEmail: true,
+          });
+          const prBtn = elements.create('paymentRequestButton', {
+            paymentRequest,
+            style: { paymentRequestButton: { theme: 'light', height: '48px' } },
+          });
+          paymentRequest.canMakePayment().then(result => {
+            if (result) {
+              prBtn.mount(`#${buttonMountId}`);
+              document.getElementById(sectionId).style.display = '';
+            }
+          });
+        }
 
-        // Apple Pay / Google Pay
-        const paymentRequest = stripe.paymentRequest({
-          country: 'CA', currency: 'cad',
-          total: { label: 'Leveled Hockey Summer Package', amount: 100 },
-          requestPayerName: true, requestPayerEmail: true,
-        });
-        const prBtn = elements.create('paymentRequestButton', {
-          paymentRequest,
-          style: { paymentRequestButton: { theme: 'light', height: '48px' } },
-        });
-        paymentRequest.canMakePayment().then(result => {
-          if (result) {
-            prBtn.mount('#sreg-payment-request-btn');
-            document.getElementById('sreg-express-section').style.display = '';
-          }
-        });
+        // ---- Full program (13 sessions, $699) ----
+        const fpepElements = stripe.elements();
+        const fpepCardEl   = setupCardElement(fpepElements, 'fpep-card-element', 'fpep-card-errors');
+        setupExpressCheckout(fpepElements, 69900, 'Fall PEP 13-Session Program', 'fpep-payment-request-btn', 'fpep-express-section');
 
-        document.getElementById('sreg-form').addEventListener('submit', async function(e) {
+        document.getElementById('fpep-form').addEventListener('submit', async function(e) {
           e.preventDefault();
           const form = e.target;
 
@@ -1033,33 +1260,27 @@
             field.style.borderColor = '';
             if (!field.value.trim()) { field.style.borderColor = '#e05a5a'; valid = false; }
           });
-          const timeSection = document.getElementById('sreg-time-section');
-          const timeSelect  = document.getElementById('sreg-time-slot');
-          if (timeSection.style.display !== 'none' && !timeSelect.value) {
-            timeSelect.style.borderColor = '#e05a5a';
-            valid = false;
-          }
           if (!valid) return;
 
-          const submitBtn = document.getElementById('sreg-submit');
+          const submitBtn = document.getElementById('fpep-submit');
           submitBtn.disabled    = true;
           submitBtn.textContent = 'Processing…';
 
           function showError(msg) {
-            let errEl = document.getElementById('sreg-form-error');
+            let errEl = document.getElementById('fpep-form-error');
             if (!errEl) {
               errEl = document.createElement('p');
-              errEl.id = 'sreg-form-error';
+              errEl.id = 'fpep-form-error';
               errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
-              form.querySelector('.sreg-submit-row').prepend(errEl);
+              form.querySelector('.fpep-submit-row').prepend(errEl);
             }
             errEl.textContent     = msg;
             submitBtn.disabled    = false;
-            submitBtn.textContent = 'Submit Registration';
+            submitBtn.textContent = 'Register for Fall Program';
           }
 
           const payload = {
-            packageId:    form.packageId.value,
+            packageId:    FALL_PEP_PROGRAM.packageId,
             player_first: form.player_first.value.trim(),
             player_last:  form.player_last.value.trim(),
             level:        form.level.value,
@@ -1067,13 +1288,12 @@
             parent_name:  form.parent_name.value.trim(),
             phone:        form.phone.value.trim(),
             email:        form.email.value.trim(),
-            time_slot:    form.time_slot ? form.time_slot.value : '',
-            mailList:     document.getElementById('sreg-mailing-list').checked ? 'true' : 'false',
+            mailList:     document.getElementById('fpep-mailing-list').checked ? 'true' : 'false',
           };
 
           let clientSecret;
           try {
-            const resp = await fetch('/api/summer-register', {
+            const resp = await fetch('/api/fall-pep-register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
@@ -1087,9 +1307,9 @@
           }
 
           submitBtn.textContent = 'Completing payment…';
-          const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+          const { error } = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
-              card:            cardEl,
+              card:            fpepCardEl,
               billing_details: { name: form.parent_name.value.trim(), email: form.email.value.trim() },
             },
           });
@@ -1097,14 +1317,91 @@
           if (error) { showError(error.message || 'Payment failed. Please try again.'); return; }
 
           form.style.display = 'none';
-          const title = document.getElementById('sreg-title').textContent;
-          document.getElementById('sreg-success-summary').innerHTML =
-            `Package: <strong>${title}</strong><br>` +
+          document.getElementById('fpep-success-summary').innerHTML =
+            `Program: <strong>Fall 2026 Power Edge Pro — 13-Session Program</strong><br>` +
             `Player: <strong>${form.player_first.value.trim()} ${form.player_last.value.trim()}</strong>`;
-          document.getElementById('sreg-success').style.display = 'block';
+          document.getElementById('fpep-success').style.display = 'block';
+        });
+
+        // ---- Drop-in (single session, $65) ----
+        const fpepDropinElements = stripe.elements();
+        const fpepDropinCardEl   = setupCardElement(fpepDropinElements, 'fpep-dropin-card-element', 'fpep-dropin-card-errors');
+        setupExpressCheckout(fpepDropinElements, 6500, 'Fall PEP Drop-In Session', 'fpep-dropin-payment-request-btn', 'fpep-dropin-express-section');
+
+        document.getElementById('fpep-dropin-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const form = e.target;
+
+          let valid = true;
+          form.querySelectorAll('[required]').forEach(field => {
+            field.style.borderColor = '';
+            if (!field.value.trim()) { field.style.borderColor = '#e05a5a'; valid = false; }
+          });
+          if (!valid) return;
+
+          const submitBtn = document.getElementById('fpep-dropin-submit');
+          submitBtn.disabled    = true;
+          submitBtn.textContent = 'Processing…';
+
+          function showError(msg) {
+            let errEl = document.getElementById('fpep-dropin-form-error');
+            if (!errEl) {
+              errEl = document.createElement('p');
+              errEl.id = 'fpep-dropin-form-error';
+              errEl.style.cssText = 'color:#e05a5a;margin-top:0.75rem;font-size:0.9rem;';
+              form.querySelector('.fpep-submit-row').prepend(errEl);
+            }
+            errEl.textContent     = msg;
+            submitBtn.disabled    = false;
+            submitBtn.textContent = 'Submit Registration';
+          }
+
+          const payload = {
+            sessionId:    form.session.value,
+            player_first: form.player_first.value.trim(),
+            player_last:  form.player_last.value.trim(),
+            level:        form.level.value,
+            birth_year:   form.birth_year.value.trim(),
+            parent_name:  form.parent_name.value.trim(),
+            phone:        form.phone.value.trim(),
+            email:        form.email.value.trim(),
+            mailList:     document.getElementById('fpep-dropin-mailing-list').checked ? 'true' : 'false',
+          };
+
+          let clientSecret;
+          try {
+            const resp = await fetch('/api/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { showError(data.error || 'Something went wrong. Please try again.'); return; }
+            clientSecret = data.clientSecret;
+          } catch {
+            showError('Network error. Please check your connection and try again.');
+            return;
+          }
+
+          submitBtn.textContent = 'Completing payment…';
+          const { error } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card:            fpepDropinCardEl,
+              billing_details: { name: form.parent_name.value.trim(), email: form.email.value.trim() },
+            },
+          });
+
+          if (error) { showError(error.message || 'Payment failed. Please try again.'); return; }
+
+          form.style.display = 'none';
+          const dateLabel = form.session.options[form.session.selectedIndex].textContent;
+          document.getElementById('fpep-dropin-success-summary').innerHTML =
+            `Session: <strong>Fall 2026 PEP Drop-In — ${dateLabel}</strong><br>` +
+            `Player: <strong>${form.player_first.value.trim()} ${form.player_last.value.trim()}</strong>`;
+          document.getElementById('fpep-dropin-success').style.display = 'block';
         });
       } catch (err) {
-        console.error('Stripe init failed:', err);
+        console.error('Fall PEP Stripe init failed:', err);
       }
     })();
   </script>

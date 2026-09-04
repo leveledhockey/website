@@ -960,7 +960,7 @@
             <div id="card-element" class="form-input" style="padding-top: 0.85rem; padding-bottom: 0.85rem; cursor: text;"></div>
             <div id="card-errors" style="color: #e05a5a; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
           </div>
-          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.65rem; line-height: 1.5;">
+          <p id="amount-line" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.65rem; line-height: 1.5;">
             Amount: <strong style="color: var(--text);">$55.00 CAD</strong> per session - processed securely by Stripe.
           </p>
         </div>
@@ -1058,6 +1058,7 @@
   </footer>
 
   <script src="waiver.js"></script>
+  <script src="fall-pep.js"></script>
   <script>
     // Transparent → solid nav on scroll
     const nav = document.getElementById('nav');
@@ -1410,24 +1411,33 @@
       const container = document.getElementById('modal-session-cards');
       container.innerHTML = daySessions.map(s => {
         const full = s.spotsRemaining <= 0;
+        const isFallPep = isFallPepSession(s.sessionId);
         const spotsLabel = full
           ? 'Full'
-          : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
+          : isFallPep
+            ? `${s.spotsRemaining} drop-in spot${s.spotsRemaining !== 1 ? 's' : ''} remaining`
+            : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
+        const price = isFallPep ? FALL_PEP_PROGRAM.dropIn : 55;
+        const spotsSpan = `<span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>`;
+        // Fall PEP's longer "N drop-in spots remaining" text crowds the top row next
+        // to the badge, so it gets its own row below the age group instead.
         return `
           <div class="session-card${full ? ' session-card--full' : ''}"
                data-session-id="${s.sessionId}"
                data-program="${s['Program']}"
                data-time="${formatTime(s['Time'])}"
                data-location="${s['Location']}"
+               data-price="${price}"
                ${full ? '' : 'role="radio" tabindex="0"'}>
             <div class="session-card-top">
               <span class="program-badge">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
-              <span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>
+              ${isFallPep ? '' : spotsSpan}
             </div>
             <div class="session-card-details">
               <span>${formatTimeRange(s['Time'], s.EndTime)}</span>
               <span>${s['Location']}</span>
               <span>${s['Age Group']}</span>
+              ${isFallPep ? spotsSpan : ''}
             </div>
           </div>
         `;
@@ -1452,10 +1462,7 @@
         ? container.querySelector(`.session-card[data-session-id="${preselectedSessionId}"]`)
         : null;
       const programMatch = !preselected && urlProgram
-        ? [...available].find(c => {
-            const badge = c.querySelector('.program-badge');
-            return badge && badge.textContent.trim().toLowerCase() === urlProgram.toLowerCase();
-          })
+        ? [...available].find(c => (c.dataset.program || '').trim().toLowerCase() === urlProgram.toLowerCase())
         : null;
       if (preselected && !preselected.classList.contains('session-card--full')) {
         selectSessionCard(preselected);
@@ -1465,6 +1472,7 @@
         selectSessionCard(available[0]);
       } else {
         document.getElementById('modal-session-id').value = '';
+        updateAmountLine(55);
       }
       document.getElementById('success-msg').style.display = 'none';
       document.querySelector('.modal-session-section').style.display = '';
@@ -1483,10 +1491,24 @@
       document.body.style.overflow = 'hidden';
     }
 
+    // Updated once the Stripe payment-request button is created; lets
+    // selectSessionCard() keep its preview total in sync with the selected price.
+    let updateExpressCheckoutTotal = null;
+
+    function updateAmountLine(price) {
+      const isFallPep = price !== 55;
+      document.getElementById('amount-line').innerHTML = isFallPep
+        ? `Amount: <strong style="color: var(--text);">$${price}.00 CAD</strong> per session. Fall PEP sessions are $${price}/session - processed securely by Stripe.`
+        : `Amount: <strong style="color: var(--text);">$${price}.00 CAD</strong> per session - processed securely by Stripe.`;
+    }
+
     function selectSessionCard(card) {
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('session-card--selected'));
       card.classList.add('session-card--selected');
       document.getElementById('modal-session-id').value = card.dataset.sessionId;
+      const price = parseInt(card.dataset.price, 10) || 55;
+      updateAmountLine(price);
+      if (updateExpressCheckoutTotal) updateExpressCheckoutTotal(price);
     }
 
     function closeModal() {
@@ -1625,6 +1647,16 @@
       requestPayerName: true,
       requestPayerEmail: true,
     });
+
+    // Keep the express-checkout preview total in sync with the selected session's price.
+    updateExpressCheckoutTotal = price => {
+      paymentRequest.update({
+        total: {
+          label:  price === 55 ? 'Leveled Hockey Session' : 'Fall PEP Drop-In Session',
+          amount: price * 100,
+        },
+      });
+    };
 
     const prButton = elements.create('paymentRequestButton', {
       paymentRequest,
