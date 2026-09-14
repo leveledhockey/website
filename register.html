@@ -961,7 +961,7 @@
             <div id="card-errors" style="color: #e05a5a; font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
           </div>
           <p id="amount-line" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.65rem; line-height: 1.5;">
-            Amount: <strong style="color: var(--text);">$55.00 CAD</strong> per session - processed securely by Stripe.
+            Amount: calculating&hellip;
           </p>
         </div>
 
@@ -980,6 +980,9 @@
           </label>
         </div>
 
+        <p id="submit-amount-line" class="form-note" style="margin-top: 1rem;">
+          You will be charged calculating&hellip; upon submitting this form.
+        </p>
         <div class="form-submit-row">
           <button type="submit" class="btn btn-primary" id="submit-btn" disabled>Submit Registration</button>
 
@@ -1417,7 +1420,7 @@
           : isFallPep
             ? `${s.spotsRemaining} drop-in spot${s.spotsRemaining !== 1 ? 's' : ''} remaining`
             : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
-        const price = isFallPep ? FALL_PEP_PROGRAM.dropIn : 55;
+        const price = Number(s.Cost) > 0 ? Number(s.Cost) : 55;
         const spotsSpan = `<span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>`;
         // Fall PEP's longer "N drop-in spots remaining" text crowds the top row next
         // to the badge, so it gets its own row below the age group instead.
@@ -1472,7 +1475,8 @@
         selectSessionCard(available[0]);
       } else {
         document.getElementById('modal-session-id').value = '';
-        updateAmountLine(55);
+        document.getElementById('amount-line').textContent = 'Amount: calculating…';
+        document.getElementById('submit-amount-line').textContent = 'You will be charged calculating… upon submitting this form.';
       }
       document.getElementById('success-msg').style.display = 'none';
       document.querySelector('.modal-session-section').style.display = '';
@@ -1495,20 +1499,24 @@
     // selectSessionCard() keep its preview total in sync with the selected price.
     let updateExpressCheckoutTotal = null;
 
-    function updateAmountLine(price) {
-      const isFallPep = price !== 55;
+    function updateAmountLine(price, isFallPep) {
+      const priceStr = price.toFixed(2);
       document.getElementById('amount-line').innerHTML = isFallPep
-        ? `Amount: <strong style="color: var(--text);">$${price}.00 CAD</strong> per session. Fall PEP sessions are $${price}/session - processed securely by Stripe.`
-        : `Amount: <strong style="color: var(--text);">$${price}.00 CAD</strong> per session - processed securely by Stripe.`;
+        ? `Amount: <strong style="color: var(--text);">$${priceStr} CAD</strong>. Fall PEP sessions are $${priceStr}/session - processed securely by Stripe.`
+        : `Amount: <strong style="color: var(--text);">$${priceStr} CAD</strong> processed securely by Stripe.`;
+      document.getElementById('submit-amount-line').innerHTML =
+        `You will be charged <strong style="color: var(--text);">$${priceStr} CAD</strong> upon submitting this form.`;
     }
 
     function selectSessionCard(card) {
       document.querySelectorAll('.session-card').forEach(c => c.classList.remove('session-card--selected'));
       card.classList.add('session-card--selected');
-      document.getElementById('modal-session-id').value = card.dataset.sessionId;
-      const price = parseInt(card.dataset.price, 10) || 55;
-      updateAmountLine(price);
-      if (updateExpressCheckoutTotal) updateExpressCheckoutTotal(price);
+      const sessionId = card.dataset.sessionId;
+      document.getElementById('modal-session-id').value = sessionId;
+      const price = Number(card.dataset.price) > 0 ? Number(card.dataset.price) : 55;
+      const isFallPep = isFallPepSession(sessionId);
+      updateAmountLine(price, isFallPep);
+      if (updateExpressCheckoutTotal) updateExpressCheckoutTotal(price, isFallPep);
     }
 
     function closeModal() {
@@ -1649,11 +1657,11 @@
     });
 
     // Keep the express-checkout preview total in sync with the selected session's price.
-    updateExpressCheckoutTotal = price => {
+    updateExpressCheckoutTotal = (price, isFallPep) => {
       paymentRequest.update({
         total: {
-          label:  price === 55 ? 'Leveled Hockey Session' : 'Fall PEP Drop-In Session',
-          amount: price * 100,
+          label:  isFallPep ? 'Fall PEP Drop-In Session' : 'Leveled Hockey Session',
+          amount: Math.round(price * 100),
         },
       });
     };

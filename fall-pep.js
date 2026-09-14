@@ -1,7 +1,9 @@
 // Fall 2026 Power Edge Pro program — shared between index.html and register.html.
 // Hard-coded to this one 13-week program; mirrors the session IDs entered into the
-// Schedule sheet (PEP_MM-DD-26_16:00) so both pages agree on which sessions get the
-// Fall PEP drop-in rate ($65 instead of the standard $55).
+// Schedule sheet (PEP_MM-DD-26_16:00) so both pages agree on which sessions belong to
+// it. The per-session drop-in price is NOT hard-coded here — it's read from the
+// Schedule sheet's Cost column (see api/schedule.js / api/register.js), defaulting to
+// $55 if left blank. Only the 13-session program package rate is fixed.
 const FALL_PEP_PROGRAM = {
   packageId:     'fall-pep-2026',
   name:          'Fall 2026 Power Edge Pro',
@@ -11,10 +13,8 @@ const FALL_PEP_PROGRAM = {
   location:      'Scotia Barn Burnaby',
   ageGroup:      'U18',
   sessionsCount: 13,
-  dropIn:        65,
   programRate:   699,
-  amountCents:      69900,
-  dropInAmountCents: 6500,
+  amountCents:   69900,
   dates: [
     'Sept 23', 'Sept 30', 'Oct 7', 'Oct 14', 'Oct 21', 'Oct 28',
     'Nov 4', 'Nov 11', 'Nov 18', 'Nov 25', 'Dec 2', 'Dec 9', 'Dec 16',

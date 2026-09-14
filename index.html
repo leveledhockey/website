@@ -482,13 +482,13 @@
             <li>Scotia Barn &middot; Burnaby</li>
             <li>Sept. 23 - Dec. 16</li>
           </ul>
-          <p class="fpep-dropin-note">Drop In: <strong>$65</strong> per session</p>
+          <p class="fpep-dropin-note" id="fpep-dropin-note">Drop In: <strong>$65</strong> per session</p>
         </div>
 
         <div class="fpep-card">
           <p class="fpep-card-eyebrow">13 Sessions</p>
           <p class="fpep-card-price">$699 <span>CAD</span></p>
-          <p class="fpep-card-savings">Save $146 vs. Drop-In</p>
+          <p class="fpep-card-savings" id="fpep-card-savings">Save $146 vs. Drop-In</p>
           <ul class="fpep-feature-list">
             <li>Reserved weekly spot</li>
             <li>Consistent weekly development</li>
@@ -503,7 +503,7 @@
       <div class="fpep-dropin-strip">
         <div>
           <p class="fpep-dropin-strip-title">Can&rsquo;t commit to the full program?</p>
-          <p class="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session, subject to availability.</p>
+          <p class="fpep-dropin-strip-desc" id="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session, subject to availability.</p>
         </div>
         <button type="button" class="btn btn-outline" id="fpep-dropin-btn">Drop-In Registration</button>
       </div>
@@ -765,7 +765,7 @@
           <div class="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Sept 23 &ndash; Dec 16 &middot; 13 sessions<br>Scotia Barn Burnaby</div>
           <p id="fpep-program-spots" class="fpep-program-spots">Checking availability&hellip;</p>
         </div>
-        <div class="fpep-pkg-price">$699 <span style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
+        <div class="fpep-pkg-price">$699 <span id="fpep-pkg-savings" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
       </div>
 
       <form id="fpep-form" novalidate>
@@ -828,7 +828,7 @@
             <div id="fpep-card-element" class="form-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
             <div id="fpep-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
           </div>
-          <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
+          <p id="fpep-program-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
             Amount: <strong style="color:var(--text)">$699.00 CAD</strong> for all 13 sessions (save $146 vs. the $65 drop-in rate) - processed securely by Stripe.
           </p>
         </div>
@@ -940,8 +940,8 @@
             <div id="fpep-dropin-card-element" class="form-input" style="padding-top:0.85rem;padding-bottom:0.85rem;cursor:text;"></div>
             <div id="fpep-dropin-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
           </div>
-          <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
-            Amount: <strong style="color:var(--text)">$65.00 CAD</strong> per session, processed securely by Stripe.
+          <p id="fpep-dropin-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
+            Amount: <strong style="color:var(--text)">$65.00 CAD</strong>, processed securely by Stripe.
           </p>
         </div>
 
@@ -1041,6 +1041,33 @@
     let fallPepProgramSpotsRemaining = null; // null = unknown yet
     let fallPepProgramFull = false;
 
+    // Fall PEP drop-in price, read from the Schedule sheet's Cost column (defaults to
+    // $55 server-side if left blank). Starts at the static markup's placeholder value
+    // and is corrected once /api/schedule resolves.
+    let fallPepDropinPrice = 65;
+    // Set once the Stripe payment-request button for the drop-in is created; lets
+    // applyFallPepDropinPrice() keep its preview total in sync with the sheet price.
+    let updateFpepDropinExpressTotal = null;
+
+    function applyFallPepDropinPrice(price) {
+      fallPepDropinPrice = price;
+      const priceStr = price.toFixed(2);
+      const savings   = Math.max(0, Math.round(price * FALL_PEP_PROGRAM.sessionsCount - FALL_PEP_PROGRAM.programRate));
+
+      document.getElementById('fpep-dropin-note').innerHTML =
+        `Drop In: <strong>$${priceStr}</strong> per session`;
+      document.getElementById('fpep-dropin-strip-desc').textContent =
+        `Limited drop-in spaces will be available for $${priceStr}/session, subject to availability.`;
+      document.getElementById('fpep-card-savings').textContent = `Save $${savings} vs. Drop-In`;
+      document.getElementById('fpep-pkg-savings').innerHTML = `CAD &middot; save $${savings}`;
+      document.getElementById('fpep-program-amount-line').innerHTML =
+        `Amount: <strong style="color:var(--text)">$${FALL_PEP_PROGRAM.programRate}.00 CAD</strong> for all 13 sessions (save $${savings} vs. the $${priceStr} drop-in rate) - processed securely by Stripe.`;
+      document.getElementById('fpep-dropin-amount-line').innerHTML =
+        `Amount: <strong style="color:var(--text)">$${priceStr} CAD</strong>, processed securely by Stripe.`;
+
+      if (updateFpepDropinExpressTotal) updateFpepDropinExpressTotal(price);
+    }
+
     function populateFallPepDropinOptions() {
       const select = document.getElementById('fpep-dropin-session');
       const prevValue = select.value;
@@ -1113,15 +1140,18 @@
     (async () => {
       try {
         const sessions = await fetch('/api/schedule').then(r => r.json());
+        let dropinPrice = null;
         sessions.forEach(s => {
           if (isFallPepSession(s.sessionId)) {
             fallPepSpotsData[s.sessionId] = s.spotsRemaining;
+            if (dropinPrice === null && Number(s.Cost) > 0) dropinPrice = Number(s.Cost);
             if (typeof s.fallPepProgramSpotsRemaining === 'number') {
               fallPepProgramSpotsRemaining = s.fallPepProgramSpotsRemaining;
             }
           }
         });
         fallPepSpotsStatus = 'done';
+        if (dropinPrice !== null) applyFallPepDropinPrice(dropinPrice);
       } catch (_) {
         fallPepSpotsStatus = 'error';
       }
@@ -1244,6 +1274,7 @@
               document.getElementById(sectionId).style.display = '';
             }
           });
+          return paymentRequest;
         }
 
         // ---- Full program (13 sessions, $699) ----
@@ -1323,10 +1354,18 @@
           document.getElementById('fpep-success').style.display = 'block';
         });
 
-        // ---- Drop-in (single session, $65) ----
+        // ---- Drop-in (single session, price read from the Schedule sheet's Cost column) ----
         const fpepDropinElements = stripe.elements();
         const fpepDropinCardEl   = setupCardElement(fpepDropinElements, 'fpep-dropin-card-element', 'fpep-dropin-card-errors');
-        setupExpressCheckout(fpepDropinElements, 6500, 'Fall PEP Drop-In Session', 'fpep-dropin-payment-request-btn', 'fpep-dropin-express-section');
+        const fpepDropinPaymentRequest = setupExpressCheckout(
+          fpepDropinElements, Math.round(fallPepDropinPrice * 100),
+          'Fall PEP Drop-In Session', 'fpep-dropin-payment-request-btn', 'fpep-dropin-express-section',
+        );
+        updateFpepDropinExpressTotal = price => {
+          fpepDropinPaymentRequest.update({
+            total: { label: 'Fall PEP Drop-In Session', amount: Math.round(price * 100) },
+          });
+        };
 
         document.getElementById('fpep-dropin-form').addEventListener('submit', async function(e) {
           e.preventDefault();

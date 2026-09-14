@@ -23,6 +23,13 @@ function isFallPepProgramLabel(label) {
   return String(label || '').startsWith(FALL_PEP_LABEL);
 }
 
+const DEFAULT_DROPIN_COST = 55; // CAD, used when a Schedule row leaves Cost blank
+
+function getSessionCost(obj) {
+  const raw = parseFloat(obj['Cost']);
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DROPIN_COST;
+}
+
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (raw && raw.startsWith('"') && raw.endsWith('"')) raw = raw.slice(1, -1);
@@ -47,7 +54,7 @@ module.exports = async function handler(req, res) {
     const [scheduleData, regData] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range:         `${SCHEDULE_SHEET}!A1:H`,
+        range:         `${SCHEDULE_SHEET}!A1:I`,
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
@@ -113,6 +120,7 @@ module.exports = async function handler(req, res) {
         Location:           obj['Location'],
         'Max Participants': obj['Max Participants'],
         'Age Group':        obj['Age Group'],
+        Cost:               getSessionCost(obj),
         spotsRemaining,
       };
 

@@ -6,17 +6,21 @@ const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEE
 const SHEET_REGISTRATIONS          = 'Registrations';
 const SCHEDULE_SHEET               = 'Schedule';
 
-const STANDARD_DROPIN_AMOUNT = 5500; // $55.00 CAD
+const DEFAULT_DROPIN_COST = 55; // CAD, used when a Schedule row leaves Cost blank
 
-// Fall 2026 Power Edge Pro sessions are $65/session instead of the standard $55, and
-// run a hard capacity partition: only 4 of each session's 20 seats are ever sold as
-// drop-in — the other 16 are reserved for the 13-session program and never spill over,
-// even if the program under-sells. No sheet schema change: a program registration is
-// told apart from a drop-in registration by the sessionLabel text already written to
-// column C (see FALL_PEP_LABEL). When full-program registration closes, bump
-// FALL_PEP_DROPIN_CAP up (e.g. to 20) to open the unsold program seats to drop-in.
+function getSessionCost(obj) {
+  const raw = parseFloat(obj['Cost']);
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DROPIN_COST;
+}
+
+// Fall 2026 Power Edge Pro sessions run a hard capacity partition: only 4 of each
+// session's 20 seats are ever sold as drop-in — the other 16 are reserved for the
+// 13-session program and never spill over, even if the program under-sells. No sheet
+// schema change: a program registration is told apart from a drop-in registration by
+// the sessionLabel text already written to column C (see FALL_PEP_LABEL). When
+// full-program registration closes, bump FALL_PEP_DROPIN_CAP up (e.g. to 20) to open
+// the unsold program seats to drop-in.
 // Hard-coded to these 13 session IDs (Wednesdays, Sept 23 - Dec 16, 4:00-4:50 PM).
-const FALL_PEP_DROPIN_AMOUNT = 6500; // $65.00 CAD
 const FALL_PEP_DROPIN_CAP    = 4;
 const FALL_PEP_LABEL         = 'Fall 2026 Power Edge Pro — 13-Session Program';
 const FALL_PEP_DROPIN_SESSION_IDS = new Set([
@@ -67,7 +71,7 @@ module.exports = async function handler(req, res) {
     const [scheduleRes, regRes] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range:         `${SCHEDULE_SHEET}!A1:H`,
+        range:         `${SCHEDULE_SHEET}!A1:I`,
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: REGISTRATIONS_SPREADSHEET_ID,
@@ -117,7 +121,7 @@ module.exports = async function handler(req, res) {
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
-    const amount = isFallPepDropin ? FALL_PEP_DROPIN_AMOUNT : STANDARD_DROPIN_AMOUNT;
+    const amount = Math.round(getSessionCost(sessionObj) * 100);
 
     // Store all registration data in PaymentIntent metadata so the webhook can
     // write the spreadsheet row only after payment actually succeeds.
