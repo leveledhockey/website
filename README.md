@@ -64,21 +64,23 @@ The site reads from two separate Google Spreadsheets, both shared with the servi
 
 ## Schedule Spreadsheet — Schedule Tab
 
-A single flat tab containing all programs. **Header row (row 1) — must be exactly these 7 columns:**
+A single flat tab containing all programs. **Header row (row 1) — must be exactly these 9 columns:**
 
-| Program | Date (MM-DD-YY) | Time (24H clock) | Location | Max Participants | Age Group | SessionID |
-|---|---|---|---|---|---|---|
-| PEP | 05-02-26 | 9:00 | NSWC | 16 | U13 | PEP_05-02-26_09:00 |
-| PUCK SKILLS | 05-09-26 | 9:00 | NSWC | 16 | U15 | PUCKSKILLS_05-09-26_09:00 |
-| BATTLE CAMP | 05-10-26 | 10:00 | NSWC | 20 | U11 | BATTLECAMP_05-10-26_10:00 |
+| Program | Date (MM-DD-YY) | Time (24H clock) | End Time (24H clock) | Location | Max Participants | Age Group | Cost | SessionID |
+|---|---|---|---|---|---|---|---|---|
+| PEP | 05-02-26 | 9:00 | 10:00 | NSWC | 16 | U13 | 55 | PEP_05-02-26_09:00 |
+| PUCK SKILLS | 05-09-26 | 9:00 | 10:00 | NSWC | 16 | U15 | 55 | PUCKSKILLS_05-09-26_09:00 |
+| BATTLE CAMP | 05-10-26 | 10:00 | 11:00 | NSWC | 20 | U11 | 55 | BATTLECAMP_05-10-26_10:00 |
 
 **Column rules:**
 - **Program** — display name of the program. Valid values: `PEP`, `OVERSPEED`, `PUCK SKILLS`, `BATTLE CAMP`, `DEFENSE CAMP`
 - **Date** — format `MM-DD-YY` (e.g. `05-02-26`)
 - **Time** — format `H:MM` or `HH:MM`, 24-hour clock, no seconds (e.g. `9:00`, `13:00`)
+- **End Time** — same format as Time
 - **Location** — rink name (e.g. `NSWC`, `Canlan North Van`)
 - **Max Participants** — set to `0` to mark a session as full on the calendar
 - **Age Group** — values: `U9`, `U11`, `U13`, `U15`
+- **Cost** — drop-in price in CAD (e.g. `55`). This is the amount actually charged through Stripe at checkout. Leave blank to fall back to the $55 default.
 - **SessionID** — format: `{PROGRAMCODE}_{MM-DD-YY}_{HH:MM}`. Program code is the program name with spaces removed (e.g. `PUCK SKILLS` → `PUCKSKILLS`, `BATTLE CAMP` → `BATTLECAMP`, `DEFENSE CAMP` → `DEFENSECAMP`). Set once, never change. Must be unique — two sessions on the same day for the same program must use different times.
 
 ## Registrations Spreadsheet — `Registrations` Tab
