@@ -1,43 +1,84 @@
 // Fall 2026 Power Edge Pro program — shared between index.html and register.html.
-// Hard-coded to this one 13-week program; mirrors the session IDs entered into the
-// Schedule sheet (PEP_MM-DD-26_16:00) so both pages agree on which sessions belong to
-// it. The per-session drop-in price is NOT hard-coded here — it's read from the
-// Schedule sheet's Cost column (see api/schedule.js / api/register.js), defaulting to
-// $55 if left blank. Only the 13-session program package rate is fixed.
+// Two cohorts (Wednesday and Thursday), same 13-week format, same pricing. Hard-coded
+// to mirror the session IDs entered into the Schedule sheet (PEP_MM-DD-26_16:00) so
+// every page agrees on which sessions belong to which cohort. The per-session drop-in
+// price is NOT hard-coded here — it's read from the Schedule sheet's Cost column (see
+// api/schedule.js / api/register.js), defaulting to $55 if left blank. Only the
+// 13-session program package rate is fixed.
+const FALL_PEP_COHORTS = [
+  {
+    packageId:     'fall-pep-2026',
+    day:           'Wednesday',
+    dayPlural:     'Wednesdays',
+    time:          '4:00–4:50 PM',
+    dates: [
+      'Sept 23', 'Sept 30', 'Oct 7', 'Oct 14', 'Oct 21', 'Oct 28',
+      'Nov 4', 'Nov 11', 'Nov 18', 'Nov 25', 'Dec 2', 'Dec 9', 'Dec 16',
+    ],
+    // Matches the SessionID column written into the Schedule sheet for each date.
+    sessionIds: [
+      'PEP_09-23-26_16:00', 'PEP_09-30-26_16:00', 'PEP_10-07-26_16:00', 'PEP_10-14-26_16:00',
+      'PEP_10-21-26_16:00', 'PEP_10-28-26_16:00', 'PEP_11-04-26_16:00', 'PEP_11-11-26_16:00',
+      'PEP_11-18-26_16:00', 'PEP_11-25-26_16:00', 'PEP_12-02-26_16:00', 'PEP_12-09-26_16:00',
+      'PEP_12-16-26_16:00',
+    ],
+  },
+  {
+    packageId:     'fall-pep-2026-thu',
+    day:           'Thursday',
+    dayPlural:     'Thursdays',
+    time:          '4:00–4:50 PM',
+    dates: [
+      'Sept 24', 'Oct 1', 'Oct 8', 'Oct 15', 'Oct 22', 'Oct 29',
+      'Nov 5', 'Nov 12', 'Nov 19', 'Nov 26', 'Dec 3', 'Dec 10', 'Dec 17',
+    ],
+    sessionIds: [
+      'PEP_09-24-26_16:00', 'PEP_10-01-26_16:00', 'PEP_10-08-26_16:00', 'PEP_10-15-26_16:00',
+      'PEP_10-22-26_16:00', 'PEP_10-29-26_16:00', 'PEP_11-05-26_16:00', 'PEP_11-12-26_16:00',
+      'PEP_11-19-26_16:00', 'PEP_11-26-26_16:00', 'PEP_12-03-26_16:00', 'PEP_12-10-26_16:00',
+      'PEP_12-17-26_16:00',
+    ],
+  },
+];
+
+// Shared across every cohort.
 const FALL_PEP_PROGRAM = {
-  packageId:     'fall-pep-2026',
   name:          'Fall 2026 Power Edge Pro',
   shortName:     'Fall PEP Program',
-  day:           'Wednesday',
-  time:          '4:00–4:50 PM',
   location:      'Scotia Barn Burnaby',
   ageGroup:      'U18',
   sessionsCount: 13,
   programRate:   699,
   amountCents:   69900,
-  dates: [
-    'Sept 23', 'Sept 30', 'Oct 7', 'Oct 14', 'Oct 21', 'Oct 28',
-    'Nov 4', 'Nov 11', 'Nov 18', 'Nov 25', 'Dec 2', 'Dec 9', 'Dec 16',
-  ],
-  // Matches the SessionID column written into the Schedule sheet for each date.
-  sessionIds: [
-    'PEP_09-23-26_16:00', 'PEP_09-30-26_16:00', 'PEP_10-07-26_16:00', 'PEP_10-14-26_16:00',
-    'PEP_10-21-26_16:00', 'PEP_10-28-26_16:00', 'PEP_11-04-26_16:00', 'PEP_11-11-26_16:00',
-    'PEP_11-18-26_16:00', 'PEP_11-25-26_16:00', 'PEP_12-02-26_16:00', 'PEP_12-09-26_16:00',
-    'PEP_12-16-26_16:00',
-  ],
 };
 
-const FALL_PEP_SESSION_ID_SET = new Set(FALL_PEP_PROGRAM.sessionIds);
+const FALL_PEP_SESSION_ID_SET = new Set(FALL_PEP_COHORTS.flatMap(c => c.sessionIds));
+
+const FALL_PEP_SESSION_TO_COHORT = new Map();
+FALL_PEP_COHORTS.forEach(cohort => {
+  cohort.sessionIds.forEach(id => FALL_PEP_SESSION_TO_COHORT.set(id, cohort));
+});
 
 function isFallPepSession(sessionId) {
   return FALL_PEP_SESSION_ID_SET.has(sessionId);
 }
 
-// Pairs each session ID with its display date, for building a date picker.
+function getFallPepCohortForSession(sessionId) {
+  return FALL_PEP_SESSION_TO_COHORT.get(sessionId) || null;
+}
+
+function getFallPepCohortByPackageId(packageId) {
+  return FALL_PEP_COHORTS.find(c => c.packageId === packageId) || null;
+}
+
+// Pairs each session ID with its display date and cohort, for building a date picker
+// across every cohort (e.g. the drop-in session select).
 function getFallPepSessionOptions() {
-  return FALL_PEP_PROGRAM.sessionIds.map((sessionId, i) => ({
-    sessionId,
-    date: FALL_PEP_PROGRAM.dates[i],
-  }));
+  return FALL_PEP_COHORTS.flatMap(cohort =>
+    cohort.sessionIds.map((sessionId, i) => ({
+      sessionId,
+      date:   cohort.dates[i],
+      cohort,
+    }))
+  );
 }

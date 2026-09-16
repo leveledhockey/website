@@ -1,6 +1,13 @@
 const { google } = require('googleapis');
 const sgMail = require('@sendgrid/mail');
 const Stripe = require('stripe');
+const {
+  FALL_PEP_TIME,
+  FALL_PEP_DURATION_MIN,
+  FALL_PEP_LOCATION,
+  getFallPepCohortByPackageId,
+  fallPepSessionId,
+} = require('./fall-pep-config');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const EMAIL_SPREADSHEET_ID          = process.env.GOOGLE_EMAIL_SPREADSHEET_ID;
@@ -69,19 +76,10 @@ function formatDate(mmddyy) {
   return `${DOW_NAMES[d.getDay()]}, ${MONTH_NAMES[mm - 1]} ${dd}, ${year}`;
 }
 
-// Fall 2026 Power Edge Pro — 13-session package. Hard-coded: a single, fixed-schedule
-// program (Wednesdays, Sept 23 - Dec 16, 4:00-4:50 PM at Scotia Barn Burnaby).
-const FALL_PEP_LABEL       = 'Fall 2026 Power Edge Pro — 13-Session Program';
-const FALL_PEP_TIME        = '16:00';
-const FALL_PEP_DURATION_MIN = 50;
-const FALL_PEP_LOCATION    = 'Scotia Barn Burnaby';
-const FALL_PEP_DATES    = [
-  '09-23-26', '09-30-26', '10-07-26', '10-14-26', '10-21-26', '10-28-26',
-  '11-04-26', '11-11-26', '11-18-26', '11-25-26', '12-02-26', '12-09-26', '12-16-26',
-];
-function fallPepSessionId(mmddyy) {
-  return `PEP_${mmddyy}_${FALL_PEP_TIME}`;
-}
+// Fall 2026 Power Edge Pro — 13-session package. Two fixed-schedule cohorts (Wednesday
+// and Thursday, Sept 23/24 - Dec 16/17, 4:00-4:50 PM at Scotia Barn Burnaby) — see
+// fall-pep-config.js. Which cohort a purchase belongs to comes from its packageId,
+// stored in the PaymentIntent metadata by api/fall-pep-register.js.
 
 // Disable body parser — Stripe needs raw bytes for signature verification
 module.exports.config = { api: { bodyParser: false } };
@@ -208,7 +206,13 @@ async function handleDropIn(paymentIntent, meta, res) {
 }
 
 async function handleFallPepProgram(paymentIntent, meta, res) {
-  const { player_first, player_last, level, birthYear, parent_name, phone, email, mailList, timestamp } = meta;
+  const { packageId, player_first, player_last, level, birthYear, parent_name, phone, email, mailList, timestamp } = meta;
+
+  const cohort = getFallPepCohortByPackageId(packageId);
+  if (!cohort) {
+    console.error('stripe-webhook fall-pep: unknown packageId', packageId);
+    return res.status(200).json({ received: true });
+  }
 
   try {
     const auth = await getAuth().getClient();
@@ -216,9 +220,9 @@ async function handleFallPepProgram(paymentIntent, meta, res) {
 
     // One row per session date, written into the shared Registrations sheet —
     // matches how drop-in registrations are recorded, one row per session.
-    const rows = FALL_PEP_DATES.map(date => {
+    const rows = cohort.dates.map(date => {
       const sessionId    = fallPepSessionId(date);
-      const sessionLabel = `${FALL_PEP_LABEL} - ${date} at ${FALL_PEP_TIME} (${FALL_PEP_LOCATION})`;
+      const sessionLabel = `${cohort.label} - ${date} at ${FALL_PEP_TIME} (${FALL_PEP_LOCATION})`;
       return [
         timestamp || new Date().toISOString(),
         sessionId,
@@ -252,7 +256,7 @@ async function handleFallPepProgram(paymentIntent, meta, res) {
     const parentFirst = (parent_name || '').split(' ')[0];
 
     try {
-      const sessionsHtml = FALL_PEP_DATES.map((date, i) => `
+      const sessionsHtml = cohort.dates.map((date, i) => `
         <p>
           <strong>Session ${i + 1}:</strong> ${formatDate(date)}<br>
           Time: ${formatTime(FALL_PEP_TIME)} - ${formatTime(addMinutes(FALL_PEP_TIME, FALL_PEP_DURATION_MIN))}<br>
@@ -265,8 +269,8 @@ async function handleFallPepProgram(paymentIntent, meta, res) {
         to:      email,
         subject: `Fall PEP Program Registration Confirmed: ${playerFirst} ${playerLast}`,
         html: `<p>Hi ${parentFirst},</p>
-               <p>${playerFirst} ${playerLast} is registered for the Fall 2026 Power Edge Pro 13-session program. Your payment has been received.</p>
-               <p><strong>${FALL_PEP_LABEL}</strong></p>
+               <p>${playerFirst} ${playerLast} is registered for the Fall 2026 Power Edge Pro 13-session program (${cohort.day}s). Your payment has been received.</p>
+               <p><strong>${cohort.label}</strong></p>
                ${sessionsHtml}
                <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD was received successfully.</p>
                <p>We'll see you on the ice! If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>

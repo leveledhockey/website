@@ -119,15 +119,6 @@
       flex-shrink: 0;
     }
     .fpep-cta { width: 100%; justify-content: center; }
-    .fpep-card-spots {
-      margin: 0 0 1rem;
-      font-family: var(--font-display);
-      font-size: 0.78rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #6cda9a;
-    }
-    .fpep-card-spots--full { color: #e05a5a; }
 
     .fpep-dropin-strip {
       margin-top: clamp(2rem, 4vw, 2.75rem);
@@ -229,6 +220,70 @@
       margin-bottom: 1.5rem;
       padding-right: 2rem;
     }
+    .fpep-daychoice-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .fpep-daychoice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 560px) {
+      .fpep-daychoice-grid { grid-template-columns: 1fr; }
+    }
+    .fpep-daychoice-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      text-align: left;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans);
+      font-family: inherit;
+    }
+    .fpep-daychoice-card:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--surface-3);
+    }
+    .fpep-daychoice-card:disabled { opacity: 0.5; cursor: not-allowed; }
+    .fpep-daychoice-day {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--text);
+    }
+    .fpep-daychoice-time, .fpep-daychoice-dates {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .fpep-daychoice-spots {
+      margin-top: 0.4rem;
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6cda9a;
+    }
+    .fpep-daychoice-spots--full { color: #e05a5a; }
+    .fpep-change-day {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.82rem;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 1.25rem;
+      display: inline-block;
+    }
+    .fpep-change-day:hover { text-decoration: underline; }
     .fpep-pkg-summary {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -478,9 +533,9 @@
           <h2 class="section-title">Fall Power Edge Pro Program</h2>
           <p class="fpep-subtitle">13-Week Development Program</p>
           <ul class="fpep-meta-list">
-            <li>Wednesdays &middot; 4:00&ndash;4:50 PM</li>
+            <li>Wednesdays &amp; Thursdays &middot; 4:00&ndash;4:50 PM</li>
             <li>Scotia Barn &middot; Burnaby</li>
-            <li>Sept. 23 - Dec. 16</li>
+            <li>Sept. 23 - Dec. 17</li>
           </ul>
           <p class="fpep-dropin-note" id="fpep-dropin-note">Drop In: <strong>$65</strong> per session</p>
         </div>
@@ -493,9 +548,8 @@
             <li>Reserved weekly spot</li>
             <li>Consistent weekly development</li>
             <li>Best available session rate</li>
-            <li>Limited full-program registration</li>
+            <li>Choose Wednesdays or Thursdays</li>
           </ul>
-          <p id="fpep-card-spots" class="fpep-card-spots">Checking availability&hellip;</p>
           <button type="button" class="btn btn-primary fpep-cta" id="fpep-register-btn">Register for Fall Program</button>
         </div>
       </div>
@@ -758,15 +812,23 @@
       <button class="fpep-modal-close" id="fpep-modal-close" aria-label="Close">&times;</button>
 
       <p class="fpep-eyebrow">Register</p>
-      <h2 class="fpep-title" id="fpep-title">Fall 2026 Power Edge Pro 13-Session Program</h2>
-      <div class="fpep-pkg-summary">
-        <div>
-          <div class="fpep-pkg-name">Fall PEP Program</div>
-          <div class="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Sept 23 &ndash; Dec 16 &middot; 13 sessions<br>Scotia Barn Burnaby</div>
-          <p id="fpep-program-spots" class="fpep-program-spots">Checking availability&hellip;</p>
-        </div>
-        <div class="fpep-pkg-price">$699 <span id="fpep-pkg-savings" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
+      <h2 class="fpep-title" id="fpep-title">Fall 2026 Power Edge Pro &mdash; 13-Session Program</h2>
+
+      <div id="fpep-day-select">
+        <p class="fpep-daychoice-desc">Wednesday and Thursday classes run the same 13-week schedule at the same price, choose whichever day works best for your schedule.</p>
+        <div class="fpep-daychoice-grid" id="fpep-daychoice-grid"></div>
       </div>
+
+      <div id="fpep-form-wrap" style="display:none">
+        <button type="button" class="fpep-change-day" id="fpep-change-day">&larr; Choose a different day</button>
+        <div class="fpep-pkg-summary">
+          <div>
+            <div class="fpep-pkg-name" id="fpep-pkg-name">Fall PEP Program</div>
+            <div class="fpep-pkg-meta" id="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Sept 23 &ndash; Dec 16 &middot; 13 sessions<br>Scotia Barn Burnaby</div>
+            <p id="fpep-program-spots" class="fpep-program-spots">Checking availability&hellip;</p>
+          </div>
+          <div class="fpep-pkg-price">$699 <span id="fpep-pkg-savings" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
+        </div>
 
       <form id="fpep-form" novalidate>
         <div class="fpep-form-section">
@@ -857,6 +919,7 @@
         <br>
         Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
       </div>
+      </div>
     </div>
   </div>
 
@@ -874,9 +937,7 @@
           <p class="fpep-section-label">Select a Session</p>
           <div class="form-group full">
             <label class="form-label" for="fpep-dropin-session">Session Date <span class="required">*</span></label>
-            <select class="form-select" id="fpep-dropin-session" name="session" required>
-              <option value="">Select a date</option>
-            </select>
+            <select class="form-select" id="fpep-dropin-session" name="session" required></select>
             <p id="fpep-dropin-session-spots" class="fpep-dropin-session-spots"></p>
           </div>
         </div>
@@ -1038,8 +1099,9 @@
     // ---- Fall PEP program ----
     let fallPepSpotsData   = {};        // { [sessionId]: drop-in spotsRemaining }
     let fallPepSpotsStatus = 'loading'; // 'loading' | 'done' | 'error'
-    let fallPepProgramSpotsRemaining = null; // null = unknown yet
-    let fallPepProgramFull = false;
+    let fallPepProgramSpotsByPackage = {}; // { [packageId]: full-program spotsRemaining }
+    let fallPepSelectedCohort = null;   // the cohort chosen on the day-select step
+    let fallPepProgramFull = false;     // whether fallPepSelectedCohort is sold out
 
     // Fall PEP drop-in price, read from the Schedule sheet's Cost column (defaults to
     // $55 server-side if left blank). Starts at the static markup's placeholder value
@@ -1072,16 +1134,24 @@
       const select = document.getElementById('fpep-dropin-session');
       const prevValue = select.value;
       select.innerHTML = '<option value="">Select a date</option>';
-      getFallPepSessionOptions().forEach(({ sessionId, date }) => {
-        const opt = document.createElement('option');
-        const spots = fallPepSpotsData[sessionId];
-        const known = fallPepSpotsStatus === 'done' && spots !== undefined;
-        const soldOut = known && spots <= 0;
-        opt.value = sessionId;
-        opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
-        if (soldOut) opt.disabled = true;
-        select.appendChild(opt);
+
+      FALL_PEP_COHORTS.forEach(cohort => {
+        const group = document.createElement('optgroup');
+        group.label = cohort.dayPlural;
+        cohort.sessionIds.forEach((sessionId, i) => {
+          const date = cohort.dates[i];
+          const opt = document.createElement('option');
+          const spots = fallPepSpotsData[sessionId];
+          const known = fallPepSpotsStatus === 'done' && spots !== undefined;
+          const soldOut = known && spots <= 0;
+          opt.value = sessionId;
+          opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
+          if (soldOut) opt.disabled = true;
+          group.appendChild(opt);
+        });
+        select.appendChild(group);
       });
+
       if (prevValue) select.value = prevValue;
       updateFpepDropinSessionSpotsDisplay();
     }
@@ -1103,65 +1173,74 @@
 
     populateFallPepDropinOptions();
 
-    function updateFpepProgramSpotsDisplay() {
-      const modalEl   = document.getElementById('fpep-program-spots');
-      const cardEl     = document.getElementById('fpep-card-spots');
-      const submitBtn  = document.getElementById('fpep-submit');
-      const cardBtn    = document.getElementById('fpep-register-btn');
+    // Builds the two day-choice cards on the day-select step, each showing that
+    // cohort's own full-program spot count.
+    function renderFpepDayChoices() {
+      const grid = document.getElementById('fpep-daychoice-grid');
+      grid.innerHTML = '';
+      FALL_PEP_COHORTS.forEach(cohort => {
+        const spotsRemaining = fallPepProgramSpotsByPackage[cohort.packageId];
+        const known = typeof spotsRemaining === 'number';
+        const full  = known && spotsRemaining <= 0;
+        const label = !known
+          ? 'Checking availability…'
+          : full
+            ? 'Full Program Registration Is Full'
+            : `${spotsRemaining} Full Program Spot${spotsRemaining !== 1 ? 's' : ''} Remaining`;
 
-      if (fallPepProgramSpotsRemaining === null) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'fpep-daychoice-card';
+        btn.disabled = full;
+        btn.innerHTML = `
+          <span class="fpep-daychoice-day">${cohort.dayPlural}</span>
+          <span class="fpep-daychoice-time">${cohort.time}</span>
+          <span class="fpep-daychoice-dates">${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]}, 2026</span>
+          <span class="fpep-daychoice-spots${full ? ' fpep-daychoice-spots--full' : ''}">${label}</span>
+        `;
+        btn.addEventListener('click', () => selectFpepCohort(cohort));
+        grid.appendChild(btn);
+      });
+    }
+
+    // Updates the in-form spots line + submit button for the currently selected cohort.
+    function updateFpepProgramSpotsDisplay() {
+      if (!fallPepSelectedCohort) return;
+      const modalEl   = document.getElementById('fpep-program-spots');
+      const submitBtn = document.getElementById('fpep-submit');
+      const spotsRemaining = fallPepProgramSpotsByPackage[fallPepSelectedCohort.packageId];
+
+      if (typeof spotsRemaining !== 'number') {
         modalEl.textContent = 'Checking availability…';
-        cardEl.textContent  = 'Checking availability…';
         return;
       }
 
-      fallPepProgramFull = fallPepProgramSpotsRemaining <= 0;
+      fallPepProgramFull = spotsRemaining <= 0;
       const label = fallPepProgramFull
         ? 'Full Program Registration Is Full'
-        : `${fallPepProgramSpotsRemaining} Full Program Spot${fallPepProgramSpotsRemaining !== 1 ? 's' : ''} Remaining`;
+        : `${spotsRemaining} Full Program Spot${spotsRemaining !== 1 ? 's' : ''} Remaining`;
 
       modalEl.textContent = label;
       modalEl.classList.toggle('fpep-program-spots--full', fallPepProgramFull);
-      cardEl.textContent = label;
-      cardEl.classList.toggle('fpep-card-spots--full', fallPepProgramFull);
 
       if (fallPepProgramFull) {
         submitBtn.disabled    = true;
         submitBtn.textContent = 'Full Program Registration Closed';
-        cardBtn.disabled      = true;
-        cardBtn.textContent   = 'Full Program Registration Closed';
       } else {
         if (submitBtn.textContent === 'Full Program Registration Closed') submitBtn.textContent = 'Register for Fall Program';
-        cardBtn.disabled    = false;
-        cardBtn.textContent = 'Register for Fall Program';
       }
     }
 
-    (async () => {
-      try {
-        const sessions = await fetch('/api/schedule').then(r => r.json());
-        let dropinPrice = null;
-        sessions.forEach(s => {
-          if (isFallPepSession(s.sessionId)) {
-            fallPepSpotsData[s.sessionId] = s.spotsRemaining;
-            if (dropinPrice === null && Number(s.Cost) > 0) dropinPrice = Number(s.Cost);
-            if (typeof s.fallPepProgramSpotsRemaining === 'number') {
-              fallPepProgramSpotsRemaining = s.fallPepProgramSpotsRemaining;
-            }
-          }
-        });
-        fallPepSpotsStatus = 'done';
-        if (dropinPrice !== null) applyFallPepDropinPrice(dropinPrice);
-      } catch (_) {
-        fallPepSpotsStatus = 'error';
-      }
-      populateFallPepDropinOptions();
-      updateFpepProgramSpotsDisplay();
-    })();
+    // Switches the full-program modal from the day-select step into the registration
+    // form, populated with the chosen cohort's schedule details.
+    function selectFpepCohort(cohort) {
+      fallPepSelectedCohort = cohort;
 
-    // ---- Fall PEP: full-program modal ----
-    function openFpepModal() {
-      const overlay = document.getElementById('fpep-modal-overlay');
+      document.getElementById('fpep-title').textContent =
+        `Fall 2026 Power Edge Pro — 13-Session Program (${cohort.dayPlural})`;
+      document.getElementById('fpep-pkg-meta').innerHTML =
+        `${cohort.dayPlural} &middot; ${cohort.time} &middot; ${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]} &middot; 13 sessions<br>${FALL_PEP_PROGRAM.location}`;
+
       const form = document.getElementById('fpep-form');
       form.reset();
       form.style.display = '';
@@ -1172,7 +1251,49 @@
       const prevErr = document.getElementById('fpep-form-error');
       if (prevErr) prevErr.remove();
       form.querySelectorAll('.form-input, .form-select').forEach(el => { el.style.borderColor = ''; });
+
       updateFpepProgramSpotsDisplay();
+
+      document.getElementById('fpep-day-select').style.display = 'none';
+      document.getElementById('fpep-form-wrap').style.display  = '';
+    }
+
+    function showFpepDaySelect() {
+      fallPepSelectedCohort = null;
+      document.getElementById('fpep-title').textContent = 'Fall 2026 Power Edge Pro — 13-Session Program';
+      document.getElementById('fpep-form-wrap').style.display = 'none';
+      document.getElementById('fpep-day-select').style.display = '';
+      renderFpepDayChoices();
+    }
+    document.getElementById('fpep-change-day').addEventListener('click', showFpepDaySelect);
+
+    (async () => {
+      try {
+        const sessions = await fetch('/api/schedule').then(r => r.json());
+        let dropinPrice = null;
+        sessions.forEach(s => {
+          if (isFallPepSession(s.sessionId)) {
+            fallPepSpotsData[s.sessionId] = s.spotsRemaining;
+            if (dropinPrice === null && Number(s.Cost) > 0) dropinPrice = Number(s.Cost);
+            if (s.fallPepPackageId && typeof s.fallPepProgramSpotsRemaining === 'number') {
+              fallPepProgramSpotsByPackage[s.fallPepPackageId] = s.fallPepProgramSpotsRemaining;
+            }
+          }
+        });
+        fallPepSpotsStatus = 'done';
+        if (dropinPrice !== null) applyFallPepDropinPrice(dropinPrice);
+      } catch (_) {
+        fallPepSpotsStatus = 'error';
+      }
+      populateFallPepDropinOptions();
+      renderFpepDayChoices();
+      updateFpepProgramSpotsDisplay();
+    })();
+
+    // ---- Fall PEP: full-program modal ----
+    function openFpepModal() {
+      const overlay = document.getElementById('fpep-modal-overlay');
+      showFpepDaySelect();
       overlay.classList.add('open');
       document.body.classList.add('modal-open');
       document.getElementById('fpep-modal-close').focus();
@@ -1311,7 +1432,7 @@
           }
 
           const payload = {
-            packageId:    FALL_PEP_PROGRAM.packageId,
+            packageId:    fallPepSelectedCohort.packageId,
             player_first: form.player_first.value.trim(),
             player_last:  form.player_last.value.trim(),
             level:        form.level.value,
@@ -1349,7 +1470,7 @@
 
           form.style.display = 'none';
           document.getElementById('fpep-success-summary').innerHTML =
-            `Program: <strong>Fall 2026 Power Edge Pro — 13-Session Program</strong><br>` +
+            `Program: <strong>Fall 2026 Power Edge Pro — 13-Session Program (${fallPepSelectedCohort.dayPlural})</strong><br>` +
             `Player: <strong>${form.player_first.value.trim()} ${form.player_last.value.trim()}</strong>`;
           document.getElementById('fpep-success').style.display = 'block';
         });
