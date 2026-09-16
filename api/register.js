@@ -5,6 +5,7 @@ const {
   FALL_PEP_SESSION_IDS: FALL_PEP_DROPIN_SESSION_IDS,
   isFallPepProgramLabel,
 } = require('./fall-pep-config');
+const { gstPortionCents } = require('./gst');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -20,7 +21,7 @@ function getSessionCost(obj) {
 
 // Fall 2026 Power Edge Pro sessions (Wednesday and Thursday cohorts, see
 // fall-pep-config.js) run a hard capacity partition: only 4 of each session's 20 seats
-// are ever sold as drop-in — the other 16 are reserved for the 13-session program and
+// are ever sold as drop-in — the other 16 are reserved for the 11-session program and
 // never spill over, even if the program under-sells. No sheet schema change: a program
 // registration is told apart from a drop-in registration by the sessionLabel text
 // already written to column C. When full-program registration closes, bump
@@ -114,7 +115,9 @@ module.exports = async function handler(req, res) {
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
-    const amount = Math.round(getSessionCost(sessionObj) * 100);
+    const baseAmount = Math.round(getSessionCost(sessionObj) * 100);
+    const gstAmount   = gstPortionCents(baseAmount);
+    const amount      = baseAmount + gstAmount;
 
     // Store all registration data in PaymentIntent metadata so the webhook can
     // write the spreadsheet row only after payment actually succeeds.
@@ -136,6 +139,8 @@ module.exports = async function handler(req, res) {
         email:        String(email).trim(),
         mailList:     mailList === 'true' ? 'true' : 'false',
         timestamp:    new Date().toISOString(),
+        baseAmountCents: String(baseAmount),
+        gstAmountCents:  String(gstAmount),
       },
     });
 

@@ -264,6 +264,16 @@
       font-size: 0.82rem;
       color: var(--text-muted);
     }
+    .fpep-daychoice-age {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .fpep-daychoice-agenote {
+      font-size: 0.74rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
     .fpep-daychoice-spots {
       margin-top: 0.4rem;
       font-family: var(--font-display);
@@ -304,6 +314,7 @@
       color: var(--accent);
     }
     .fpep-pkg-meta { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+    .fpep-pkg-agenote { font-size: 0.76rem; font-style: italic; color: var(--text-muted); margin-top: 0.2rem; }
     .fpep-pkg-price {
       font-family: var(--font-display);
       font-size: 1.05rem;
@@ -531,19 +542,21 @@
         <div>
           <p class="section-eyebrow">Fall 2026</p>
           <h2 class="section-title">Fall Power Edge Pro Program</h2>
-          <p class="fpep-subtitle">13-Week Development Program</p>
+          <p class="fpep-subtitle">11-Week Development Program</p>
           <ul class="fpep-meta-list">
             <li>Wednesdays &amp; Thursdays &middot; 4:00&ndash;4:50 PM</li>
             <li>Scotia Barn &middot; Burnaby</li>
-            <li>Sept. 23 - Dec. 17</li>
+            <li>Oct. 7 - Dec. 17</li>
+            <li>Wednesdays: U15&ndash;U18 <span style="opacity:0.75">(U13 may <a href="mailto:info@leveledhockey.com" style="color:inherit">email</a> to apply)</span></li>
+            <li>Thursdays: U11&ndash;U13 <span style="opacity:0.75">(U9 may <a href="mailto:info@leveledhockey.com" style="color:inherit">email</a> to apply)</span></li>
           </ul>
-          <p class="fpep-dropin-note" id="fpep-dropin-note">Drop In: <strong>$65</strong> per session</p>
+          <p class="fpep-dropin-note" id="fpep-dropin-note">Drop In: <strong>$65</strong> per session + GST</p>
         </div>
 
         <div class="fpep-card">
-          <p class="fpep-card-eyebrow">13 Sessions</p>
-          <p class="fpep-card-price">$699 <span>CAD</span></p>
-          <p class="fpep-card-savings" id="fpep-card-savings">Save $146 vs. Drop-In</p>
+          <p class="fpep-card-eyebrow">11 Sessions</p>
+          <p class="fpep-card-price">$599.99 <span>CAD + GST</span></p>
+          <p class="fpep-card-savings" id="fpep-card-savings">Save $115 vs. Drop-In</p>
           <ul class="fpep-feature-list">
             <li>Reserved weekly spot</li>
             <li>Consistent weekly development</li>
@@ -557,7 +570,7 @@
       <div class="fpep-dropin-strip">
         <div>
           <p class="fpep-dropin-strip-title">Can&rsquo;t commit to the full program?</p>
-          <p class="fpep-dropin-strip-desc" id="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session, subject to availability.</p>
+          <p class="fpep-dropin-strip-desc" id="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session + GST, subject to availability.</p>
         </div>
         <button type="button" class="btn btn-outline" id="fpep-dropin-btn">Drop-In Registration</button>
       </div>
@@ -587,7 +600,7 @@
             <h3 class="program-card-title">Power Edge Pro</h3>
             <p class="program-card-desc">Led by a Certified Level 2 PEP Instructor, this program builds elite edge control, puck handling, and decision-making through structured movement patterns that simulate real-game pressure. Players get significantly more puck touches and reps than traditional practices.</p>
             <div class="program-card-meta">
-              <div class="program-card-price">$55 <span>/ player / hr</span></div>
+              <div class="program-card-price">$55 <span>+ GST / player / hr</span></div>
               <a href="register.html?program=Power+Edge+Pro" class="btn btn-accent-outline program-card-cta">Register</a>
             </div>
           </div>
@@ -606,7 +619,7 @@
             <h3 class="program-card-title">Overspeed Power Skating</h3>
             <p class="program-card-desc">One of the only programs in BC partnered with Bronko Hockey, this session combines power skating with resistance training using the Bronko weighted belt system. Build stride strength, acceleration, and balance that translates directly to speed when the resistance comes off.</p>
             <div class="program-card-meta">
-              <div class="program-card-price">$55 <span>/ player / hr</span></div>
+              <div class="program-card-price">$55 <span>+ GST / player / hr</span></div>
               <a href="register.html?program=Overspeed+Power+Skating" class="btn btn-accent-outline program-card-cta">Register</a>
             </div>
           </div>
@@ -625,7 +638,7 @@
             <h3 class="program-card-title">Puck Skills</h3>
             <p class="program-card-desc">Develops offensive puck skills in motion and under pressure. Stick-handling in tight areas, puck protection, shooting, passing, and deception to create space. Every rep is designed to mirror what players face in real game situations.</p>
             <div class="program-card-meta">
-              <div class="program-card-price">$55 <span>/ player / hr</span></div>
+              <div class="program-card-price">$55 <span>+ GST / player / hr</span></div>
               <a href="register.html?program=Puck+Skills" class="btn btn-accent-outline program-card-cta">Register</a>
             </div>
           </div>
@@ -644,7 +657,7 @@
             <h3 class="program-card-title">Battle Camp</h3>
             <p class="program-card-desc">Bridges skill development and in-game performance through small-area competitive scenarios: 1v1, 2v2, and 3v3 situations where players must win puck battles, make quick decisions, and execute under pressure.</p>
             <div class="program-card-meta">
-              <div class="program-card-price">$55 <span>/ player / hr</span></div>
+              <div class="program-card-price">$55 <span>+ GST / player / hr</span></div>
               <a href="register.html?program=Battle+Camp" class="btn btn-accent-outline program-card-cta">Register</a>
             </div>
           </div>
@@ -663,7 +676,7 @@
             <h3 class="program-card-title">Defense Camp</h3>
             <p class="program-card-desc">A review of defensive fundamentals: defense-specific skating, breakouts, zone coverage, offensive activation, and 1-on-1 scenarios. Builds the tools and confidence to play a reliable, complete game from the back end.</p>
             <div class="program-card-meta">
-              <div class="program-card-price">$55 <span>/ player / hr</span></div>
+              <div class="program-card-price">$55 <span>+ GST / player / hr</span></div>
               <a href="register.html?program=Defense+Camp" class="btn btn-accent-outline program-card-cta">Register</a>
             </div>
           </div>
@@ -768,28 +781,28 @@
             <span class="modal-rate-name">1-on-1</span>
             <span class="modal-rate-detail">Fully private lesson</span>
           </div>
-          <div class="modal-rate-price">$200<span>/hr + ice fee</span></div>
+          <div class="modal-rate-price">$200<span>/hr + ice fee + GST</span></div>
         </div>
         <div class="modal-rate-row">
           <div class="modal-rate-label">
             <span class="modal-rate-name">Semi-Private</span>
             <span class="modal-rate-detail">2–5 players</span>
           </div>
-          <div class="modal-rate-price">$225<span>/hr + ice fee</span></div>
+          <div class="modal-rate-price">$225<span>/hr + ice fee + GST</span></div>
         </div>
         <div class="modal-rate-row">
           <div class="modal-rate-label">
             <span class="modal-rate-name">Large Group</span>
             <span class="modal-rate-detail">6–10 players</span>
           </div>
-          <div class="modal-rate-price">$250<span>/hr + ice fee</span></div>
+          <div class="modal-rate-price">$250<span>/hr + ice fee + GST</span></div>
         </div>
         <div class="modal-rate-row">
           <div class="modal-rate-label">
             <span class="modal-rate-name">Team Practice</span>
             <span class="modal-rate-detail">Full team session</span>
           </div>
-          <div class="modal-rate-price">$300<span>/hr + ice fee</span></div>
+          <div class="modal-rate-price">$300<span>/hr + ice fee + GST</span></div>
         </div>
       </div>
       <div class="modal-contact-info">
@@ -812,10 +825,10 @@
       <button class="fpep-modal-close" id="fpep-modal-close" aria-label="Close">&times;</button>
 
       <p class="fpep-eyebrow">Register</p>
-      <h2 class="fpep-title" id="fpep-title">Fall 2026 Power Edge Pro &mdash; 13-Session Program</h2>
+      <h2 class="fpep-title" id="fpep-title">Fall 2026 Power Edge Pro &mdash; 11-Session Program</h2>
 
       <div id="fpep-day-select">
-        <p class="fpep-daychoice-desc">Wednesday and Thursday classes run the same 13-week schedule at the same price, choose whichever day works best for your schedule.</p>
+        <p class="fpep-daychoice-desc">Wednesday and Thursday classes run the same 11-week schedule at the same price &mdash; choose whichever day matches your player's age group.</p>
         <div class="fpep-daychoice-grid" id="fpep-daychoice-grid"></div>
       </div>
 
@@ -824,10 +837,11 @@
         <div class="fpep-pkg-summary">
           <div>
             <div class="fpep-pkg-name" id="fpep-pkg-name">Fall PEP Program</div>
-            <div class="fpep-pkg-meta" id="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Sept 23 &ndash; Dec 16 &middot; 13 sessions<br>Scotia Barn Burnaby</div>
+            <div class="fpep-pkg-meta" id="fpep-pkg-meta">Wednesdays &middot; 4:00&ndash;4:50 PM &middot; Oct 7 &ndash; Dec 16 &middot; 11 sessions &middot; U15&ndash;U18<br>Scotia Barn Burnaby</div>
+            <p class="fpep-pkg-agenote" id="fpep-pkg-agenote">U13 players may email to apply</p>
             <p id="fpep-program-spots" class="fpep-program-spots">Checking availability&hellip;</p>
           </div>
-          <div class="fpep-pkg-price">$699 <span id="fpep-pkg-savings" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD &middot; save $146</span></div>
+          <div class="fpep-pkg-price">$599.99 <span id="fpep-pkg-savings" style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-body);font-weight:400">CAD + GST &middot; save $115</span></div>
         </div>
 
       <form id="fpep-form" novalidate>
@@ -891,7 +905,7 @@
             <div id="fpep-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
           </div>
           <p id="fpep-program-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
-            Amount: <strong style="color:var(--text)">$699.00 CAD</strong> for all 13 sessions (save $146 vs. the $65 drop-in rate) - processed securely by Stripe.
+            Amount: <strong style="color:var(--text)">$599.99 + $72.00 GST = $671.99 CAD</strong> for all 11 sessions (save $115 vs. the $65 drop-in rate) - processed securely by Stripe.
           </p>
         </div>
 
@@ -914,7 +928,7 @@
       </form>
 
       <div class="fpep-success" id="fpep-success">
-        <strong>Registration received!</strong> Your payment has been processed and your spot in all 13 sessions is confirmed.<br><br>
+        <strong>Registration received!</strong> Your payment has been processed and your spot in all 11 sessions is confirmed.<br><br>
         <div id="fpep-success-summary"></div>
         <br>
         Check your email for confirmation details. Questions? <a href="mailto:info@leveledhockey.com" style="color:var(--accent)">info@leveledhockey.com</a>
@@ -1002,7 +1016,7 @@
             <div id="fpep-dropin-card-errors" style="color:#e05a5a;font-size:0.8rem;margin-top:0.3rem;display:none;"></div>
           </div>
           <p id="fpep-dropin-amount-line" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.65rem;line-height:1.5;">
-            Amount: <strong style="color:var(--text)">$65.00 CAD</strong>, processed securely by Stripe.
+            Amount: <strong style="color:var(--text)">$65.00 + $7.80 GST = $72.80 CAD</strong>, processed securely by Stripe.
           </p>
         </div>
 
@@ -1034,6 +1048,7 @@
   </div>
 
   <script src="waiver.js"></script>
+  <script src="gst.js"></script>
   <script src="fall-pep.js"></script>
   <script>
     // Transparent → solid nav on scroll
@@ -1116,16 +1131,21 @@
       const priceStr = price.toFixed(2);
       const savings   = Math.max(0, Math.round(price * FALL_PEP_PROGRAM.sessionsCount - FALL_PEP_PROGRAM.programRate));
 
+      const programGst   = gstPortion(FALL_PEP_PROGRAM.programRate);
+      const programTotal = addGst(FALL_PEP_PROGRAM.programRate);
+      const dropinGst     = gstPortion(price);
+      const dropinTotal   = addGst(price);
+
       document.getElementById('fpep-dropin-note').innerHTML =
-        `Drop In: <strong>$${priceStr}</strong> per session`;
+        `Drop In: <strong>$${priceStr}</strong> per session + GST`;
       document.getElementById('fpep-dropin-strip-desc').textContent =
-        `Limited drop-in spaces will be available for $${priceStr}/session, subject to availability.`;
+        `Limited drop-in spaces will be available for $${priceStr}/session + GST, subject to availability.`;
       document.getElementById('fpep-card-savings').textContent = `Save $${savings} vs. Drop-In`;
-      document.getElementById('fpep-pkg-savings').innerHTML = `CAD &middot; save $${savings}`;
+      document.getElementById('fpep-pkg-savings').innerHTML = `CAD + GST &middot; save $${savings}`;
       document.getElementById('fpep-program-amount-line').innerHTML =
-        `Amount: <strong style="color:var(--text)">$${FALL_PEP_PROGRAM.programRate}.00 CAD</strong> for all 13 sessions (save $${savings} vs. the $${priceStr} drop-in rate) - processed securely by Stripe.`;
+        `Amount: <strong style="color:var(--text)">$${FALL_PEP_PROGRAM.programRate.toFixed(2)} + $${programGst.toFixed(2)} GST = $${programTotal.toFixed(2)} CAD</strong> for all ${FALL_PEP_PROGRAM.sessionsCount} sessions (save $${savings} vs. the $${priceStr} drop-in rate) - processed securely by Stripe.`;
       document.getElementById('fpep-dropin-amount-line').innerHTML =
-        `Amount: <strong style="color:var(--text)">$${priceStr} CAD</strong>, processed securely by Stripe.`;
+        `Amount: <strong style="color:var(--text)">$${priceStr} + $${dropinGst.toFixed(2)} GST = $${dropinTotal.toFixed(2)} CAD</strong>, processed securely by Stripe.`;
 
       if (updateFpepDropinExpressTotal) updateFpepDropinExpressTotal(price);
     }
@@ -1196,6 +1216,8 @@
           <span class="fpep-daychoice-day">${cohort.dayPlural}</span>
           <span class="fpep-daychoice-time">${cohort.time}</span>
           <span class="fpep-daychoice-dates">${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]}, 2026</span>
+          <span class="fpep-daychoice-age">${cohort.ageGroup}</span>
+          <span class="fpep-daychoice-agenote">${cohort.ageNote}</span>
           <span class="fpep-daychoice-spots${full ? ' fpep-daychoice-spots--full' : ''}">${label}</span>
         `;
         btn.addEventListener('click', () => selectFpepCohort(cohort));
@@ -1237,9 +1259,10 @@
       fallPepSelectedCohort = cohort;
 
       document.getElementById('fpep-title').textContent =
-        `Fall 2026 Power Edge Pro — 13-Session Program (${cohort.dayPlural})`;
+        `Fall 2026 Power Edge Pro — ${FALL_PEP_PROGRAM.sessionsCount}-Session Program (${cohort.dayPlural})`;
       document.getElementById('fpep-pkg-meta').innerHTML =
-        `${cohort.dayPlural} &middot; ${cohort.time} &middot; ${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]} &middot; 13 sessions<br>${FALL_PEP_PROGRAM.location}`;
+        `${cohort.dayPlural} &middot; ${cohort.time} &middot; ${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]} &middot; ${FALL_PEP_PROGRAM.sessionsCount} sessions &middot; ${cohort.ageGroup}<br>${FALL_PEP_PROGRAM.location}`;
+      document.getElementById('fpep-pkg-agenote').textContent = cohort.ageNote;
 
       const form = document.getElementById('fpep-form');
       form.reset();
@@ -1260,7 +1283,7 @@
 
     function showFpepDaySelect() {
       fallPepSelectedCohort = null;
-      document.getElementById('fpep-title').textContent = 'Fall 2026 Power Edge Pro — 13-Session Program';
+      document.getElementById('fpep-title').textContent = `Fall 2026 Power Edge Pro — ${FALL_PEP_PROGRAM.sessionsCount}-Session Program`;
       document.getElementById('fpep-form-wrap').style.display = 'none';
       document.getElementById('fpep-day-select').style.display = '';
       renderFpepDayChoices();
@@ -1398,10 +1421,10 @@
           return paymentRequest;
         }
 
-        // ---- Full program (13 sessions, $699) ----
+        // ---- Full program (11 sessions, $599.99) ----
         const fpepElements = stripe.elements();
         const fpepCardEl   = setupCardElement(fpepElements, 'fpep-card-element', 'fpep-card-errors');
-        setupExpressCheckout(fpepElements, 69900, 'Fall PEP 13-Session Program', 'fpep-payment-request-btn', 'fpep-express-section');
+        setupExpressCheckout(fpepElements, Math.round(addGst(FALL_PEP_PROGRAM.programRate) * 100), `Fall PEP ${FALL_PEP_PROGRAM.sessionsCount}-Session Program`, 'fpep-payment-request-btn', 'fpep-express-section');
 
         document.getElementById('fpep-form').addEventListener('submit', async function(e) {
           e.preventDefault();
@@ -1470,7 +1493,7 @@
 
           form.style.display = 'none';
           document.getElementById('fpep-success-summary').innerHTML =
-            `Program: <strong>Fall 2026 Power Edge Pro — 13-Session Program (${fallPepSelectedCohort.dayPlural})</strong><br>` +
+            `Program: <strong>Fall 2026 Power Edge Pro — ${FALL_PEP_PROGRAM.sessionsCount}-Session Program (${fallPepSelectedCohort.dayPlural})</strong><br>` +
             `Player: <strong>${form.player_first.value.trim()} ${form.player_last.value.trim()}</strong>`;
           document.getElementById('fpep-success').style.display = 'block';
         });
@@ -1479,12 +1502,12 @@
         const fpepDropinElements = stripe.elements();
         const fpepDropinCardEl   = setupCardElement(fpepDropinElements, 'fpep-dropin-card-element', 'fpep-dropin-card-errors');
         const fpepDropinPaymentRequest = setupExpressCheckout(
-          fpepDropinElements, Math.round(fallPepDropinPrice * 100),
+          fpepDropinElements, Math.round(addGst(fallPepDropinPrice) * 100),
           'Fall PEP Drop-In Session', 'fpep-dropin-payment-request-btn', 'fpep-dropin-express-section',
         );
         updateFpepDropinExpressTotal = price => {
           fpepDropinPaymentRequest.update({
-            total: { label: 'Fall PEP Drop-In Session', amount: Math.round(price * 100) },
+            total: { label: 'Fall PEP Drop-In Session', amount: Math.round(addGst(price) * 100) },
           });
         };
 

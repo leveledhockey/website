@@ -6,13 +6,14 @@ const {
   getFallPepCohortByPackageId,
   isFallPepProgramLabel,
 } = require('./fall-pep-config');
+const { gstPortionCents } = require('./gst');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS          = 'Registrations';
 
-// Fall 2026 Power Edge Pro — 13-session package. Two fixed-schedule cohorts (Wednesday
-// and Thursday, Sept 23/24 - Dec 16/17, 4:00-4:50 PM) — see fall-pep-config.js.
-// A full-program purchase writes an identical row to all 13 sessions of its cohort in
+// Fall 2026 Power Edge Pro — 11-session package. Two fixed-schedule cohorts (Wednesday
+// and Thursday, Oct 7/8 - Dec 16/17, 4:00-4:50 PM) — see fall-pep-config.js.
+// A full-program purchase writes an identical row to all 11 sessions of its cohort in
 // one webhook call — registration counts are tracked off each cohort's canonical
 // session to avoid a 13x overcount.
 
@@ -63,9 +64,11 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'Sorry, the Fall Program is full.' });
     }
 
+    const gstAmount = gstPortionCents(FALL_PEP_AMOUNT);
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
-      amount:      FALL_PEP_AMOUNT,
+      amount:      FALL_PEP_AMOUNT + gstAmount,
       currency:    'cad',
       description: cohort.label,
       metadata: {
@@ -80,6 +83,8 @@ module.exports = async function handler(req, res) {
         email:        String(email).trim(),
         mailList:     mailList === 'true' ? 'true' : 'false',
         timestamp:    new Date().toISOString(),
+        baseAmountCents: String(FALL_PEP_AMOUNT),
+        gstAmountCents:  String(gstAmount),
       },
     });
 

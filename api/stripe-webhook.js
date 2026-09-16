@@ -76,8 +76,8 @@ function formatDate(mmddyy) {
   return `${DOW_NAMES[d.getDay()]}, ${MONTH_NAMES[mm - 1]} ${dd}, ${year}`;
 }
 
-// Fall 2026 Power Edge Pro — 13-session package. Two fixed-schedule cohorts (Wednesday
-// and Thursday, Sept 23/24 - Dec 16/17, 4:00-4:50 PM at Scotia Barn Burnaby) — see
+// Fall 2026 Power Edge Pro — 11-session package. Two fixed-schedule cohorts (Wednesday
+// and Thursday, Oct 7/8 - Dec 16/17, 4:00-4:50 PM at Scotia Barn Burnaby) — see
 // fall-pep-config.js. Which cohort a purchase belongs to comes from its packageId,
 // stored in the PaymentIntent metadata by api/fall-pep-register.js.
 
@@ -190,7 +190,7 @@ async function handleDropIn(paymentIntent, meta, res) {
                  <strong>Time: ${sessionTime}</strong><br>
                  <strong>Location: ${sessionLoc}</strong>
                </p>
-               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD was received successfully.</p>
+               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD (includes GST) was received successfully.</p>
                <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>See you on the ice!<br>Leveled Hockey</p>`,
       });
@@ -269,10 +269,10 @@ async function handleFallPepProgram(paymentIntent, meta, res) {
         to:      email,
         subject: `Fall PEP Program Registration Confirmed: ${playerFirst} ${playerLast}`,
         html: `<p>Hi ${parentFirst},</p>
-               <p>${playerFirst} ${playerLast} is registered for the Fall 2026 Power Edge Pro 13-session program (${cohort.day}s). Your payment has been received.</p>
+               <p>${playerFirst} ${playerLast} is registered for the Fall 2026 Power Edge Pro 11-session program (${cohort.day}s). Your payment has been received.</p>
                <p><strong>${cohort.label}</strong></p>
                ${sessionsHtml}
-               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD was received successfully.</p>
+               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD (includes GST) was received successfully.</p>
                <p>We'll see you on the ice! If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>Leveled Hockey Development</p>`,
       });

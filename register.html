@@ -1061,6 +1061,7 @@
   </footer>
 
   <script src="waiver.js"></script>
+  <script src="gst.js"></script>
   <script src="fall-pep.js"></script>
   <script>
     // Transparent → solid nav on scroll
@@ -1501,11 +1502,14 @@
 
     function updateAmountLine(price, isFallPep) {
       const priceStr = price.toFixed(2);
+      const gst      = gstPortion(price);
+      const total    = addGst(price);
+      const totalStr = `$${priceStr} + $${gst.toFixed(2)} GST = $${total.toFixed(2)} CAD`;
       document.getElementById('amount-line').innerHTML = isFallPep
-        ? `Amount: <strong style="color: var(--text);">$${priceStr} CAD</strong>. Fall PEP sessions are $${priceStr}/session - processed securely by Stripe.`
-        : `Amount: <strong style="color: var(--text);">$${priceStr} CAD</strong> processed securely by Stripe.`;
+        ? `Amount: <strong style="color: var(--text);">${totalStr}</strong>. Fall PEP sessions are $${priceStr}/session + GST - processed securely by Stripe.`
+        : `Amount: <strong style="color: var(--text);">${totalStr}</strong> processed securely by Stripe.`;
       document.getElementById('submit-amount-line').innerHTML =
-        `You will be charged <strong style="color: var(--text);">$${priceStr} CAD</strong> upon submitting this form.`;
+        `You will be charged <strong style="color: var(--text);">$${total.toFixed(2)} CAD</strong> (includes GST) upon submitting this form.`;
     }
 
     function selectSessionCard(card) {
@@ -1651,7 +1655,7 @@
     const paymentRequest = stripe.paymentRequest({
       country:          'CA',
       currency:         'cad',
-      total:            { label: 'Leveled Hockey Session', amount: 5500 },
+      total:            { label: 'Leveled Hockey Session', amount: Math.round(addGst(55) * 100) },
       requestPayerName: true,
       requestPayerEmail: true,
     });
@@ -1661,7 +1665,7 @@
       paymentRequest.update({
         total: {
           label:  isFallPep ? 'Fall PEP Drop-In Session' : 'Leveled Hockey Session',
-          amount: Math.round(price * 100),
+          amount: Math.round(addGst(price) * 100),
         },
       });
     };
