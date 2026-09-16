@@ -1,22 +1,20 @@
 const { google } = require('googleapis');
 const Stripe = require('stripe');
+const {
+  FALL_PEP_PROGRAM_CAP,
+  FALL_PEP_AMOUNT,
+  getFallPepCohortByPackageId,
+  isFallPepProgramLabel,
+} = require('./fall-pep-config');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS          = 'Registrations';
 
-// Fall 2026 Power Edge Pro — 13-session package. Hard-coded: this is a single,
-// fixed-schedule program (Wednesdays, Sept 23 - Dec 16, 4:00-4:50 PM).
-const FALL_PEP_PACKAGE_ID  = 'fall-pep-2026';
-const FALL_PEP_LABEL       = 'Fall 2026 Power Edge Pro 13-Session Program';
-const FALL_PEP_AMOUNT      = 69900; // $699.00 CAD
-
-// Hard capacity partition: only 16 of the 20 seats in each session are ever sold as
-// the full program — the other 4 are reserved for drop-in and never touched here.
-// When full-program registration closes, this cap can simply be raised.
-const FALL_PEP_PROGRAM_CAP = 16;
-// A full-program purchase writes an identical row to all 13 sessions in one webhook
-// call — count registrations off a single canonical session to avoid a 13x overcount.
-const FALL_PEP_CANONICAL_SESSION_ID = 'PEP_09-23-26_16:00';
+// Fall 2026 Power Edge Pro — 13-session package. Two fixed-schedule cohorts (Wednesday
+// and Thursday, Sept 23/24 - Dec 16/17, 4:00-4:50 PM) — see fall-pep-config.js.
+// A full-program purchase writes an identical row to all 13 sessions of its cohort in
+// one webhook call — registration counts are tracked off each cohort's canonical
+// session to avoid a 13x overcount.
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -43,7 +41,8 @@ module.exports = async function handler(req, res) {
   if (!String(email).includes('@')) {
     return res.status(400).json({ error: 'Invalid email address.' });
   }
-  if (String(packageId || '').trim() !== FALL_PEP_PACKAGE_ID) {
+  const cohort = getFallPepCohortByPackageId(String(packageId || '').trim());
+  if (!cohort) {
     return res.status(400).json({ error: 'Invalid package selection.' });
   }
 
@@ -57,7 +56,7 @@ module.exports = async function handler(req, res) {
     });
     const regRows = (regRes.data.values || []).slice(1);
     const programCount = regRows.filter(row =>
-      row[0] === FALL_PEP_CANONICAL_SESSION_ID && String(row[1] || '').startsWith(FALL_PEP_LABEL)
+      row[0] === cohort.canonicalSessionId && isFallPepProgramLabel(row[1])
     ).length;
 
     if (programCount >= FALL_PEP_PROGRAM_CAP) {
@@ -68,10 +67,10 @@ module.exports = async function handler(req, res) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount:      FALL_PEP_AMOUNT,
       currency:    'cad',
-      description: FALL_PEP_LABEL,
+      description: cohort.label,
       metadata: {
         type:         'fall_pep_program',
-        packageId:    FALL_PEP_PACKAGE_ID,
+        packageId:    cohort.packageId,
         player_first: String(player_first).trim(),
         player_last:  String(player_last).trim(),
         level:        String(level || '').trim(),

@@ -1,4 +1,12 @@
 const { google } = require('googleapis');
+const {
+  FALL_PEP_PROGRAM_CAP,
+  FALL_PEP_DROPIN_CAP,
+  FALL_PEP_SESSION_IDS,
+  isFallPepSession,
+  getFallPepCohortForSession,
+  isFallPepProgramLabel,
+} = require('./fall-pep-config');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -9,19 +17,6 @@ const SCHEDULE_SHEET               = 'Schedule';
 // each write already stores (col C), rather than adding a new column.
 // When full-program registration closes, bump FALL_PEP_DROPIN_CAP up (e.g. to 20)
 // so the unsold program seats become available as drop-in.
-const FALL_PEP_LABEL        = 'Fall 2026 Power Edge Pro — 13-Session Program';
-const FALL_PEP_PROGRAM_CAP  = 16;
-const FALL_PEP_DROPIN_CAP   = 4;
-const FALL_PEP_CANONICAL_SESSION_ID = 'PEP_09-23-26_16:00';
-const FALL_PEP_SESSION_IDS = new Set([
-  'PEP_09-23-26_16:00', 'PEP_09-30-26_16:00', 'PEP_10-07-26_16:00', 'PEP_10-14-26_16:00',
-  'PEP_10-21-26_16:00', 'PEP_10-28-26_16:00', 'PEP_11-04-26_16:00', 'PEP_11-11-26_16:00',
-  'PEP_11-18-26_16:00', 'PEP_11-25-26_16:00', 'PEP_12-02-26_16:00', 'PEP_12-09-26_16:00',
-  'PEP_12-16-26_16:00',
-]);
-function isFallPepProgramLabel(label) {
-  return String(label || '').startsWith(FALL_PEP_LABEL);
-}
 
 const DEFAULT_DROPIN_COST = 55; // CAD, used when a Schedule row leaves Cost blank
 
@@ -66,7 +61,7 @@ module.exports = async function handler(req, res) {
     const regRows = (regData.data.values || []).slice(1);
     const regCountMap = {};
     const fallPepDropinCountMap = {};
-    let fallPepProgramCount = 0;
+    const fallPepProgramCountByPackage = {};
     regRows.forEach(row => {
       const sessionId = row[0] || '';
       const label     = row[1] || '';
@@ -76,9 +71,14 @@ module.exports = async function handler(req, res) {
 
       if (FALL_PEP_SESSION_IDS.has(sessionId)) {
         if (isFallPepProgramLabel(label)) {
-          // One full-program purchase writes an identical row to all 13 sessions —
-          // count it once, off a single canonical session, to avoid a 13x overcount.
-          if (sessionId === FALL_PEP_CANONICAL_SESSION_ID) fallPepProgramCount++;
+          // One full-program purchase writes an identical row to all 13 sessions of its
+          // cohort — count it once, off that cohort's canonical session, to avoid a
+          // 13x overcount.
+          const cohort = getFallPepCohortForSession(sessionId);
+          if (cohort && sessionId === cohort.canonicalSessionId) {
+            fallPepProgramCountByPackage[cohort.packageId] =
+              (fallPepProgramCountByPackage[cohort.packageId] || 0) + 1;
+          }
         } else {
           fallPepDropinCountMap[sessionId] = (fallPepDropinCountMap[sessionId] || 0) + 1;
         }
@@ -102,7 +102,8 @@ module.exports = async function handler(req, res) {
 
       const maxParticipants = parseInt(obj['Max Participants'], 10) || 0;
       const registered      = regCountMap[obj['SessionID']] || 0;
-      const isFallPep       = FALL_PEP_SESSION_IDS.has(obj['SessionID']);
+      const isFallPep       = isFallPepSession(obj['SessionID']);
+      const fallPepCohort   = isFallPep ? getFallPepCohortForSession(obj['SessionID']) : null;
 
       // Fall PEP sessions run a hard capacity partition: only FALL_PEP_DROPIN_CAP of
       // the 20 seats are ever sold as drop-in, regardless of how many program spots
@@ -124,8 +125,12 @@ module.exports = async function handler(req, res) {
         spotsRemaining,
       };
 
-      if (isFallPep) {
-        sessionResult.fallPepProgramSpotsRemaining = Math.max(0, FALL_PEP_PROGRAM_CAP - fallPepProgramCount);
+      if (isFallPep && fallPepCohort) {
+        sessionResult.fallPepPackageId = fallPepCohort.packageId;
+        sessionResult.fallPepProgramSpotsRemaining = Math.max(
+          0,
+          FALL_PEP_PROGRAM_CAP - (fallPepProgramCountByPackage[fallPepCohort.packageId] || 0),
+        );
       }
 
       result.push(sessionResult);

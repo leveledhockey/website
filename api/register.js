@@ -1,5 +1,10 @@
 const { google } = require('googleapis');
 const Stripe = require('stripe');
+const {
+  FALL_PEP_DROPIN_CAP,
+  FALL_PEP_SESSION_IDS: FALL_PEP_DROPIN_SESSION_IDS,
+  isFallPepProgramLabel,
+} = require('./fall-pep-config');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -13,25 +18,13 @@ function getSessionCost(obj) {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DROPIN_COST;
 }
 
-// Fall 2026 Power Edge Pro sessions run a hard capacity partition: only 4 of each
-// session's 20 seats are ever sold as drop-in — the other 16 are reserved for the
-// 13-session program and never spill over, even if the program under-sells. No sheet
-// schema change: a program registration is told apart from a drop-in registration by
-// the sessionLabel text already written to column C (see FALL_PEP_LABEL). When
-// full-program registration closes, bump FALL_PEP_DROPIN_CAP up (e.g. to 20) to open
-// the unsold program seats to drop-in.
-// Hard-coded to these 13 session IDs (Wednesdays, Sept 23 - Dec 16, 4:00-4:50 PM).
-const FALL_PEP_DROPIN_CAP    = 4;
-const FALL_PEP_LABEL         = 'Fall 2026 Power Edge Pro — 13-Session Program';
-const FALL_PEP_DROPIN_SESSION_IDS = new Set([
-  'PEP_09-23-26_16:00', 'PEP_09-30-26_16:00', 'PEP_10-07-26_16:00', 'PEP_10-14-26_16:00',
-  'PEP_10-21-26_16:00', 'PEP_10-28-26_16:00', 'PEP_11-04-26_16:00', 'PEP_11-11-26_16:00',
-  'PEP_11-18-26_16:00', 'PEP_11-25-26_16:00', 'PEP_12-02-26_16:00', 'PEP_12-09-26_16:00',
-  'PEP_12-16-26_16:00',
-]);
-function isFallPepProgramLabel(label) {
-  return String(label || '').startsWith(FALL_PEP_LABEL);
-}
+// Fall 2026 Power Edge Pro sessions (Wednesday and Thursday cohorts, see
+// fall-pep-config.js) run a hard capacity partition: only 4 of each session's 20 seats
+// are ever sold as drop-in — the other 16 are reserved for the 13-session program and
+// never spill over, even if the program under-sells. No sheet schema change: a program
+// registration is told apart from a drop-in registration by the sessionLabel text
+// already written to column C. When full-program registration closes, bump
+// FALL_PEP_DROPIN_CAP up (e.g. to 20) to open the unsold program seats to drop-in.
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
