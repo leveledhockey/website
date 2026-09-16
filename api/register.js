@@ -5,6 +5,7 @@ const {
   FALL_PEP_SESSION_IDS: FALL_PEP_DROPIN_SESSION_IDS,
   isFallPepProgramLabel,
 } = require('./fall-pep-config');
+const { gstPortionCents } = require('./gst');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
@@ -114,7 +115,9 @@ module.exports = async function handler(req, res) {
     // Format: "Program - MM-DD-YY at H:MM (Location)"
     const sessionLabel = `${sessionObj['Program']} - ${sessionObj['Date (MM-DD-YY)']} at ${sessionObj['Time (24H clock)']} (${sessionObj['Location']})`;
 
-    const amount = Math.round(getSessionCost(sessionObj) * 100);
+    const baseAmount = Math.round(getSessionCost(sessionObj) * 100);
+    const gstAmount   = gstPortionCents(baseAmount);
+    const amount      = baseAmount + gstAmount;
 
     // Store all registration data in PaymentIntent metadata so the webhook can
     // write the spreadsheet row only after payment actually succeeds.
@@ -136,6 +139,8 @@ module.exports = async function handler(req, res) {
         email:        String(email).trim(),
         mailList:     mailList === 'true' ? 'true' : 'false',
         timestamp:    new Date().toISOString(),
+        baseAmountCents: String(baseAmount),
+        gstAmountCents:  String(gstAmount),
       },
     });
 

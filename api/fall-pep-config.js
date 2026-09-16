@@ -15,7 +15,9 @@ const FALL_PEP_DURATION_MIN  = 50;
 const FALL_PEP_LOCATION      = 'Scotia Barn Burnaby';
 const FALL_PEP_PROGRAM_CAP   = 16;   // full-program seats per cohort, per session
 const FALL_PEP_DROPIN_CAP    = 4;    // drop-in seats per session
-const FALL_PEP_AMOUNT        = 59999; // $599.99 CAD, per cohort
+const FALL_PEP_AMOUNT        = 59999; // $599.99 CAD pre-tax, per cohort — GST is added
+                                       // on top when the PaymentIntent is created (see
+                                       // fall-pep-register.js / gst.js)
 
 function fallPepSessionId(mmddyy) {
   return `PEP_${mmddyy}_${FALL_PEP_TIME}`;

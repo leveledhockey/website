@@ -190,7 +190,7 @@ async function handleDropIn(paymentIntent, meta, res) {
                  <strong>Time: ${sessionTime}</strong><br>
                  <strong>Location: ${sessionLoc}</strong>
                </p>
-               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD was received successfully.</p>
+               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD (includes GST) was received successfully.</p>
                <p>If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>See you on the ice!<br>Leveled Hockey</p>`,
       });
@@ -272,7 +272,7 @@ async function handleFallPepProgram(paymentIntent, meta, res) {
                <p>${playerFirst} ${playerLast} is registered for the Fall 2026 Power Edge Pro 11-session program (${cohort.day}s). Your payment has been received.</p>
                <p><strong>${cohort.label}</strong></p>
                ${sessionsHtml}
-               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD was received successfully.</p>
+               <p>Payment of $${(paymentIntent.amount / 100).toFixed(2)} CAD (includes GST) was received successfully.</p>
                <p>We'll see you on the ice! If you have any questions, contact us at info@leveledhockey.com or 604-500-6574.</p>
                <p>Leveled Hockey Development</p>`,
       });

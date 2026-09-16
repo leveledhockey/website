@@ -6,6 +6,7 @@ const {
   getFallPepCohortByPackageId,
   isFallPepProgramLabel,
 } = require('./fall-pep-config');
+const { gstPortionCents } = require('./gst');
 
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SHEET_REGISTRATIONS          = 'Registrations';
@@ -63,9 +64,11 @@ module.exports = async function handler(req, res) {
       return res.status(409).json({ error: 'Sorry, the Fall Program is full.' });
     }
 
+    const gstAmount = gstPortionCents(FALL_PEP_AMOUNT);
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const paymentIntent = await stripe.paymentIntents.create({
-      amount:      FALL_PEP_AMOUNT,
+      amount:      FALL_PEP_AMOUNT + gstAmount,
       currency:    'cad',
       description: cohort.label,
       metadata: {
@@ -80,6 +83,8 @@ module.exports = async function handler(req, res) {
         email:        String(email).trim(),
         mailList:     mailList === 'true' ? 'true' : 'false',
         timestamp:    new Date().toISOString(),
+        baseAmountCents: String(FALL_PEP_AMOUNT),
+        gstAmountCents:  String(gstAmount),
       },
     });
 
