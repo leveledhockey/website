@@ -20,7 +20,7 @@ function getSessionCost(obj) {
 
 // Fall 2026 Power Edge Pro sessions (Wednesday and Thursday cohorts, see
 // fall-pep-config.js) run a hard capacity partition: only 4 of each session's 20 seats
-// are ever sold as drop-in — the other 16 are reserved for the 13-session program and
+// are ever sold as drop-in — the other 16 are reserved for the 11-session program and
 // never spill over, even if the program under-sells. No sheet schema change: a program
 // registration is told apart from a drop-in registration by the sessionLabel text
 // already written to column C. When full-program registration closes, bump

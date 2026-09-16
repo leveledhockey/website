@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
 
       if (FALL_PEP_SESSION_IDS.has(sessionId)) {
         if (isFallPepProgramLabel(label)) {
-          // One full-program purchase writes an identical row to all 13 sessions of its
+          // One full-program purchase writes an identical row to all 11 sessions of its
           // cohort — count it once, off that cohort's canonical session, to avoid a
           // 13x overcount.
           const cohort = getFallPepCohortForSession(sessionId);

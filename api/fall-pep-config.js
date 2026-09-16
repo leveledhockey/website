@@ -5,17 +5,17 @@
 //
 // IMPORTANT: WED_LABEL below is written verbatim (via handleFallPepProgram in
 // stripe-webhook.js) into the "Session Label" column of already-existing Registrations
-// rows for the Wednesday cohort. Do not change it — isFallPepProgramLabel() below
-// matches historical rows with startsWith(), and changing it would make existing
-// full-program registrations get miscounted as drop-ins.
-const WED_LABEL = 'Fall 2026 Power Edge Pro — 13-Session Program';
+// rows for the Wednesday cohort. Do not change it once registrations exist —
+// isFallPepProgramLabel() below matches historical rows with startsWith(), and changing
+// it later would make existing full-program registrations get miscounted as drop-ins.
+const WED_LABEL = 'Fall 2026 Power Edge Pro — 11-Session Program';
 
 const FALL_PEP_TIME          = '16:00';
 const FALL_PEP_DURATION_MIN  = 50;
 const FALL_PEP_LOCATION      = 'Scotia Barn Burnaby';
 const FALL_PEP_PROGRAM_CAP   = 16;   // full-program seats per cohort, per session
 const FALL_PEP_DROPIN_CAP    = 4;    // drop-in seats per session
-const FALL_PEP_AMOUNT        = 69900; // $699.00 CAD, per cohort
+const FALL_PEP_AMOUNT        = 59999; // $599.99 CAD, per cohort
 
 function fallPepSessionId(mmddyy) {
   return `PEP_${mmddyy}_${FALL_PEP_TIME}`;
@@ -27,7 +27,7 @@ const FALL_PEP_COHORTS = [
     day:       'Wednesday',
     label:     WED_LABEL,
     dates: [
-      '09-23-26', '09-30-26', '10-07-26', '10-14-26', '10-21-26', '10-28-26',
+      '10-07-26', '10-14-26', '10-21-26', '10-28-26',
       '11-04-26', '11-11-26', '11-18-26', '11-25-26', '12-02-26', '12-09-26',
       '12-16-26',
     ],
@@ -37,7 +37,7 @@ const FALL_PEP_COHORTS = [
     day:       'Thursday',
     label:     `${WED_LABEL} (Thursday)`,
     dates: [
-      '09-24-26', '10-01-26', '10-08-26', '10-15-26', '10-22-26', '10-29-26',
+      '10-08-26', '10-15-26', '10-22-26', '10-29-26',
       '11-05-26', '11-12-26', '11-19-26', '11-26-26', '12-03-26', '12-10-26',
       '12-17-26',
     ],
