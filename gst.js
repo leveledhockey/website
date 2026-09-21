@@ -2,7 +2,7 @@
 // page are pre-tax; the amount actually charged (and shown at checkout) has GST added
 // on top. Keep this rate in sync with api/gst.js, the server-side copy used when the
 // real Stripe charge is created.
-const GST_RATE = 0.12;
+const GST_RATE = 0.05;
 
 // Cent-based math so displayed breakdowns always sum exactly (base + gst === total).
 function gstPortion(baseDollars) {
