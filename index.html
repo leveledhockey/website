@@ -562,13 +562,15 @@
             <li>Consistent weekly development</li>
             <li>Best available session rate</li>
           </ul>
-          <button type="button" class="btn btn-primary fpep-cta" id="fpep-register-btn">Register for Fall Program</button>
+          <!-- The 11-session package is sold out — see FALL_PEP_PROGRAM.programClosed in
+               fall-pep.js. Individual sessions are still bookable as drop-ins below. -->
+          <button type="button" class="btn btn-primary fpep-cta" id="fpep-register-btn" disabled>Sold Out</button>
         </div>
       </div>
 
       <div class="fpep-dropin-strip">
         <div>
-          <p class="fpep-dropin-strip-title">Can&rsquo;t commit to the full program?</p>
+          <p class="fpep-dropin-strip-title">DROP IN REGISTRATION STILL OPEN</p>
           <p class="fpep-dropin-strip-desc" id="fpep-dropin-strip-desc">Limited drop-in spaces will be available for $65/session + GST, subject to availability.</p>
         </div>
         <button type="button" class="btn btn-outline" id="fpep-dropin-btn">Drop-In Registration</button>
@@ -1111,11 +1113,9 @@
     });
 
     // ---- Fall PEP program ----
-    let fallPepSpotsData   = {};        // { [sessionId]: drop-in spotsRemaining }
+    let fallPepSpotsData   = {};        // { [sessionId]: spotsRemaining }
     let fallPepSpotsStatus = 'loading'; // 'loading' | 'done' | 'error'
-    let fallPepProgramSpotsByPackage = {}; // { [packageId]: full-program spotsRemaining }
     let fallPepSelectedCohort = null;   // the cohort chosen on the day-select step
-    let fallPepProgramFull = false;     // whether fallPepSelectedCohort is sold out
 
     // Fall PEP drop-in price, read from the Schedule sheet's Cost column (defaults to
     // $55 server-side if left blank). Starts at the static markup's placeholder value
@@ -1164,7 +1164,7 @@
           const known = fallPepSpotsStatus === 'done' && spots !== undefined;
           const soldOut = known && spots <= 0;
           opt.value = sessionId;
-          opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
+          opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
           if (soldOut) opt.disabled = true;
           group.appendChild(opt);
         });
@@ -1176,7 +1176,7 @@
     }
 
     // <option> text can't be partially colored (options render as plain text, no
-    // nested markup) — so the highlighted "N drop-in spots remaining" line lives here,
+    // nested markup) — so the highlighted "N spots remaining" line lives here,
     // just below the dropdown, and updates as the selected date changes.
     function updateFpepDropinSessionSpotsDisplay() {
       const select = document.getElementById('fpep-dropin-session');
@@ -1186,70 +1186,56 @@
         el.textContent = '';
         return;
       }
-      el.textContent = spots <= 0 ? 'Sold out' : `${spots} drop-in spot${spots !== 1 ? 's' : ''} remaining`;
+      el.textContent = spots <= 0 ? 'Sold out' : `${spots} spot${spots !== 1 ? 's' : ''} remaining`;
     }
     document.getElementById('fpep-dropin-session').addEventListener('change', updateFpepDropinSessionSpotsDisplay);
 
     populateFallPepDropinOptions();
 
-    // Builds the two day-choice cards on the day-select step, each showing that
-    // cohort's own full-program spot count.
+    // Builds the two day-choice cards on the day-select step. The package is sold out,
+    // so both cards are disabled and this step is a dead end — the landing-page CTA that
+    // opens this modal is disabled too. Drop-ins for the same sessions are unaffected.
     function renderFpepDayChoices() {
+      const closed = FALL_PEP_PROGRAM.programClosed;
       const grid = document.getElementById('fpep-daychoice-grid');
       grid.innerHTML = '';
       FALL_PEP_COHORTS.forEach(cohort => {
-        const spotsRemaining = fallPepProgramSpotsByPackage[cohort.packageId];
-        const known = typeof spotsRemaining === 'number';
-        const full  = known && spotsRemaining <= 0;
-        const label = !known
-          ? 'Checking availability…'
-          : full
-            ? 'Full Program Registration Is Full'
-            : `${spotsRemaining} Full Program Spot${spotsRemaining !== 1 ? 's' : ''} Remaining`;
-
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'fpep-daychoice-card';
-        btn.disabled = full;
+        btn.disabled = closed;
         btn.innerHTML = `
           <span class="fpep-daychoice-day">${cohort.dayPlural}</span>
           <span class="fpep-daychoice-time">${cohort.time}</span>
           <span class="fpep-daychoice-dates">${cohort.dates[0]} &ndash; ${cohort.dates[cohort.dates.length - 1]}, 2026</span>
           <span class="fpep-daychoice-age">${cohort.ageGroup}</span>
           <span class="fpep-daychoice-agenote">${cohort.ageNote}</span>
-          <span class="fpep-daychoice-spots${full ? ' fpep-daychoice-spots--full' : ''}">${label}</span>
+          ${closed ? '<span class="fpep-daychoice-spots fpep-daychoice-spots--full">Sold Out</span>' : ''}
         `;
         btn.addEventListener('click', () => selectFpepCohort(cohort));
         grid.appendChild(btn);
       });
     }
 
-    // Updates the in-form spots line + submit button for the currently selected cohort.
+    // Updates the in-form availability line + submit button for the selected cohort.
+    // While the package is closed this is purely a safety net: it keeps the form from
+    // being submittable if the modal is ever reached, and /api/fall-pep-register refuses
+    // the request anyway.
     function updateFpepProgramSpotsDisplay() {
       if (!fallPepSelectedCohort) return;
       const modalEl   = document.getElementById('fpep-program-spots');
       const submitBtn = document.getElementById('fpep-submit');
-      const spotsRemaining = fallPepProgramSpotsByPackage[fallPepSelectedCohort.packageId];
 
-      if (typeof spotsRemaining !== 'number') {
-        modalEl.textContent = 'Checking availability…';
+      if (!FALL_PEP_PROGRAM.programClosed) {
+        modalEl.textContent = '';
+        modalEl.classList.remove('fpep-program-spots--full');
         return;
       }
 
-      fallPepProgramFull = spotsRemaining <= 0;
-      const label = fallPepProgramFull
-        ? 'Full Program Registration Is Full'
-        : `${spotsRemaining} Full Program Spot${spotsRemaining !== 1 ? 's' : ''} Remaining`;
-
-      modalEl.textContent = label;
-      modalEl.classList.toggle('fpep-program-spots--full', fallPepProgramFull);
-
-      if (fallPepProgramFull) {
-        submitBtn.disabled    = true;
-        submitBtn.textContent = 'Full Program Registration Closed';
-      } else {
-        if (submitBtn.textContent === 'Full Program Registration Closed') submitBtn.textContent = 'Register for Fall Program';
-      }
+      modalEl.textContent = 'Sold Out';
+      modalEl.classList.add('fpep-program-spots--full');
+      submitBtn.disabled    = true;
+      submitBtn.textContent = 'Full Program Registration Closed';
     }
 
     // Switches the full-program modal from the day-select step into the registration
@@ -1269,7 +1255,8 @@
       document.getElementById('fpep-success').style.display = 'none';
       document.getElementById('fpep-consent').checked = false;
       document.getElementById('fpep-submit').disabled = true;
-      document.getElementById('fpep-submit').textContent = 'Register for Fall Program';
+      document.getElementById('fpep-submit').textContent =
+        FALL_PEP_PROGRAM.programClosed ? 'Full Program Registration Closed' : 'Register for Fall Program';
       const prevErr = document.getElementById('fpep-form-error');
       if (prevErr) prevErr.remove();
       form.querySelectorAll('.form-input, .form-select').forEach(el => { el.style.borderColor = ''; });
@@ -1297,9 +1284,6 @@
           if (isFallPepSession(s.sessionId)) {
             fallPepSpotsData[s.sessionId] = s.spotsRemaining;
             if (dropinPrice === null && Number(s.Cost) > 0) dropinPrice = Number(s.Cost);
-            if (s.fallPepPackageId && typeof s.fallPepProgramSpotsRemaining === 'number') {
-              fallPepProgramSpotsByPackage[s.fallPepPackageId] = s.fallPepProgramSpotsRemaining;
-            }
           }
         });
         fallPepSpotsStatus = 'done';
@@ -1333,7 +1317,8 @@
       if (e.key === 'Escape' && document.getElementById('fpep-modal-overlay').classList.contains('open')) closeFpepModal();
     });
     document.getElementById('fpep-consent').addEventListener('change', function() {
-      document.getElementById('fpep-submit').disabled = !this.checked || fallPepProgramFull;
+      document.getElementById('fpep-submit').disabled =
+        !this.checked || FALL_PEP_PROGRAM.programClosed;
     });
 
     // ---- Fall PEP: drop-in modal ----

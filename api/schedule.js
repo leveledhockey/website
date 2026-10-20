@@ -1,22 +1,14 @@
 const { google } = require('googleapis');
-const {
-  FALL_PEP_PROGRAM_CAP,
-  FALL_PEP_DROPIN_CAP,
-  FALL_PEP_SESSION_IDS,
-  isFallPepSession,
-  getFallPepCohortForSession,
-  isFallPepProgramLabel,
-} = require('./fall-pep-config');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
 const REGISTRATIONS_SPREADSHEET_ID = process.env.GOOGLE_REGISTRATIONS_SPREADSHEET_ID;
 const SCHEDULE_SHEET               = 'Schedule';
 
-// Fall 2026 Power Edge Pro — hard capacity partition, no sheet changes: we tell a
-// program registration apart from a drop-in registration by the sessionLabel text
-// each write already stores (col C), rather than adding a new column.
-// When full-program registration closes, bump FALL_PEP_DROPIN_CAP up (e.g. to 20)
-// so the unsold program seats become available as drop-in.
+// Every session is reported the same way: spotsRemaining is "Max Participants" minus
+// the number of registrations against that session ID. The Fall 2026 Power Edge Pro
+// sessions used to be partitioned here (16 program seats / 4 drop-in seats per
+// session); the program is now closed, so they are plain drop-in sessions and their
+// unsold seats count toward the drop-in pool like any other. See api/fall-pep-config.js.
 
 const DEFAULT_DROPIN_COST = 55; // CAD, used when a Schedule row leaves Cost blank
 
@@ -58,31 +50,14 @@ module.exports = async function handler(req, res) {
     ]);
 
     // Build a map of sessionId → registration count. Every row present is approved.
+    // A full-program purchase wrote one row per session of its cohort, so each of those
+    // rows correctly occupies a seat in the session it names.
     const regRows = (regData.data.values || []).slice(1);
     const regCountMap = {};
-    const fallPepDropinCountMap = {};
-    const fallPepProgramCountByPackage = {};
     regRows.forEach(row => {
       const sessionId = row[0] || '';
-      const label     = row[1] || '';
       if (!sessionId) return;
-
       regCountMap[sessionId] = (regCountMap[sessionId] || 0) + 1;
-
-      if (FALL_PEP_SESSION_IDS.has(sessionId)) {
-        if (isFallPepProgramLabel(label)) {
-          // One full-program purchase writes an identical row to all 11 sessions of its
-          // cohort — count it once, off that cohort's canonical session, to avoid a
-          // 13x overcount.
-          const cohort = getFallPepCohortForSession(sessionId);
-          if (cohort && sessionId === cohort.canonicalSessionId) {
-            fallPepProgramCountByPackage[cohort.packageId] =
-              (fallPepProgramCountByPackage[cohort.packageId] || 0) + 1;
-          }
-        } else {
-          fallPepDropinCountMap[sessionId] = (fallPepDropinCountMap[sessionId] || 0) + 1;
-        }
-      }
     });
 
     const scheduleRows = scheduleData.data.values || [];
@@ -102,15 +77,7 @@ module.exports = async function handler(req, res) {
 
       const maxParticipants = parseInt(obj['Max Participants'], 10) || 0;
       const registered      = regCountMap[obj['SessionID']] || 0;
-      const isFallPep       = isFallPepSession(obj['SessionID']);
-      const fallPepCohort   = isFallPep ? getFallPepCohortForSession(obj['SessionID']) : null;
-
-      // Fall PEP sessions run a hard capacity partition: only FALL_PEP_DROPIN_CAP of
-      // the 20 seats are ever sold as drop-in, regardless of how many program spots
-      // go unsold — so spotsRemaining here reflects the drop-in pool only.
-      const spotsRemaining = isFallPep
-        ? Math.max(0, FALL_PEP_DROPIN_CAP - (fallPepDropinCountMap[obj['SessionID']] || 0))
-        : Math.max(0, maxParticipants - registered);
+      const spotsRemaining  = Math.max(0, maxParticipants - registered);
 
       const sessionResult = {
         sessionId:          obj['SessionID'],
@@ -124,14 +91,6 @@ module.exports = async function handler(req, res) {
         Cost:               getSessionCost(obj),
         spotsRemaining,
       };
-
-      if (isFallPep && fallPepCohort) {
-        sessionResult.fallPepPackageId = fallPepCohort.packageId;
-        sessionResult.fallPepProgramSpotsRemaining = Math.max(
-          0,
-          FALL_PEP_PROGRAM_CAP - (fallPepProgramCountByPackage[fallPepCohort.packageId] || 0),
-        );
-      }
 
       result.push(sessionResult);
     });

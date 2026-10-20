@@ -1062,7 +1062,6 @@
 
   <script src="waiver.js"></script>
   <script src="gst.js"></script>
-  <script src="fall-pep.js"></script>
   <script>
     // Transparent → solid nav on scroll
     const nav = document.getElementById('nav');
@@ -1415,16 +1414,11 @@
       const container = document.getElementById('modal-session-cards');
       container.innerHTML = daySessions.map(s => {
         const full = s.spotsRemaining <= 0;
-        const isFallPep = isFallPepSession(s.sessionId);
         const spotsLabel = full
           ? 'Full'
-          : isFallPep
-            ? `${s.spotsRemaining} drop-in spot${s.spotsRemaining !== 1 ? 's' : ''} remaining`
-            : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
+          : `${s.spotsRemaining} spot${s.spotsRemaining !== 1 ? 's' : ''} left`;
         const price = Number(s.Cost) > 0 ? Number(s.Cost) : 55;
         const spotsSpan = `<span class="session-spots${full ? ' session-spots--full' : ''}">${spotsLabel}</span>`;
-        // Fall PEP's longer "N drop-in spots remaining" text crowds the top row next
-        // to the badge, so it gets its own row below the age group instead.
         return `
           <div class="session-card${full ? ' session-card--full' : ''}"
                data-session-id="${s.sessionId}"
@@ -1435,13 +1429,12 @@
                ${full ? '' : 'role="radio" tabindex="0"'}>
             <div class="session-card-top">
               <span class="program-badge">${s['Program']}${full ? ' <span class="prog-full-label">(FULL)</span>' : ''}</span>
-              ${isFallPep ? '' : spotsSpan}
+              ${spotsSpan}
             </div>
             <div class="session-card-details">
               <span>${formatTimeRange(s['Time'], s.EndTime)}</span>
               <span>${s['Location']}</span>
               <span>${s['Age Group']}</span>
-              ${isFallPep ? spotsSpan : ''}
             </div>
           </div>
         `;
@@ -1500,14 +1493,13 @@
     // selectSessionCard() keep its preview total in sync with the selected price.
     let updateExpressCheckoutTotal = null;
 
-    function updateAmountLine(price, isFallPep) {
+    function updateAmountLine(price) {
       const priceStr = price.toFixed(2);
       const gst      = gstPortion(price);
       const total    = addGst(price);
       const totalStr = `$${priceStr} + $${gst.toFixed(2)} GST = $${total.toFixed(2)} CAD`;
-      document.getElementById('amount-line').innerHTML = isFallPep
-        ? `Amount: <strong style="color: var(--text);">${totalStr}</strong>. Fall PEP sessions are $${priceStr}/session + GST - processed securely by Stripe.`
-        : `Amount: <strong style="color: var(--text);">${totalStr}</strong> processed securely by Stripe.`;
+      document.getElementById('amount-line').innerHTML =
+        `Amount: <strong style="color: var(--text);">${totalStr}</strong> processed securely by Stripe.`;
       document.getElementById('submit-amount-line').innerHTML =
         `You will be charged <strong style="color: var(--text);">$${total.toFixed(2)} CAD</strong> (includes GST) upon submitting this form.`;
     }
@@ -1518,9 +1510,8 @@
       const sessionId = card.dataset.sessionId;
       document.getElementById('modal-session-id').value = sessionId;
       const price = Number(card.dataset.price) > 0 ? Number(card.dataset.price) : 55;
-      const isFallPep = isFallPepSession(sessionId);
-      updateAmountLine(price, isFallPep);
-      if (updateExpressCheckoutTotal) updateExpressCheckoutTotal(price, isFallPep);
+      updateAmountLine(price);
+      if (updateExpressCheckoutTotal) updateExpressCheckoutTotal(price);
     }
 
     function closeModal() {
@@ -1661,10 +1652,10 @@
     });
 
     // Keep the express-checkout preview total in sync with the selected session's price.
-    updateExpressCheckoutTotal = (price, isFallPep) => {
+    updateExpressCheckoutTotal = (price) => {
       paymentRequest.update({
         total: {
-          label:  isFallPep ? 'Fall PEP Drop-In Session' : 'Leveled Hockey Session',
+          label:  'Leveled Hockey Session',
           amount: Math.round(addGst(price) * 100),
         },
       });
