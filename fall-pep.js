@@ -1,10 +1,16 @@
-// Fall 2026 Power Edge Pro program — shared between index.html and register.html.
-// Two cohorts (Wednesday and Thursday), same 11-week format, same pricing. Hard-coded
-// to mirror the session IDs entered into the Schedule sheet (PEP_MM-DD-26_16:00) so
-// every page agrees on which sessions belong to which cohort. The per-session drop-in
-// price is NOT hard-coded here — it's read from the Schedule sheet's Cost column (see
+// Fall 2026 Power Edge Pro program — used by index.html for its Fall PEP section and
+// drop-in modal. Two cohorts (Wednesday and Thursday), same 11-week format. Hard-coded
+// to mirror the session IDs entered into the Schedule sheet (PEP_MM-DD-26_16:00) so the
+// drop-in date picker lists the right sessions. The per-session drop-in price is NOT
+// hard-coded here — it's read from the Schedule sheet's Cost column (see
 // api/schedule.js / api/register.js), defaulting to $55 if left blank. Only the
 // 11-session program package rate is fixed.
+//
+// The 11-session program is SOLD OUT and no longer purchasable — see
+// FALL_PEP_PROGRAM.programClosed below and api/fall-pep-register.js. Its sessions are
+// now plain drop-in sessions: register.html lists them like any other session, and
+// /api/schedule reports each one's full remaining capacity as drop-in availability
+// (the old 4-drop-ins-per-session cap is gone).
 //
 // Note: Sept 23/30 (Wed) and Sept 24/Oct 1 (Thu) still exist as regular sessions in the
 // Schedule sheet — they were dropped from the PEP bundle but not deleted from the sheet.
@@ -57,6 +63,10 @@ const FALL_PEP_PROGRAM = {
   sessionsCount: 11,
   programRate:   599.99,
   amountCents:   59999,
+  // The whole-program package is sold out: the landing-page CTA is greyed out, the
+  // day-choice cards are disabled, and /api/fall-pep-register refuses every request.
+  // Flip to false (and re-open the endpoint) to sell the package again.
+  programClosed: true,
 };
 
 const FALL_PEP_SESSION_ID_SET = new Set(FALL_PEP_COHORTS.flatMap(c => c.sessionIds));

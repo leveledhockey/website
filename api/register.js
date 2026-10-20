@@ -1,10 +1,5 @@
 const { google } = require('googleapis');
 const Stripe = require('stripe');
-const {
-  FALL_PEP_DROPIN_CAP,
-  FALL_PEP_SESSION_IDS: FALL_PEP_DROPIN_SESSION_IDS,
-  isFallPepProgramLabel,
-} = require('./fall-pep-config');
 const { gstPortionCents } = require('./gst');
 
 const SPREADSHEET_ID               = process.env.GOOGLE_SPREADSHEET_ID;
@@ -19,13 +14,11 @@ function getSessionCost(obj) {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DROPIN_COST;
 }
 
-// Fall 2026 Power Edge Pro sessions (Wednesday and Thursday cohorts, see
-// fall-pep-config.js) run a hard capacity partition: only 4 of each session's 20 seats
-// are ever sold as drop-in — the other 16 are reserved for the 11-session program and
-// never spill over, even if the program under-sells. No sheet schema change: a program
-// registration is told apart from a drop-in registration by the sessionLabel text
-// already written to column C. When full-program registration closes, bump
-// FALL_PEP_DROPIN_CAP up (e.g. to 20) to open the unsold program seats to drop-in.
+// Every session enforces the same capacity rule: "Max Participants" from the Schedule
+// sheet, counted against every registration row for that session ID. The Fall 2026
+// Power Edge Pro sessions used to reserve 16 of their 20 seats for the 11-session
+// program and cap drop-ins at 4; the program is now closed, so those sessions take
+// drop-ins up to their full capacity. See api/fall-pep-config.js.
 
 function getAuth() {
   let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -93,21 +86,15 @@ module.exports = async function handler(req, res) {
 
     const maxParticipants  = parseInt(sessionObj['Max Participants'], 10);
     const trimmedSessionId = String(sessionId).trim();
-    const isFallPepDropin  = FALL_PEP_DROPIN_SESSION_IDS.has(trimmedSessionId);
 
-    // Count live registrations for this session to enforce capacity. Fall PEP
-    // sessions run a hard partition, so only drop-in-labeled rows count against
-    // the drop-in cap — program registrations are tracked separately and never
-    // eat into this pool.
+    // Count live registrations for this session to enforce capacity. Every row against
+    // this session ID occupies a seat, including the rows written by the (now closed)
+    // Fall PEP full-program purchases.
     const regCount = regRows
       .slice(1)
-      .filter(row => {
-        if (row[0] !== trimmedSessionId) return false;
-        return isFallPepDropin ? !isFallPepProgramLabel(row[1]) : true;
-      }).length;
+      .filter(row => row[0] === trimmedSessionId).length;
 
-    const capacity = isFallPepDropin ? FALL_PEP_DROPIN_CAP : maxParticipants;
-    if (regCount >= capacity) {
+    if (regCount >= maxParticipants) {
       return res.status(409).json({ error: 'Sorry, this session is now full.' });
     }
 

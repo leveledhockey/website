@@ -1,20 +1,23 @@
-// Shared Fall 2026 Power Edge Pro config — required by api/schedule.js, api/register.js,
-// api/fall-pep-register.js, and api/stripe-webhook.js so every endpoint that needs to
-// recognize a Fall PEP session, or process a full-program purchase, agrees on the same
-// set of cohorts (currently Wednesday and Thursday).
+// Shared Fall 2026 Power Edge Pro config — required by api/fall-pep-register.js and
+// api/stripe-webhook.js so both endpoints agree on the same set of cohorts (Wednesday
+// and Thursday).
+//
+// As of Oct 2026 the 11-session program is CLOSED (sold out): fall-pep-register.js
+// refuses every request, and the Wednesday/Thursday sessions now run as ordinary
+// drop-in sessions — api/schedule.js and api/register.js no longer special-case them,
+// so each one's capacity is simply its "Max Participants" minus every registration
+// against it (full-program registrants included). That means the seats the program
+// never sold are now open to drop-ins.
 //
 // IMPORTANT: WED_LABEL below is written verbatim (via handleFallPepProgram in
 // stripe-webhook.js) into the "Session Label" column of already-existing Registrations
-// rows for the Wednesday cohort. Do not change it once registrations exist —
-// isFallPepProgramLabel() below matches historical rows with startsWith(), and changing
-// it later would make existing full-program registrations get miscounted as drop-ins.
+// rows for the Wednesday cohort. Do not change it — those historical rows are what
+// record who bought the program.
 const WED_LABEL = 'Fall 2026 Power Edge Pro — 11-Session Program';
 
 const FALL_PEP_TIME          = '16:00';
 const FALL_PEP_DURATION_MIN  = 50;
 const FALL_PEP_LOCATION      = 'Scotia Barn Burnaby';
-const FALL_PEP_PROGRAM_CAP   = 16;   // full-program seats per cohort, per session
-const FALL_PEP_DROPIN_CAP    = 4;    // drop-in seats per session
 const FALL_PEP_AMOUNT        = 59999; // $599.99 CAD pre-tax, per cohort — GST is added
                                        // on top when the PaymentIntent is created (see
                                        // fall-pep-register.js / gst.js)
@@ -47,47 +50,19 @@ const FALL_PEP_COHORTS = [
 ];
 
 FALL_PEP_COHORTS.forEach(cohort => {
-  cohort.sessionIds        = cohort.dates.map(fallPepSessionId);
-  cohort.canonicalSessionId = cohort.sessionIds[0];
+  cohort.sessionIds = cohort.dates.map(fallPepSessionId);
 });
-
-const FALL_PEP_SESSION_IDS = new Set(FALL_PEP_COHORTS.flatMap(c => c.sessionIds));
-
-const SESSION_ID_TO_COHORT = new Map();
-FALL_PEP_COHORTS.forEach(cohort => {
-  cohort.sessionIds.forEach(id => SESSION_ID_TO_COHORT.set(id, cohort));
-});
-
-function isFallPepSession(sessionId) {
-  return FALL_PEP_SESSION_IDS.has(sessionId);
-}
-
-function getFallPepCohortForSession(sessionId) {
-  return SESSION_ID_TO_COHORT.get(sessionId) || null;
-}
 
 function getFallPepCohortByPackageId(packageId) {
   return FALL_PEP_COHORTS.find(c => c.packageId === packageId) || null;
-}
-
-// Every cohort's label starts with WED_LABEL (the Thursday one appends " (Thursday)"),
-// so a single startsWith check identifies any full-program row regardless of cohort.
-function isFallPepProgramLabel(label) {
-  return String(label || '').startsWith(WED_LABEL);
 }
 
 module.exports = {
   FALL_PEP_TIME,
   FALL_PEP_DURATION_MIN,
   FALL_PEP_LOCATION,
-  FALL_PEP_PROGRAM_CAP,
-  FALL_PEP_DROPIN_CAP,
   FALL_PEP_AMOUNT,
   FALL_PEP_COHORTS,
-  FALL_PEP_SESSION_IDS,
   fallPepSessionId,
-  isFallPepSession,
-  getFallPepCohortForSession,
   getFallPepCohortByPackageId,
-  isFallPepProgramLabel,
 };
