@@ -1149,6 +1149,15 @@
       if (updateFpepDropinExpressTotal) updateFpepDropinExpressTotal(price);
     }
 
+    // Cohort dates are short strings like "Oct 7" with the year implied (2026) —
+    // appending it gives a string the Date constructor parses natively.
+    function isFallPepDatePast(date) {
+      const sessionDate = new Date(`${date}, 2026`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return sessionDate < today;
+    }
+
     function populateFallPepDropinOptions() {
       const select = document.getElementById('fpep-dropin-session');
       const prevValue = select.value;
@@ -1160,18 +1169,26 @@
         cohort.sessionIds.forEach((sessionId, i) => {
           const date = cohort.dates[i];
           const opt = document.createElement('option');
+          const past = isFallPepDatePast(date);
           const spots = fallPepSpotsData[sessionId];
           const known = fallPepSpotsStatus === 'done' && spots !== undefined;
           const soldOut = known && spots <= 0;
           opt.value = sessionId;
-          opt.textContent = `${date}, 2026${known ? (soldOut ? ' (Sold Out)' : ` (${spots} spot${spots !== 1 ? 's' : ''} remaining)`) : ''}`;
-          if (soldOut) opt.disabled = true;
+          opt.textContent = `${date}, 2026${
+            past ? ' (Past)' : known ? (soldOut ? ' (Sold Out)' : ` (${spots} spot${spots !== 1 ? 's' : ''} remaining)`) : ''
+          }`;
+          if (past || soldOut) opt.disabled = true;
           group.appendChild(opt);
         });
         select.appendChild(group);
       });
 
-      if (prevValue) select.value = prevValue;
+      // A previously-selected date can turn disabled on a later refresh — don't leave a
+      // disabled option selected, since those can't be submitted.
+      if (prevValue) {
+        select.value = prevValue;
+        if (select.selectedOptions[0]?.disabled) select.value = '';
+      }
       updateFpepDropinSessionSpotsDisplay();
     }
 

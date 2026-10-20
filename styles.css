@@ -880,6 +880,7 @@ h1, h2, h3, h4, h5 {
   padding-right: 2.5rem;
 }
 .form-select option { background: var(--surface-2); color: var(--text); }
+.form-select option:disabled { color: var(--text-subtle); }
 .form-textarea { resize: vertical; min-height: 130px; }
 .form-submit { margin-top: 0.5rem; width: 100%; justify-content: center; }
 
