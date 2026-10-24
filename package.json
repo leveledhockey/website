@@ -2,9 +2,6 @@
   "name": "leveled-hockey",
   "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": "22.x"
-  },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
     "googleapis": "^144.0.0",
